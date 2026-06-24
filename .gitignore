@@ -47,3 +47,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+NEXT_PUBLIC_SUPABASE_URL=https://eokvqqcorktxtbflunuf.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_htcBRzoevOjzjhraoSm-Ww_vwKAao97
