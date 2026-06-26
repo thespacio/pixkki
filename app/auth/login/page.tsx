@@ -1,5 +1,5 @@
 import { PawPrint, Shield, HeartHandshake, QrCode } from 'lucide-react'
-import { LoginForm } from '@/components/auth/login-form'
+import { LoginForm } from '@/modules/auth/components/login-form'
 import Link from "next/link";
 
 export const metadata = {

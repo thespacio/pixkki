@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/dashboard/sidebar'
-import { Header } from '@/components/dashboard/header'
-import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
-import {createSupabaseServerClient} from "@/lib/supabase/server-client";
+// Cambiado a rutas relativas para evitar errores de alias de TypeScript/Turbopack
+import { Sidebar } from "../components/dashboard/sidebar"
+import { Header } from "../components/dashboard/header"
+import { createSupabaseServerClient } from "@/lib/supabase/server-client"
 
 export default async function DashboardLayout({
   children,

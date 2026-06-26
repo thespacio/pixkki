@@ -1,5 +1,4 @@
-
-import { KpiCard } from '@/components/dashboard/kpi-card'
+import { KpiCard } from '../components/dashboard/kpi-card'
 import {
   PawPrint,
   HeartHandshake,
