@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link' // 👈 Importamos Link
 import { Eye, EyeOff, LogIn } from 'lucide-react'
-import { getSupabaseBrowserClient } from '@/lib/supabase/browser-client'
+import { getSupabaseBrowserClient } from '../../../app/lib/supabase/browser-client'
 
 export function LoginForm() {
   const router = useRouter()

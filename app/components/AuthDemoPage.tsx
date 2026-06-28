@@ -27,7 +27,7 @@ export function AuthDemoPage({
             <h1 className="text-2xl font-semibold text-white">{title}</h1>
           </div>
           <Link
-            href="/"
+            href="/public"
             className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-300 transition hover:text-emerald-200"
           >
             Back home →
