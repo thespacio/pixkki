@@ -28,8 +28,7 @@ const navItems = [
 ];
 
 const adminItems = [
-    { icon: Stethoscope, label: "Crear Refugio", to: "/dashboard/shelter-info" },
-    { icon: BuildingIcon, label: "Infraestructura", to: "/dashboard/shelter-infraestructure" },
+    { icon: BuildingIcon, label: "Crear Albergue", to: "/dashboard/shelter-infraestructure" },
     { icon: Users, label: "Personal", to: "/dashboard/staff" },
     { icon: BarChart2, label: "Reportes", to: "/reports" },
     { icon: FileText, label: "Documentos", to: "/documents" },

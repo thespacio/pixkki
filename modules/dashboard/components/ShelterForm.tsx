@@ -1,8 +1,13 @@
-"use client"
 import { useState } from "react";
+interface Props {
+    shelterName: string;
+    setShelterName: React.Dispatch<React.SetStateAction<string>>;
+}
 
-export default function ShelterForm() {
-    const [shelterName, setShelterName] = useState("");
+export default function ShelterForm({
+                                        shelterName,
+                                        setShelterName,
+                                    }: Props) {
 
     return (
         <div className="space-y-6">

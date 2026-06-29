@@ -185,7 +185,7 @@ export default function Login() {
                             maxLength={6}
                             value={twoFactorCode}
                             onChange={(e) =>
-                                setTwoFactorCode(e.target.value.replace(/\D/g, ""))
+                                setTwoFactorCode(e.target.value.replace(/\SpacesTable/g, ""))
                             }
                             placeholder="123456"
                             className="w-full px-4 py-3 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/25"
