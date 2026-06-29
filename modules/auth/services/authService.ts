@@ -1,6 +1,6 @@
 "use client";
 
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { getSupabaseBrowserClient } from "../../../app/lib/supabase/browser-client";
 
 // Inicializamos el cliente de Supabase para el navegador
 const supabase = getSupabaseBrowserClient();
