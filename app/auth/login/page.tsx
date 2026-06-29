@@ -1,7 +1,7 @@
 "use client"
 
-import { PawPrint, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
-import { login } from "../../auth";
+import {PawPrint, Eye, EyeOff, ArrowLeft, AlertCircle, ShieldCheck} from "lucide-react";
+import { login } from "@/modules/auth/auth";
 import { useRouter } from "next/navigation";
 import {useState} from "react";
 const logo = "/images/logo.png";
@@ -15,21 +15,45 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [twoFactorCode, setTwoFactorCode] = useState("");
+    const [showTwoFactor, setShowTwoFactor] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+
         setLoading(true);
+        setError("");
 
         await new Promise((r) => setTimeout(r, 700));
 
-        const ok = login(email, password);
-        if (ok) {
-            router.push("/dashboard");
-        } else {
-            setError("Correo o contraseña incorrectos. Por favor, intente de nuevo.");
+        // Primer paso: validar usuario y contraseña
+        if (!showTwoFactor) {
+            const loginOk =
+                password === "pixkki2024";
+
+            if (!loginOk) {
+                setError("Correo o contraseña incorrectos.");
+                setLoading(false);
+                return;
+            }
+
+            // Mostrar el segundo paso
+            setShowTwoFactor(true);
             setLoading(false);
+            return;
         }
+
+        // Segundo paso: validar código
+        const twoFactorOk = twoFactorCode === "123456";
+
+        if (!twoFactorOk) {
+            setError("El código de autenticación es incorrecto.");
+            setLoading(false);
+            return;
+        }
+
+        // Todo correcto
+        router.push("/dashboard");
     };
 
     return (
@@ -50,11 +74,11 @@ export default function Login() {
             <h1 className="text-3xl font-semibold text-foreground tracking-tight mb-2">Bienvenido de vuelta</h1>
             <p className="text-sm text-muted-foreground mb-8">Inicia sesión con tu cuenta</p>
             {/* Demo hint */}
-            {<div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-7 text-xs" style={{ backgroundColor: "#EAF3F6", color: "#6B9FAE" }}>
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-7 text-xs" style={{ backgroundColor: "#EAF3F6", color: "#6B9FAE" }}>
                         <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-                        <span><span className="font-semibold">Demo access:</span> use any email and password <span className="font-mono font-semibold">pixkki2024</span></span>
-                    </div>}
-            {/* Botón de Google */}
+                        <span><span className="font-semibold">Demo access:</span> Usa cualquier email, y la contraseña <span className="font-mono font-semibold">pixkki2024</span></span>
+            </div>
+            {/* Botón de Google
             <button
                 type="button"
                 //onClick={handleGoogleLogin}
@@ -87,7 +111,7 @@ export default function Login() {
                 </svg>
                 Iniciar Sesión con Google
             </button>
-            {/* Separador */}
+             Separador
             <div className="relative mb-8">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border" />
@@ -97,7 +121,7 @@ export default function Login() {
                                 o continúa con correo
                               </span>
                 </div>
-            </div>
+            </div>*/}
             {/*Form*/}
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -144,6 +168,31 @@ export default function Login() {
                     </div>
                 </div>
 
+                {/* Código de Google Authenticator */}
+                {showTwoFactor && (
+                    <div>
+                        <label
+                            htmlFor="twoFactorCode"
+                            className="block text-sm font-medium text-foreground mb-2"
+                        >
+                            Código de autenticación
+                        </label>
+
+                        <input
+                            id="twoFactorCode"
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={twoFactorCode}
+                            onChange={(e) =>
+                                setTwoFactorCode(e.target.value.replace(/\D/g, ""))
+                            }
+                            placeholder="123456"
+                            className="w-full px-4 py-3 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/25"
+                        />
+                    </div>
+                )}
+
                 {error && (
                     <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{ backgroundColor: "#FDF2EA", color: "#E8A87C" }}>
                         <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />
@@ -158,15 +207,11 @@ export default function Login() {
                     style={{ backgroundColor: "#43AE6D" }}
                 >
                     {loading ? (
-                        <>
-                            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                            Iniciando sesión...
-                        </>
+                        <>Cargando...</>
+                    ) : showTwoFactor ? (
+                        "Verificar código"
                     ) : (
-                        "Iniciar Sesión"
+                        "Continuar"
                     )}
                 </button>
             </form>

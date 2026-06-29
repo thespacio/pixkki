@@ -1,7 +1,7 @@
 // app/(dashboard)/layout.tsx
 "use client";
 
-import DashboardLayout from "../components/DashboardLayout";
+import DashboardLayout from "@/modules/dashboard/components/DashboardLayout";
 
 export default function Layout({
    children,

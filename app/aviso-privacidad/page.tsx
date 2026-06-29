@@ -7,7 +7,7 @@ export default function PrivacidadPage() {
       <div className="prose prose-gray dark:prose-invert">
         <p>Panic</p>
       </div>
-      <Link href="/auth/login" className="inline-block mt-6 text-primary hover:underline">
+      <Link href="/modules/auth/auth.ts/login" className="inline-block mt-6 text-primary hover:underline">
         ← Volver al inicio de sesión
       </Link>
     </div>
