@@ -53,7 +53,7 @@ export default function Login() {
         }
 
         // Todo correcto
-        router.push("/dashboard");
+        router.push("/shelter-setup");
     };
 
     return (

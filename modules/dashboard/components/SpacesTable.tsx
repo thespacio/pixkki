@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {Pencil, Plus, Trash2, X} from "lucide-react";
-import {ShelterSpace} from "@/app/dashboard/shelter-infraestructure/page";
+import {ShelterSpace} from "@/app/dashboard/shelter-spaces/page";
 
 
 interface Props {

@@ -430,7 +430,7 @@ export default function Landing() {
                         <a href="page.tsx#" className="hover:text-foreground transition-colors">Privacidad</a>
                         <a href="page.tsx#" className="hover:text-foreground transition-colors">Terminos</a>
                         <a href="page.tsx#" className="hover:text-foreground transition-colors">Contacto</a>
-                        <a href="/modules/auth/auth.ts/login" className="hover:text-foreground transition-colors">Iniciar Sesión</a>
+                        <a href="/auth/login" className="hover:text-foreground transition-colors">Iniciar Sesión</a>
                     </div>
                 </div>
             </footer>
