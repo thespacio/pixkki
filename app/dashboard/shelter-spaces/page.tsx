@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import InfrastructureSection from "@/modules/dashboard/components/InfrastructureSection";
 import SpacesTable from "@/modules/dashboard/components/SpacesTable";
-import ShelterForm from "@/modules/dashboard/components/ShelterForm";
 import {Button} from "@/components/ui/button";
 import {ArrowRight, Plus} from "lucide-react";
 
@@ -23,11 +22,6 @@ export default function NewShelterPage() {
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">
-
-            <ShelterForm
-                shelterName={shelterName}
-                setShelterName={setShelterName}
-            />
 
             <InfrastructureSection
                 spaces={spaces}
