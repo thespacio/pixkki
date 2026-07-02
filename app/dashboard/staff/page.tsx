@@ -1,255 +1,281 @@
-"use client"
-import { useState } from "react";
-import {Plus, Search, Filter, MoreHorizontal, Dog, Cat, Edit2, Trash2} from "lucide-react";
-import {useRouter} from "next/navigation";
-import {router} from "next/client";
+  'use client'
 
-// Configuraciones
-const roleConfig: Record<string, { label: string; color: string; bg: string }> = {
-  veterinarian: { label: "Veterinario", color: "#43AE6D", bg: "#EBF7F1" },
-  operator: { label: "Operador", color: "#6B9FAE", bg: "#EAF3F6" },
-  coordinator: { label: "Coordinador", color: "#E8A87C", bg: "#FDF2EA" },
-  evaluator: { label: "Evaluador", color: "#7A7670", bg: "#EDE9E1" },
-};
+  import { useEffect, useState, useCallback } from 'react'
+  import { getSupabaseBrowserClient } from '@/lib/supabase/browser-client'
+  import {
+    UserPlus, Stethoscope, Heart, Phone, CheckCircle,
+    XCircle, Trash2, Plus
+  } from 'lucide-react'
 
+  type RolStaff = 'Veterinario' | 'Voluntario' | 'Recepcionista'
 
+  type Miembro = {
+    id_usuario: number
+    nombre_completo: string
+    correo: string
+    activo: boolean
+    usuario_rol: { rol: { nombre_rol: string } }[]
+  }
 
-export default function StaffManagement() {
+  const ROL_META: Record<RolStaff, { label: string; icon: React.ElementType; color: string }> = {
+    Veterinario:   { label: 'Veterinario',   icon: Stethoscope, color: '#6366f1' },
+    Voluntario:    { label: 'Voluntario',    icon: Heart,       color: '#ec4899' },
+    Recepcionista: { label: 'Recepcionista', icon: Phone,       color: '#f59e0b' },
+  }
 
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "veterinarian" | "operator" | "coordinator" | "evaluator">("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const router = useRouter();
+  export default function StaffPage() {
+    const supabase = getSupabaseBrowserClient()
 
-  const addStaff = () => {
-    // Aquí puedes agregar lógica de logout
-    router.push('/dashboard/staff/add/');
-  };
+    const [idRefugio, setIdRefugio]   = useState<number | null>(null)
+    const [equipo, setEquipo]         = useState<Miembro[]>([])
+    const [loading, setLoading]       = useState(true)
+    const [modalOpen, setModalOpen]   = useState(false)
+    const [saving, setSaving]         = useState(false)
+    const [feedback, setFeedback]     = useState<{ type: 'ok' | 'error'; msg: string } | null>(null)
 
-  // Datos de ejemplo - reemplazar con tus datos reales
-  const allStaff = [
-    {
-      id: "001",
-      name: "María García",
-      rol: "veterinarian",
-      email: "maria@example.com",
-      species: "dog",
-      breed: "Labrador",
-      sex: "Female",
-      age: "3 years",
-      weight: "25 kg",
-      kennel: "K-12",
-      intake: "2024-01-15"
-    },
-    {
-      id: "002",
-      name: "Carlos López",
-      rol: "operator",
-      status: "pending",
-      email: "carlos@example.com",
-      species: "cat",
-      breed: "Siamese",
-      sex: "Male",
-      age: "2 years",
-      weight: "4 kg",
-      kennel: "C-05",
-      intake: "2024-02-20"
-    },
-    {
-      id: "003",
-      name: "Ana Martínez",
-      rol: "coordinator",
-      email: "ana@example.com",
-      species: "dog",
-      breed: "Golden Retriever",
-      sex: "Female",
-      age: "4 years",
-      weight: "30 kg",
-      kennel: "K-08",
-      intake: "2024-01-10"
-    },
-    {
-      id: "004",
-      name: "Pedro Sánchez",
-      rol: "evaluator",
-      email: "pedro@example.com",
-      species: "cat",
-      breed: "Persian",
-      sex: "Male",
-      age: "1 year",
-      weight: "3.5 kg",
-      kennel: "C-12",
-      intake: "2024-03-05"
-    },
-    {
-      id: "005",
-      name: "Laura Pérez",
-      rol: "veterinarian",
-      email: "laura@example.com",
-      species: "dog",
-      breed: "Beagle",
-      sex: "Female",
-      age: "5 years",
-      weight: "15 kg",
-      kennel: "K-03",
-      intake: "2023-12-01"
-    },
-  ];
+    const [form, setForm] = useState({
+      nombre_completo: '',
+      correo: '',
+      password: '',
+      nombre_rol: 'Veterinario' as RolStaff,
+    })
 
-  // Filtrado
-  const filtered = allStaff.filter((a) => {
-    const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
-        a.id.includes(search) ||
-        a.email?.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "all" || a.rol === roleFilter;
-    const matchStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchSearch && matchRole && matchStatus;
-  });
+    const cargar = useCallback(async () => {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) return
 
-  // Contadores por rol
-  const vetCount = allStaff.filter((a) => a.rol === "veterinarian").length;
-  const opCount = allStaff.filter((a) => a.rol === "operator").length;
-  const coordinatorCount = allStaff.filter((a) => a.rol === "coordinator").length;
-  const evaluatorCount = allStaff.filter((a) => a.rol === "evaluator").length;
+      const { data: usuarioData } = await supabase
+        .from('usuario')
+        .select('id_refugio')
+        .eq('correo', user.email)
+        .single()
 
-  // Datos para los botones de filtro por rol
-  const roleFilters = [
-    { label: "Todo el personal", count: allStaff.length, key: "all", color: "#2E2E2E", bg: "#EDE9E1" },
-    { label: "Veterinarios", count: vetCount, key: "veterinarian", color: "#43AE6D", bg: "#EBF7F1" },
-    { label: "Operadores", count: opCount, key: "operator", color: "#6B9FAE", bg: "#EAF3F6" },
-    { label: "Coordinadores", count: coordinatorCount, key: "coordinator", color: "#E8A87C", bg: "#FDF2EA" },
-    { label: "Evaluadores", count: evaluatorCount, key: "evaluator", color: "#7A7670", bg: "#EDE9E1" },
-  ];
+      if (!usuarioData) return
+      setIdRefugio(usuarioData.id_refugio)
 
-  return (
-      <div className="px-8 py-7">
-        <div className="flex items-center justify-between mb-7">
+      const { data: equipoData } = await supabase
+        .from('usuario')
+        .select(`
+          id_usuario, nombre_completo, correo, activo,
+          usuario_rol ( rol ( nombre_rol ) )
+        `)
+        .eq('id_refugio', usuarioData.id_refugio)
+        .neq('correo', user.email) // excluir al propio admin
+        .order('id_usuario', { ascending: false })
+
+      setEquipo((equipoData as Miembro[]) ?? [])
+      setLoading(false)
+    }, [supabase])
+
+    useEffect(() => { cargar() }, [cargar])
+
+    async function handleCrear(e: React.FormEvent) {
+      e.preventDefault()
+      setSaving(true)
+      setFeedback(null)
+
+      try {
+        const res = await fetch('/api/admin/create-staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
+        })
+
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error ?? 'Error al crear el usuario')
+        }
+
+        setFeedback({ type: 'ok', msg: `${form.nombre_rol} "${form.nombre_completo}" creado correctamente.` })
+        setForm({ nombre_completo: '', correo: '', password: '', nombre_rol: 'Veterinario' })
+        cargar()
+      } catch (err: unknown) {
+        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error desconocido' })
+      } finally {
+        setSaving(false)
+      }
+    }
+
+    async function toggleActivo(miembro: Miembro) {
+      await supabase
+        .from('usuario')
+        .update({ activo: !miembro.activo })
+        .eq('id_usuario', miembro.id_usuario)
+      cargar()
+    }
+
+    // Agrupar por rol
+    const porRol = (rol: string) =>
+      equipo.filter((m) => m.usuario_rol?.[0]?.rol?.nombre_rol === rol)
+
+    return (
+      <div className="p-8 max-w-5xl mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-semibold text-foreground tracking-tight">Personal</h2>
-            <p className="text-sm text-muted-foreground mt-1">{allStaff.length} cuentas actualmente activas en el sistema.</p>
+            <h1 className="text-2xl font-bold text-foreground">Personal del albergue</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gestiona las credenciales de tu equipo de trabajo
+            </p>
           </div>
           <button
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: "#43AE6D" }}
-              onClick={addStaff}
+            onClick={() => { setModalOpen(true); setFeedback(null) }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition hover:opacity-90"
+            style={{ backgroundColor: '#43AE6D' }}
           >
-            <Plus size={15} /> Registrar Personal
+            <UserPlus size={15} /> Agregar miembro
           </button>
         </div>
 
-        {/* Filtros por rol */}
-        <div className="flex gap-3 mb-7 flex-wrap">
-          {roleFilters.map(({ label, count, key, color, bg }) => (
-              <button
-                  key={key}
-                  onClick={() => setRoleFilter(key as typeof roleFilter)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: roleFilter === key ? bg : "#FFFFFF",
-                    color: roleFilter === key ? color : "#7A7670",
-                    borderColor: roleFilter === key ? color + "40" : "rgba(46,46,46,0.08)",
-                  }}
-              >
-                {label}
-                <span className="ml-1 font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{count}</span>
-              </button>
-          ))}
-
-        </div>
-
-        {/* Tabla */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                  type="text"
-                  placeholder="Buscar por nombre, ID o email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-secondary border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
-              />
-            </div>
+        {/* Cards por rol */}
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
+        ) : (
+          <div className="space-y-8">
+            {(Object.keys(ROL_META) as RolStaff[]).map((rol) => {
+              const { label, icon: Icon, color } = ROL_META[rol]
+              const miembros = porRol(rol)
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Personal</th>
-                <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Email</th>
-                <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Rol</th>
-                <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Fecha Registro</th>
-                <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Modificar</th>
-              </tr>
-              </thead>
-              <tbody>
-              {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-muted-foreground">No se encontró personal que coincida con tu búsqueda.</td>
-                  </tr>
-              ) : (
-                  filtered.map((staff) => (
-                      <tr key={staff.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: roleConfig[staff.rol]?.bg || "#EDE9E1" }}>
-                          <span className="text-xs font-bold" style={{ color: roleConfig[staff.rol]?.color || "#7A7670" }}>
-                            {staff.name.charAt(0)}
-                          </span>
+              return (
+                <div key={rol}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: `${color}20` }}>
+                      <Icon size={15} style={{ color }} />
+                    </div>
+                    <h2 className="text-base font-semibold text-foreground">{label}s</h2>
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-secondary">
+                      {miembros.length}
+                    </span>
+                  </div>
+
+                  {miembros.length === 0 ? (
+                    <div
+                      className="rounded-2xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground cursor-pointer hover:border-primary/40 transition-colors"
+                      onClick={() => { setForm((f) => ({ ...f, nombre_rol: rol })); setModalOpen(true) }}
+                    >
+                      <Plus size={20} className="mx-auto mb-2 opacity-40" />
+                      Agregar {label.toLowerCase()}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {miembros.map((m) => (
+                        <div key={m.id_usuario}
+                          className={`rounded-2xl border bg-card p-5 transition-all ${
+                            m.activo ? 'border-border' : 'border-border opacity-50'
+                          }`}>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                              style={{ backgroundColor: color }}>
+                              {m.nombre_completo.trim().split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                             </div>
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">{staff.name}</p>
-                              <p className="text-xs text-muted-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{staff.id}</p>
+                            <div className="flex items-center gap-1">
+                              {m.activo
+                                ? <CheckCircle size={14} className="text-green-500" />
+                                : <XCircle size={14} className="text-muted-foreground" />}
+                              <button
+                                onClick={() => toggleActivo(m)}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-secondary"
+                              >
+                                {m.activo ? 'Desactivar' : 'Activar'}
+                              </button>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted-foreground">{staff.email}</td>
-                        <td className="px-4 py-4">
-                      <span
-                          className="px-2.5 py-1 rounded-full text-xs font-medium"
-                          style={{
-                            color: roleConfig[staff.rol]?.color || "#7A7670",
-                            backgroundColor: roleConfig[staff.rol]?.bg || "#EDE9E1"
-                          }}
-                      >
-                        {roleConfig[staff.rol]?.label || staff.rol}
-                      </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted-foreground">{staff.intake || "2024-01-01"}</td>
-                        <td className="px-4 py-4">
-                          <button
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
-                              title="Editar personal"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-
-                          <button
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-all duration-200"
-                              title="Eliminar personal"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                  ))
-              )}
-              </tbody>
-            </table>
+                          <p className="font-semibold text-foreground text-sm mb-1">{m.nombre_completo}</p>
+                          <p className="text-xs text-muted-foreground truncate">{m.correo}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
+        )}
 
-          <div className="px-6 py-3.5 border-t border-border flex items-center justify-between flex-wrap gap-2">
-            <p className="text-xs text-muted-foreground">
-              Mostrando <span className="font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{filtered.length}</span> de <span className="font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{allStaff.length}</span> personal
-            </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <button className="px-3 py-1.5 rounded-lg bg-secondary border border-border hover:text-foreground transition-colors">Anterior</button>
-              <span className="px-3 py-1.5 rounded-lg font-medium text-foreground" style={{ backgroundColor: "#EBF7F1", color: "#43AE6D" }}>1</span>
-              <button className="px-3 py-1.5 rounded-lg bg-secondary border border-border hover:text-foreground transition-colors">Siguiente</button>
+        {/* Modal */}
+        {modalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-2xl border border-border w-full max-w-md p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-foreground mb-5">Agregar miembro al equipo</h3>
+
+              {feedback && (
+                <div className={`mb-4 px-4 py-3 rounded-xl text-sm ${
+                  feedback.type === 'ok'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}>
+                  {feedback.msg}
+                </div>
+              )}
+
+              <form onSubmit={handleCrear} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Rol *</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(Object.keys(ROL_META) as RolStaff[]).map((rol) => {
+                      const { label, icon: Icon, color } = ROL_META[rol]
+                      const selected = form.nombre_rol === rol
+                      return (
+                        <button
+                          key={rol}
+                          type="button"
+                          onClick={() => setForm({ ...form, nombre_rol: rol })}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all ${
+                            selected ? 'border-2' : 'border-border hover:border-primary/40'
+                          }`}
+                          style={selected ? { borderColor: color, backgroundColor: `${color}10`, color } : {}}
+                        >
+                          <Icon size={16} />
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Nombre completo *</label>
+                  <input required value={form.nombre_completo}
+                    onChange={(e) => setForm({ ...form, nombre_completo: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Correo electrónico *</label>
+                  <input required type="email" value={form.correo}
+                    onChange={(e) => setForm({ ...form, correo: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">Contraseña temporal *</label>
+                  <input required type="password" value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="Mínimo 8 caracteres"
+                    className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button type="button"
+                    onClick={() => { setModalOpen(false); setFeedback(null) }}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-secondary transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={saving}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    style={{ backgroundColor: '#43AE6D' }}>
+                    {saving ? 'Creando...' : 'Crear miembro'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        )}
       </div>
-  );
-}
+    )
+  }
