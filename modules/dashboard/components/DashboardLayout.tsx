@@ -21,17 +21,22 @@ import {
 
 const navItems = [
     { icon: Home, label: "Dashboard", to: "/dashboard/" },
-    { icon: PawPrint, label: "Animales", to: "/dashboard/animals" },
     { icon: Heart, label: "Adopciones", to: "/dashboard/adoptions" },
     { icon: DollarSign, label: "Donaciones", to: "/dashboard/donations" },
     { icon: Stethoscope, label: "Expedientes", to: "/dashboard/medical" },
 ];
 
 const adminItems = [
-    { icon: BuildingIcon, label: "Espacios", to: "/dashboard/shelter-spaces" },
+    { icon: BuildingIcon, label: "Datos del Albergue", to: "/dashboard/shelter-info" },
+    { icon: BuildingIcon, label: "Infraestructura", to: "/dashboard/shelter-spaces" },
+    { icon: PawPrint, label: "Animales", to: "/dashboard/animals" },
     { icon: Users, label: "Personal", to: "/dashboard/staff" },
     { icon: BarChart2, label: "Reportes", to: "/reports" },
     { icon: FileText, label: "Documentos", to: "/documents" },
+];
+
+const superAdminItems = [
+    { icon: BuildingIcon, label: "Albergues", to: "/dashboard/shelters" },
 ];
 
 const logo = "/images/logo.png";
@@ -109,6 +114,24 @@ export default function DashboardLayout(
                         <p className="text-[10px] uppercase tracking-widest text-primary px-3 mb-3 mt-6 font-semibold">Admin</p>
                         <ul className="space-y-0.5">
                             {adminItems.map(({ icon: Icon, label, to }) => (
+                                <li key={to}>
+                                    <Link
+                                        href={to}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                                            pathname === to
+                                                ? "bg-primary text-primary-foreground"
+                                                : "text-gray-300 hover:text-foreground hover:bg-secondary"
+                                        }`}
+                                    >
+                                        <Icon size={16}/>
+                                        {label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="text-[10px] uppercase tracking-widest text-primary px-3 mb-3 mt-6 font-semibold">Superadmin</p>
+                        <ul className="space-y-0.5">
+                            {superAdminItems.map(({ icon: Icon, label, to }) => (
                                 <li key={to}>
                                     <Link
                                         href={to}

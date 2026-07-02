@@ -6,6 +6,7 @@ import InfrastructureSection from "@/modules/dashboard/components/Infrastructure
 import SpacesTable from "@/modules/dashboard/components/SpacesTable";
 import {Button} from "@/components/ui/button";
 import {ArrowRight, Plus} from "lucide-react";
+import ShelterForm from "@/modules/dashboard/components/ShelterForm";
 
 
 export interface ShelterSpace {
@@ -23,14 +24,9 @@ export default function NewShelterPage() {
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">
 
-            <InfrastructureSection
-                spaces={spaces}
-                setSpaces={setSpaces}
-            />
-
-            <SpacesTable
-                spaces={spaces}
-                setSpaces={setSpaces}
+            <ShelterForm
+                shelterName={shelterName}
+                setShelterName={setShelterName}
             />
 
             <div className={"w-full flex"}>

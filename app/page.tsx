@@ -1,7 +1,8 @@
 // app/page.tsx
 "use client";
 
-import Link from "next/link";
+import "../styles/index.css"
+
 import { PawPrint, ArrowRight, BarChart2, Heart, Stethoscope, DollarSign, CheckCircle, Star, ChevronRight, HandCoins } from "lucide-react";
 import { useRouter } from "next/navigation";
 const logo = "/images/logo.png";
