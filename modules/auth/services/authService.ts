@@ -6,13 +6,6 @@ const supabase = getSupabaseBrowserClient()
 
 export type UserRole = 'Administrador' | 'Veterinario' | 'Voluntario' | 'Recepcionista'
 
-export const ROLE_REDIRECT: Record<UserRole, string> = {
-  Administrador:  '/dashboard',
-  Veterinario:    '/dashboard/animals',
-  Voluntario:     '/dashboard/adoptions',
-  Recepcionista:  '/dashboard/adoptions',
-}
-
 export async function getUserRole(): Promise<UserRole | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user?.email) return null

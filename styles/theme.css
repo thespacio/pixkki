@@ -79,6 +79,8 @@
 }
 
 @theme inline {
+  --font-sans: "Bricolage Grotesque", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -134,7 +136,12 @@
   */
 
   html {
+    @apply font-sans;
     font-size: var(--font-size);
+  }
+
+  body {
+    @apply bg-background text-foreground;
   }
 
   h1 {

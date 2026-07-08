@@ -1,8 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&display=swap");
+/*Colocar únicamente estilos globales.*/
+@layer base {
+    html {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: var(--font-size);
+    }
 
-@import "tailwindcss";
-
-/* 🔥 FORZAR en HTML (NO body) */
-html {
-    font-family: "Bricolage Grotesque", sans-serif !important;
+    body {
+        @apply bg-background text-foreground;
+        font-family: inherit;
+    }
 }

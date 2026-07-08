@@ -24,7 +24,6 @@ test.describe('Flujo de Acceso Principal - Pixkki', () => {
     }
 
     await loginPage.login(emailInput, passwordInput);
-    //await expect(page).toHaveURL(/.*dashboard.*/);
   });
 
 })

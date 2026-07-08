@@ -1,4 +1,6 @@
 /* index.css */
+/*Este archivo es el punto de entrada.*/
 @import "tailwindcss";
+
 @import "./fonts.css";
 @import "./theme.css";
