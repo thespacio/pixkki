@@ -1,7 +1,4 @@
 import { ReactNode } from "react";
-import { redirect } from "next/navigation";
-
-import { getCurrentUser } from "@/modules/auth/service";
 import DashboardLayout from "@/modules/dashboard/components/DashboardLayout";
 
 

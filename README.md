@@ -65,7 +65,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the demo.
 ├── app/
 │   ├── email-password/     # Email + Password demo
 │   ├── google-login/        # Google OAuth demo
-│   └── page.tsx             # Home page with demo links
+│   └── test.tsx             # Home page with demo links
 ├── lib/
 │   └── supabase/
 │       ├── browser-client.ts    # Client-side Supabase client

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser } from "@/modules/auth/service";
 
 import { UnauthorizedError } from "@/modules/auth/errors";
+import {getCurrentUser} from "@/modules/auth";
 
 export async function GET() {
 

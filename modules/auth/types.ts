@@ -31,7 +31,7 @@ export type UserRole =
 
 export interface AuthenticatedUser {
     id: number;
-    shelterId: number | null;
+    shelterId: number;
     fullName: string;
     email: string;
     role: UserRole;

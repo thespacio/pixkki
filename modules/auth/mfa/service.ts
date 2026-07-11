@@ -1,4 +1,3 @@
-// modules/auth/service.ts
 import { authRepository } from './repository';
 import {
     UnauthorizedError,

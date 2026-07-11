@@ -31,6 +31,15 @@ export function ensurePermission(
 
 }
 
+export function hasPermission(
+    user: AuthenticatedUser,
+    permission: string
+): boolean {
+
+    return user.permissions.includes(permission);
+
+}
+
 export function ensureAnyPermission(
     user: AuthenticatedUser,
     permissions: string[]

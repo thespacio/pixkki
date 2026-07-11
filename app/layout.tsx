@@ -1,7 +1,8 @@
 
-import { getCurrentUser } from "@/modules/auth/service";
+
 import {AuthProvider} from "@/components/layouts/AuthProvider";
 import "@/styles/index.css"
+import {getCurrentUser} from "@/modules/auth";
 
 export default async function RootLayout({
                                              children,

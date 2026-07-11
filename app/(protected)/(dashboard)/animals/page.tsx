@@ -1,39 +1,24 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser-client'
 import { Plus, Search, PawPrint, X, Save, Stethoscope } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import {Animal, CreateAnimalInput, UpdateAnimalInput} from "@/modules/animals/types";
+import {createAnimal, deleteAnimal, fetchAnimals, updateAnimal} from "@/modules/animals/client";
+import {AnimalFormData} from "@/app/(protected)/(dashboard)/animals/types";
+import {toCreateAnimalInput} from "@/app/(protected)/(dashboard)/animals/form-mapper";
+import {AnimalState} from "@/modules/catalogs/animal-states/types";
 
-type AnimalEstado = { id_estado: number; nombre_estado: string }
+
 type Espacio      = { id_espacio: number; nombre_espacio: string }
-
-type Animal = {
-  id_animal: number
-  nombre: string | null
-  especie: string
-  raza: string | null
-  sexo: string
-  edad_estimada: number | null
-  peso: number | null
-  procedencia: string
-  rasgos_fisicos: string
-  estado_inicial: string
-  en_cuarentena: boolean
-  esterilizado: boolean
-  disponible_adopcion: boolean
-  activo: boolean
-  animal_estado: { nombre_estado: string }
-  espacio: { nombre_espacio: string }
-}
-
-const ESPECIE_EMOJI: Record<string, string> = { Perro: '🐶', Gato: '🐱' }
 
 export default function AnimalsPage() {
   const supabase = getSupabaseBrowserClient()
 
   const [idRefugio, setIdRefugio]   = useState<number | null>(null)
   const [animales, setAnimales]     = useState<Animal[]>([])
-  const [estados, setEstados]       = useState<AnimalEstado[]>([])
+  const [estados, setEstados]       = useState<AnimalState[]>([])
   const [espacios, setEspacios]     = useState<Espacio[]>([])
   const [loading, setLoading]       = useState(true)
   const [busqueda, setBusqueda]     = useState('')
@@ -42,133 +27,124 @@ export default function AnimalsPage() {
   const [feedback, setFeedback]     = useState<{ type: 'ok' | 'error'; msg: string } | null>(null)
   const [animalDetalle, setAnimalDetalle] = useState<Animal | null>(null)
 
-  const [form, setForm] = useState({
-    nombre: '',
+  const [form, setForm] = useState<AnimalFormData>({
+    nombre: "",
     especie: 'Perro',
-    raza: '',
-    sexo: 'M',
-    edad_estimada: '',
-    peso: '',
-    procedencia: '',
-    rasgos_fisicos: '',
-    estado_inicial: '',
-    id_estado: '',
-    id_espacio: '',
-    en_cuarentena: false,
+    raza: "",
+    sexo: "",
+    edadEstimada: "",
+    peso: "",
+    procedencia: "",
+    rasgosFisicos: "",
+    estadoInicial: "",
+    idEstado: "",
+    idEspacio: "",
+    enCuarentena: false,
     esterilizado: false,
-    disponible_adopcion: false,
-  })
+    disponibleParaAdopcion: false,
+  });
 
-  const cargar = useCallback(async () => {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user?.email) return
+  // Crear animal
+  const handleCreate = async (formData: CreateAnimalInput) => {
+    setSaving(true);
+    try {
+      const newAnimal = await createAnimal(formData);
+      setAnimales(prev => [...prev, newAnimal]);
+      setModalOpen(false);
+      setFeedback({ type: 'ok', msg: 'Animal creado exitosamente' });
+    } catch (error) {
+      setFeedback({ type: 'error', msg: 'Error al crear animal' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const { data: usuarioData } = await supabase
-      .from('usuario')
-      .select('id_refugio')
-      .eq('correo', user.email)
-      .single()
+  const onSubmit = async (
+      e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    try {
+      const input = toCreateAnimalInput(form);
+      await handleCreate(input);
+    } catch (error) {
+      // Errores de validación de Zod
+      setFeedback({
+        type: "error",
+        msg: "Revisa los datos del formulario.",
+      });
+    }
+  };
 
-    if (!usuarioData) return
-    setIdRefugio(usuarioData.id_refugio)
+  // Actualizar animal
+  const handleUpdate = async (id: number, data: UpdateAnimalInput) => {
+    try {
+      const updated = await updateAnimal(id, data);
+      setAnimales(prev => prev.map(a => a.id === id ? updated : a));
+      setFeedback({ type: 'ok', msg: 'Animal actualizado' });
+    } catch (error) {
+      setFeedback({ type: 'error', msg: 'Error al actualizar' });
+    }
+  };
 
-    const [animalesRes, estadosRes, espaciosRes] = await Promise.all([
-      supabase
-        .from('animal')
-        .select(`
-          id_animal, nombre, especie, raza, sexo, edad_estimada, peso,
-          procedencia, rasgos_fisicos, estado_inicial,
-          en_cuarentena, esterilizado, disponible_adopcion, activo,
-          animal_estado ( nombre_estado ),
-          espacio ( nombre_espacio )
-        `)
-        .eq('id_refugio', usuarioData.id_refugio)
-        .eq('activo', true)
-        .order('id_animal', { ascending: false }),
+  // Eliminar animal
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Eliminar este animal?')) return;
+    try {
+      await deleteAnimal(id);
+      setAnimales(prev => prev.filter(a => a.id !== id));
+      setFeedback({ type: 'ok', msg: 'Animal eliminado' });
+    } catch (error) {
+      setFeedback({ type: 'error', msg: 'Error al eliminar' });
+    }
+  };
 
-      supabase.from('animal_estado').select('id_estado, nombre_estado'),
-      supabase.from('espacio').select('id_espacio, nombre_espacio').eq('id_refugio', usuarioData.id_refugio),
-    ])
+  // useEffect para carga inicial
+  useEffect(() => {
+    async function loadEstados() {
+      const response = await fetch("/api/catalogs/animal-states");
+      const data = await response.json();
+      setEstados(data);
+    }
+    const loadAnimals = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/animals')
+        if (!response.ok) throw new Error('Error al cargar animales')
+        const json = await response.json()
+        setAnimales(Array.isArray(json?.data) ? json.data : [])
+      } catch (error) {
+        console.error('Error:', error)
+        setAnimales([])
+        setFeedback({ type: 'error', msg: 'Error al cargar animales' })
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAnimals()
+    loadEstados()
+  }, [])
 
-    setAnimales((animalesRes.data as Animal[]) ?? [])
-    setEstados((estadosRes.data as AnimalEstado[]) ?? [])
-    setEspacios((espaciosRes.data as Espacio[]) ?? [])
-    setLoading(false)
-  }, [supabase])
-
-  useEffect(() => { cargar() }, [cargar])
-
-  const animalesFiltrados = animales.filter((a) =>
-    `${a.nombre ?? ''} ${a.especie} ${a.raza ?? ''}`.toLowerCase().includes(busqueda.toLowerCase())
-  )
-
-  function resetForm() {
+  /*function resetForm() {
     setForm({
       nombre: '', especie: 'Perro', raza: '', sexo: 'M',
-      edad_estimada: '', peso: '', procedencia: '',
-      rasgos_fisicos: '', estado_inicial: '',
-      id_estado: estados[0]?.id_estado?.toString() ?? '',
-      id_espacio: espacios[0]?.id_espacio?.toString() ?? '',
-      en_cuarentena: false, esterilizado: false, disponible_adopcion: false,
+      edadEstimada: '', peso: '', procedencia: '',
+      rasgosFisicos: '', estadoInicial: '',
+      idEstado: estados[0]?.id_estado?.toString() ?? '',
+      idEspacio: espacios[0]?.id_espacio?.toString() ?? '',
+      enCuarentena: false, esterilizado: false, disponibleParaAdopcion: false,
     })
     setFeedback(null)
-  }
+  }*/
 
-  async function handleGuardar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!idRefugio) return
-    setSaving(true)
-    setFeedback(null)
+  // Filtrar animales - con validación de seguridad
+  const animalesFiltrados = Array.isArray(animales)
+      ? animales.filter((a) =>
+          `${a?.nombre ?? ''} ${a?.especie ?? ''} ${a?.raza ?? ''}`
+              .toLowerCase()
+              .includes(busqueda.toLowerCase())
+      )
+      : []
 
-    const uuid = crypto.randomUUID()
-
-    const { error } = await supabase.from('animal').insert({
-      uuid,
-      id_refugio: idRefugio,
-      id_estado: parseInt(form.id_estado),
-      id_espacio: parseInt(form.id_espacio),
-      nombre: form.nombre || null,
-      especie: form.especie,
-      raza: form.raza || null,
-      sexo: form.sexo,
-      edad_estimada: form.edad_estimada ? parseInt(form.edad_estimada) : null,
-      peso: form.peso ? parseFloat(form.peso) : null,
-      procedencia: form.procedencia,
-      rasgos_fisicos: form.rasgos_fisicos,
-      estado_inicial: form.estado_inicial,
-      en_cuarentena: form.en_cuarentena,
-      esterilizado: form.esterilizado,
-      disponible_adopcion: form.disponible_adopcion,
-      activo: true,
-    })
-
-    if (error) {
-      setFeedback({ type: 'error', msg: error.message })
-    } else {
-      setFeedback({ type: 'ok', msg: 'Animal registrado correctamente.' })
-      resetForm()
-      cargar()
-    }
-    setSaving(false)
-  }
-
-  async function toggleDisponible(animal: Animal) {
-    await supabase
-      .from('animal')
-      .update({ disponible_adopcion: !animal.disponible_adopcion })
-      .eq('id_animal', animal.id_animal)
-    cargar()
-  }
-
-  async function darDeBaja(animal: Animal) {
-    await supabase
-      .from('animal')
-      .update({ activo: false })
-      .eq('id_animal', animal.id_animal)
-    setAnimalDetalle(null)
-    cargar()
-  }
 
   const inputCls = "w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
   const labelCls = "block text-xs font-medium text-foreground mb-1"
@@ -181,14 +157,14 @@ export default function AnimalsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Animales</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {animales.length} animal{animales.length !== 1 ? 'es' : ''} registrado{animales.length !== 1 ? 's' : ''}
+            {animalesFiltrados.length} animal{animalesFiltrados.length !== 1 ? 'es' : ''} registrado{animalesFiltrados.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button onClick={() => { resetForm(); setModalOpen(true) }}
+        <Button onClick={() => { {/*esetForm();*/} setModalOpen(true) }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition"
           style={{ backgroundColor: '#43AE6D' }}>
           <Plus size={15} /> Registrar animal
-        </button>
+        </Button>
       </div>
 
       {/* Buscador */}
@@ -216,12 +192,12 @@ export default function AnimalsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {animalesFiltrados.map((animal) => (
-            <div key={animal.id_animal}
+            <div key={animal.id}
               className="rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-all cursor-pointer"
               onClick={() => setAnimalDetalle(animal)}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{ESPECIE_EMOJI[animal.especie] ?? '🐾'}</span>
+                  {/*<span className="text-2xl">{ESPECIE_EMOJI[animal.especie] ?? '🐾'}</span>*/}
                   <div>
                     <p className="font-semibold text-foreground text-sm">
                       {animal.nombre ?? `${animal.especie} sin nombre`}
@@ -232,18 +208,18 @@ export default function AnimalsPage() {
                   </div>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  animal.disponible_adopcion
+                  animal.disponibleAdopcion
                     ? 'bg-green-100 text-green-700'
                     : 'bg-secondary text-muted-foreground'
                 }`}>
-                  {animal.disponible_adopcion ? 'En adopción' : 'No disponible'}
+                  {animal.disponibleAdopcion ? 'En adopción' : 'No disponible'}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs px-2 py-1 rounded-lg bg-secondary text-muted-foreground">
-                  {animal.animal_estado?.nombre_estado}
+                  {animal.estado?.nombre}
                 </span>
-                {animal.en_cuarentena && (
+                {animal.cuarentena && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-orange-100 text-orange-600">Cuarentena</span>
                 )}
                 {animal.esterilizado && (
@@ -251,7 +227,7 @@ export default function AnimalsPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                📍 {animal.espacio?.nombre_espacio ?? '—'}
+                📍 {animal.espacio?.nombre ?? '—'}
               </p>
             </div>
           ))}
@@ -277,7 +253,9 @@ export default function AnimalsPage() {
               }`}>{feedback.msg}</div>
             )}
 
-            <form onSubmit={handleGuardar} className="space-y-4">
+            <form
+                onSubmit={onSubmit}
+                className="space-y-4">
               {/* Fila 1 */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -287,7 +265,13 @@ export default function AnimalsPage() {
                 </div>
                 <div>
                   <label className={labelCls}>Especie *</label>
-                  <select required value={form.especie} onChange={(e) => setForm({ ...form, especie: e.target.value })}
+                  <select
+                      required value={form.especie}
+                      onChange={(e) =>
+                          setForm(
+                              { ...form,
+                                especie: e.target.value as "Perro" | "Gato",
+                              })}
                     className={inputCls}>
                     <option value="Perro">Perro</option>
                     <option value="Gato">Gato</option>
@@ -304,16 +288,21 @@ export default function AnimalsPage() {
                 </div>
                 <div>
                   <label className={labelCls}>Sexo *</label>
-                  <select required value={form.sexo} onChange={(e) => setForm({ ...form, sexo: e.target.value })}
+                  <select
+                      required value={form.sexo}
+                      onChange={(
+                          e) =>
+                          setForm({ ...form, sexo: e.target.value as "H" | "M" | ""}
+                          )}
                     className={inputCls}>
                     <option value="M">Macho</option>
-                    <option value="F">Hembra</option>
+                    <option value="H">Hembra</option>
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Edad estimada (meses)</label>
-                  <input type="number" min="0" value={form.edad_estimada}
-                    onChange={(e) => setForm({ ...form, edad_estimada: e.target.value })}
+                  <input type="number" min="0" value={form.edadEstimada}
+                    onChange={(e) => setForm({ ...form, edadEstimada: e.target.value })}
                     placeholder="Ej. 12" className={inputCls} />
                 </div>
               </div>
@@ -327,10 +316,10 @@ export default function AnimalsPage() {
                     placeholder="Ej. 5.5" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Procedencia *</label>
+                  <label className={labelCls}>Orígen *</label>
                   <input required value={form.procedencia}
                     onChange={(e) => setForm({ ...form, procedencia: e.target.value })}
-                    placeholder="Ej. Rescate callejero" className={inputCls} />
+                    placeholder="Ej. Avenida, aguas sucias," className={inputCls} />
                 </div>
               </div>
 
@@ -338,8 +327,8 @@ export default function AnimalsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Estado *</label>
-                  <select required value={form.id_estado}
-                    onChange={(e) => setForm({ ...form, id_estado: e.target.value })}
+                  <select required value={form.idEstado}
+                    onChange={(e) => setForm({ ...form, idEstado: e.target.value })}
                     className={inputCls}>
                     <option value="">Seleccionar...</option>
                     {estados.map((e) => (
@@ -349,8 +338,8 @@ export default function AnimalsPage() {
                 </div>
                 <div>
                   <label className={labelCls}>Espacio / Lugar *</label>
-                  <select required value={form.id_espacio}
-                    onChange={(e) => setForm({ ...form, id_espacio: e.target.value })}
+                  <select required value={form.idEspacio}
+                    onChange={(e) => setForm({ ...form, idEspacio: e.target.value })}
                     className={inputCls}>
                     <option value="">Seleccionar...</option>
                     {espacios.map((e) => (
@@ -363,15 +352,15 @@ export default function AnimalsPage() {
               {/* Textos */}
               <div>
                 <label className={labelCls}>Rasgos físicos *</label>
-                <textarea required value={form.rasgos_fisicos}
-                  onChange={(e) => setForm({ ...form, rasgos_fisicos: e.target.value })}
+                <textarea required value={form.rasgosFisicos}
+                  onChange={(e) => setForm({ ...form, rasgosFisicos: e.target.value })}
                   placeholder="Color, marcas, tamaño..." rows={2}
                   className={`${inputCls} resize-none`} />
               </div>
               <div>
                 <label className={labelCls}>Estado inicial al ingreso *</label>
-                <textarea required value={form.estado_inicial}
-                  onChange={(e) => setForm({ ...form, estado_inicial: e.target.value })}
+                <textarea required value={form.estadoInicial}
+                  onChange={(e) => setForm({ ...form, estadoInicial: e.target.value })}
                   placeholder="Condición de salud al momento de ingreso..." rows={2}
                   className={`${inputCls} resize-none`} />
               </div>
@@ -423,7 +412,7 @@ export default function AnimalsPage() {
             </div>
 
             <div className="text-center mb-6">
-              <div className="text-5xl mb-2">{ESPECIE_EMOJI[animalDetalle.especie] ?? '🐾'}</div>
+              {/*<div className="text-5xl mb-2">{ESPECIE_EMOJI[animalDetalle.especie] ?? '🐾'}</div>*/}
               <h2 className="text-xl font-bold text-foreground">
                 {animalDetalle.nombre ?? `${animalDetalle.especie} sin nombre`}
               </h2>
@@ -434,13 +423,13 @@ export default function AnimalsPage() {
 
             <div className="space-y-3 text-sm">
               {[
-                { label: 'Estado', val: animalDetalle.animal_estado?.nombre_estado },
-                { label: 'Espacio', val: animalDetalle.espacio?.nombre_espacio },
-                { label: 'Edad estimada', val: animalDetalle.edad_estimada ? `${animalDetalle.edad_estimada} meses` : '—' },
+                { label: 'Estado', val: animalDetalle.estado?.nombre },
+                { label: 'Espacio', val: animalDetalle.espacio?.nombre },
+                { label: 'Edad estimada', val: animalDetalle.edadEstimada ? `${animalDetalle.edadEstimada} meses` : '—' },
                 { label: 'Peso', val: animalDetalle.peso ? `${animalDetalle.peso} kg` : '—' },
                 { label: 'Procedencia', val: animalDetalle.procedencia },
-                { label: 'Rasgos físicos', val: animalDetalle.rasgos_fisicos },
-                { label: 'Estado inicial', val: animalDetalle.estado_inicial },
+                { label: 'Rasgos físicos', val: animalDetalle.rasgosFisicos },
+                { label: 'Estado inicial', val: animalDetalle.estadoInicial },
               ].map(({ label, val }) => (
                 <div key={label}>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
@@ -449,13 +438,13 @@ export default function AnimalsPage() {
               ))}
 
               <div className="flex gap-2 flex-wrap pt-2">
-                {animalDetalle.en_cuarentena && (
+                {animalDetalle.cuarentena && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-orange-100 text-orange-600">Cuarentena</span>
                 )}
                 {animalDetalle.esterilizado && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-blue-100 text-blue-600">Esterilizado</span>
                 )}
-                {animalDetalle.disponible_adopcion && (
+                {animalDetalle.disponibleAdopcion && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">En adopción</span>
                 )}
               </div>
@@ -464,16 +453,16 @@ export default function AnimalsPage() {
             {/* Acciones */}
             <div className="mt-8 space-y-3">
               <button
-                onClick={() => toggleDisponible(animalDetalle)}
+                //onClick={() => toggleDisponible(animalDetalle)}
                 className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition ${
-                  animalDetalle.disponible_adopcion
+                  animalDetalle.disponibleAdopcion
                     ? 'border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100'
                     : 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
                 }`}>
-                {animalDetalle.disponible_adopcion ? 'Marcar como no disponible' : 'Marcar disponible para adopción'}
+                {animalDetalle.disponibleAdopcion ? 'Marcar como no disponible' : 'Marcar disponible para adopción'}
               </button>
               <button
-                onClick={() => darDeBaja(animalDetalle)}
+                //onClick={() => darDeBaja(animalDetalle)}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition">
                 Dar de baja
               </button>

@@ -1,7 +1,4 @@
 import { redirect } from "next/navigation";
-
-import { getCurrentUser } from "@/modules/auth/service";
-
 import {
     EmailNotVerifiedError,
     InactiveShelterError,

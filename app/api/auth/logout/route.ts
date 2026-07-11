@@ -1,8 +1,5 @@
-// app/api/auth/logout/route.ts
-
 import { NextResponse } from "next/server";
-
-import { logout } from "@/modules/auth/service";
+import {logout} from "@/modules/auth/client";
 
 export async function POST() {
 

@@ -1,8 +1,9 @@
-import { supabaseAdmin } from "@/lib/supabase/admin-client";
+import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
+
 const SUPER_ADMIN_EMAIL = "pixkki@pixkki.es";
 
 export async function ensureIsAdministrator(idUsuario: number) {
-    const { data } = await supabaseAdmin
+    const { data } = await getSupabaseBrowserClient()
         .from("usuario_rol")
         .select("rol(nombre_rol)")
         .eq("id_usuario", idUsuario)

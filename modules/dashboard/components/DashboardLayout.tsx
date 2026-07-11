@@ -16,22 +16,95 @@ import {
     LogOut,
     BarChart2,
     FileText,
-    Users, BuildingIcon,
+    Users, BuildingIcon, Syringe, Shield,
 } from "lucide-react";
 
-const navItems = [
-    { icon: Home, label: "Dashboard", to: "/dashboard/" },
-    { icon: PawPrint, label: "Animales", to: "/dashboard/animals" },
-    { icon: Heart, label: "Adopciones", to: "/dashboard/adoptions" },
-    { icon: DollarSign, label: "Donaciones", to: "/dashboard/donations" },
-    { icon: Stethoscope, label: "Expedientes", to: "/dashboard/medical" },
-];
+// navigation.config.ts
+export const navigation = [
+    // Sección Principal
+    {
+        icon: Home,
+        title: "Dashboard",
+        href: "/dashboard",
+        permission: "dashboard.view",
+        section: "Principal"
+    },
+    {
+        icon: PawPrint,
+        title: "Animales",
+        href: "/animals",
+        permission: "animals.view",
+        section: "Principal"
+    },
+    {
+        icon: Heart,
+        title: "Adopciones",
+        href: "/adoptions",
+        permission: "adoptions.view",
+        section: "Principal"
+    },
 
-const adminItems = [
-    { icon: BuildingIcon, label: "Espacios", to: "/dashboard/shelter-spaces" },
-    { icon: Users, label: "Personal", to: "/dashboard/staff" },
-    { icon: BarChart2, label: "Reportes", to: "/reports" },
-    { icon: FileText, label: "Documentos", to: "/documents" },
+    // Sección Administración (solo admin/superadmin)
+    {
+        icon: Users,
+        title: "Usuarios",
+        href: "/staff",
+        permission: "users.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Albergues",
+        href: "/shelters",
+        permission: "shelter.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Espacios",
+        href: "/shelter-spaces",
+        permission: "spaces.view",
+        section: "Administración"
+    },
+    {
+        icon: BarChart2,
+        title: "Reportes",
+        href: "/reports",
+        permission: "reports.view",
+        section: "Administración"
+    },
+
+    // Sección Veterinaria (solo veterinario)
+    {
+        icon: Stethoscope,
+        title: "Expedientes",
+        href: "/medical",
+        permission: "medical.view",
+        section: "Veterinaria"
+    },
+    {
+        icon: Syringe,
+        title: "Vacunaciones",
+        href: "/vaccinations",
+        permission: "vaccinations.view",
+        section: "Veterinaria"
+    },
+
+    // Sección Configuración (solo superadmin)
+    {
+        icon: Settings,
+        title: "Configuración",
+        href: "/settings",
+        permission: "settings.view",
+        section: "Configuración"
+    },
+    {
+        icon: Shield,
+        title: "Seguridad",
+        href: "/settings/security",
+        permission: "security.view",
+        section: "Configuración"
+    }
 ];
 
 const logo = "/images/logo.png";
@@ -40,8 +113,8 @@ const bannerPet = "/images/banner_pet.png";
 // Dentro de tu componente
 import { useRouter } from "next/navigation";
 import {logout} from "@/modules/auth/client";
-
-
+import {hasPermission} from "@/modules/auth/authorization";
+import {useAuth} from "@/components/layouts/AuthProvider";
 
 export default function DashboardLayout(
     {children}: {
@@ -49,6 +122,36 @@ export default function DashboardLayout(
     }) {
     const pathname = usePathname();
     const router = useRouter();
+    const { user, loading } = useAuth();
+    const userInitials = user?.fullName
+        .split(' ')
+        .map(word => word[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+    console.log(user);
+
+    if (loading || !user) {
+        return null;
+    }
+
+    // Filtrar items por permisos
+    const filteredNavItems = navigation.filter(item =>
+        hasPermission(user, item.permission)
+    );
+
+    // Agrupar por sección
+    const groupedNavItems = filteredNavItems.reduce(
+        (acc,
+         item) => {
+        const section = item.section || "Principal";
+        if (!acc[section]) {
+            acc[section] = [];
+        }
+        acc[section].push(item);
+        return acc;
+    }, {} as Record<string, typeof navigation>);
 
     async function handleLogout() {
         try {
@@ -90,46 +193,37 @@ export default function DashboardLayout(
                     {/* Nav */}
                     <nav className="flex-1 px-3 py-4 overflow-y-auto">
 
-                        {/*Enlaces Main*/}
-                        <p className="text-[10px] uppercase tracking-widest text-primary px-3 mb-3 font-semibold">Principal</p>
-                        <ul className="space-y-0.5">
-                            {navItems.map(({ icon: Icon, label, to }) => (
-                                <li key={to}>
+                        {/*Enlaces */}
+                        <div className="flex-1 overflow-y-auto">
+                            {Object.entries(groupedNavItems).map(([section, items]) => (
+                                <div key={section} className="mb-6">
+                                    {/* Título de sección */}
+                                    <p className="text-[10px] uppercase tracking-widest text-primary px-3 mb-3 font-semibold">
+                                        {section}
+                                    </p>
 
-                                    <Link
-                                        href={to}
-                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                                            pathname === to
-                                                ? "bg-primary text-primary-foreground"
-                                                : "text-gray-300 hover:text-foreground hover:bg-secondary"
-                                        }`}
-                                    >
-                                        <Icon size={16}/>
-                                        {label}
-                                    </Link>
-                                </li>
+                                    {/* Items de la sección */}
+                                    <ul className="space-y-0.5">
+                                        {items.map(({ icon: Icon, title, href }) => (
+                                            <li key={href}>
+                                                <Link
+                                                    href={href}
+                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                                                        pathname === href || pathname.startsWith(href + '/')
+                                                            ? "bg-primary text-primary-foreground"
+                                                            : "text-gray-300 hover:text-foreground hover:bg-secondary"
+                                                    }`}
+                                                >
+                                                    <Icon size={16} />
+                                                    {title}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
 
-                        {/*Enlaces Admin*/}
-                        <p className="text-[10px] uppercase tracking-widest text-primary px-3 mb-3 mt-6 font-semibold">Admin</p>
-                        <ul className="space-y-0.5">
-                            {adminItems.map(({ icon: Icon, label, to }) => (
-                                <li key={to}>
-                                    <Link
-                                        href={to}
-                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                                            pathname === to
-                                                ? "bg-primary text-primary-foreground"
-                                                : "text-gray-300 hover:text-foreground hover:bg-secondary"
-                                        }`}
-                                    >
-                                        <Icon size={16}/>
-                                        {label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
                     </nav>
                     {/* Mensaje Shelter */}
                     <div className="px-3 pb-4">
@@ -146,11 +240,11 @@ export default function DashboardLayout(
                     {/* Perfil */}
                     <div className="px-4 py-4 border-t border-border flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground" style={{ backgroundColor: "#43AE6D" }}>
-                            AM
+                            {userInitials}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white font-semibold truncate">Amara Osei</p>
-                            <p className="text-xs text-muted-foreground truncate">Administrador</p>
+                            <p className="text-sm text-white font-semibold truncate">{user.fullName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.role}</p>
                         </div>
                         <button
                             onClick={handleLogout}
@@ -174,8 +268,15 @@ export default function DashboardLayout(
                     className="border-b border-border px-8 py-4 flex items-center justify-between flex-shrink-0"
                 >
                     <div>
-                        <h1 className="text-xl font-semibold text-foreground tracking-tight">Buenos días, Amara</h1>
-                        <p className="text-sm text-muted-foreground mt-0.5">Wednesday, December 20, 2024 · Hillcrest Animal Shelter</p>
+                        <h1 className="text-xl font-semibold text-foreground tracking-tight">Buenos días, {user.fullName}</h1>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                            {new Date().toLocaleDateString('es-ES', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            }).replace(/^\w/, c => c.toUpperCase())}
+                        </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
