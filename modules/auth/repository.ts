@@ -35,7 +35,9 @@ export interface UserContext {
 }
 
 export class AuthRepository {
-    constructor(private readonly supabase = SupabaseClient) {}
+    constructor(
+        private readonly supabase: SupabaseClient
+    ) {}
 
     /**
      * Obtiene el usuario autenticado de Supabase Auth
@@ -90,31 +92,36 @@ export class AuthRepository {
         };
     }
 
-    /**
-     * Busca un usuario por auth_user_id
-     */
-    async findUserByAuthId(authUserId: string): Promise<UsuarioRow> {
+    async findUserContextById(userId: number): Promise<UserContext> {
         const { data, error } = await this.supabase
             .from("usuario")
             .select(`
-                id_usuario,
-                id_refugio,
-                nombre_completo,
-                fecha_creacion,
-                correo,
-                activo,
-                ultimo_login,
-                rol,
-                auth_user_id
-            `)
-            .eq("auth_user_id", authUserId)
+            id_usuario,
+            id_refugio,
+            nombre_completo,
+            correo,
+            activo,
+            ultimo_login,
+            rol,
+            auth_user_id
+        `)
+            .eq("id_usuario", userId)
             .single();
 
         if (error || !data) {
             throw new Error('Usuario no encontrado');
         }
 
-        return data;
+        return {
+            idUsuario: data.id_usuario,
+            idRefugio: data.id_refugio,
+            nombreCompleto: data.nombre_completo,
+            correo: data.correo,
+            rol: data.rol,
+            activo: data.activo,
+            ultimoLogin: data.ultimo_login,
+            authUserId: data.auth_user_id,
+        };
     }
 
     /**
@@ -153,43 +160,6 @@ export class AuthRepository {
         }
 
         return data.map((permission) => permission.permiso.nombre_permiso);
-    }
-
-    /**
-     * Crea un usuario en Supabase Auth
-     */
-    async createAuthUser(email: string, password: string): Promise<AuthUser> {
-        const { data, error } = await this.supabase.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: false,
-        });
-
-        if (error) {
-            throw new Error(`Error al crear usuario en Auth: ${error.message}`);
-        }
-
-        if (!data.user) {
-            throw new Error('No se pudo crear el usuario en Auth');
-        }
-
-        return {
-            id: data.user.id,
-            email: data.user.email!,
-            emailConfirmed: !!data.user.email_confirmed_at,
-            createdAt: data.user.created_at!,
-        };
-    }
-
-    /**
-     * Elimina un usuario de Supabase Auth
-     */
-    async deleteAuthUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.auth.admin.deleteUser(userId);
-
-        if (error) {
-            throw new Error(`Error al eliminar usuario Auth: ${error.message}`);
-        }
     }
 
     /**
@@ -234,5 +204,53 @@ export class AuthRepository {
         }
 
         return data?.activo ?? false;
+    }
+
+    /**
+     * Actualizar la contraseña de un usuario
+     */
+    async updatePassword(password: string) {
+        const { error } = await this.supabase.auth.updateUser({
+            password,
+        });
+
+        if (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Buscar usuarios por ID de refugio con rol = 1
+     */
+    async findUsersByShelterId(shelterId: number): Promise<UserContext[]> {
+        const { data, error } = await this.supabase
+            .from("usuario")
+            .select(`
+            id_usuario,
+            id_refugio,
+            nombre_completo,
+            correo,
+            activo,
+            ultimo_login,
+            rol,
+            auth_user_id
+        `)
+            .eq("id_refugio", shelterId)
+            .eq("rol", 1);
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        return (data ?? []).map(user => ({
+            idUsuario: user.id_usuario,
+            idRefugio: user.id_refugio,
+            nombreCompleto: user.nombre_completo,
+            correo: user.correo,
+            rol: user.rol,
+            activo: user.activo,
+            ultimoLogin: user.ultimo_login,
+            authUserId: user.auth_user_id,
+        }));
     }
 }

@@ -4,8 +4,9 @@ import { ShelterRepository } from '@/modules/shelters/repository';
 import { UserRepository } from '@/modules/users/repository';
 import { CreateUserInput } from '@/modules/users/types';
 import {AuthService} from "@/modules/auth/service";
-import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/schemas";
+
 import {randomBytes} from "node:crypto";
+import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/types";
 
 function generateTemporaryPassword(): string {
     return randomBytes(16).toString("base64url");
@@ -39,7 +40,7 @@ export class CreateShelterWithAdminUseCase {
             // 3. Crear usuario en BD
             const userData: CreateUserInput = {
                 authUserId: authUser.id,
-                nombreCompleto: input.shelter.nombre,
+                nombreCompleto: input.shelter.nombre_admin,
                 correo: input.shelter.correo_contacto,
                 rol: 1, //Admin
                 idRefugio: shelter.id,
@@ -48,14 +49,17 @@ export class CreateShelterWithAdminUseCase {
             const user = await this.userRepository.create(userData);
             userId = user.id;
 
+            // Enviar correo de recuperación/confirmación
+            await this.authAdminService.sendPasswordReset(input.shelter.correo_contacto);
+
             return {
                 shelter: {
                     id: shelter.id,
-                    nombre: shelter.nombre,
+                    nombre: shelter.nombre_albergue,
                 },
                 admin: {
                     id: user.id,
-                    authUserId: user.authUserId,
+                    //authUserId: user.authUserId,
                     email: user.correo,
                     nombreCompleto: user.nombreCompleto,
                 },
@@ -63,16 +67,15 @@ export class CreateShelterWithAdminUseCase {
 
         } catch (error) {
             // Compensación (ROLLBACK)
-            if (authUserId) {
-                await this.authAdminService.deleteUser(authUserId);
+            if (userId) {
+                await this.userRepository.delete(userId);
             }
             if (shelterId) {
                 await this.shelterRepository.delete(shelterId);
             }
-            if (userId) {
-                await this.userRepository.delete(userId);
+            if (authUserId) {
+                await this.authAdminService.deleteUser(authUserId);
             }
-
             throw error;
         }
     }

@@ -1,6 +1,8 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import {AuthError} from "@/modules/auth/errors";
 import { AuthError as SupabaseAuthError } from "@supabase/supabase-js";
+import {createSupabaseAdminClient} from "@/lib/supabase/admin-client";
+import {createAuthService} from "@/modules/auth/index";
 
 
 export interface LoginRequest {
@@ -64,4 +66,14 @@ export async function resetPassword(
 
     return supabase.auth.resetPasswordForEmail(email);
 
+}
+
+export async function updatePassword(password: string) {
+    const supabase = getSupabaseBrowserClient();
+
+    const { error } = await supabase.auth.updateUser({
+        password,
+    });
+
+    if (error) throw error;
 }

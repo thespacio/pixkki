@@ -1,4 +1,3 @@
-// modules/animals/index.ts
 import {createSupabaseServerClient} from "@/lib/supabase/server-client";
 import {AnimalRepository} from "@/modules/animals/repository";
 import {AnimalService} from "@/modules/animals/service";

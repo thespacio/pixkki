@@ -1,45 +1,21 @@
-"use client";
+import { getCurrentUser } from '@/modules/auth';
+import {getSpacesByShelterAction} from "@/modules/spaces/actions";
+import SpaceClient from "@/app/(protected)/(dashboard)/spaces/SpaceClient";
 
-import { useState } from "react";
+export default async function NewShelterPage() {
+    const user = await getCurrentUser();
 
-import InfrastructureSection from "@/modules/dashboard/components/InfrastructureSection";
-import SpacesTable from "@/modules/dashboard/components/SpacesTable";
-import {Button} from "@/components/ui/button";
-import {ArrowRight, Plus} from "lucide-react";
+    const res = await getSpacesByShelterAction(user.shelterId);
 
-
-export interface ShelterSpace {
-    id: number;
-    name: string;
-    type: string;
-    capacity: number;
-    occupancy: number;
-}
-
-export default function NewShelterPage() {
-    const [shelterName, setShelterName] = useState("");
-    const [spaces, setSpaces] = useState<ShelterSpace[]>([]);
+    const spaces =
+        res.success && res.data
+            ? res.data
+            : [];
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-
-            <InfrastructureSection
-                spaces={spaces}
-                setSpaces={setSpaces}
-            />
-
-            <SpacesTable
-                spaces={spaces}
-                setSpaces={setSpaces}
-            />
-
-            <div className={"w-full flex"}>
-                <Button className="ms-auto ">
-                    <ArrowRight size={18} />
-                     Guardar
-                </Button>
-            </div>
-
-        </div>
+        <SpaceClient
+            shelterId={user.shelterId}
+            spaces={spaces}
+        />
     );
 }

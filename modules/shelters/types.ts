@@ -1,23 +1,37 @@
-// modules/shelters/types.ts
+// modules/shelters/animales.types.ts
 
 import { z } from 'zod';
 import {
     ShelterSchema,
     CreateShelterSchema,
     UpdateShelterSchema,
-    ShelterFiltersSchema
+    ShelterFiltersSchema, ShelterFieldsSchema
 } from './schemas';
-import {AuthService} from "@/modules/auth/service";
-import {ShelterRepository} from "@/modules/shelters/repository";
-import {UserRepository} from "@/modules/users/repository";
+import {DefaultValues, FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
 
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
 export type Shelter = z.infer<typeof ShelterSchema>;
+export type ShelterFormValues = z.input<typeof ShelterFieldsSchema>;
 export type CreateShelterInput = z.infer<typeof CreateShelterSchema>;
 export type UpdateShelterInput = z.infer<typeof UpdateShelterSchema>;
 export type ShelterFilters = z.infer<typeof ShelterFiltersSchema>;
 
+export interface CreateShelterWithAdminInput {
+    shelter: CreateShelterInput;
+}
+export interface CreateShelterWithAdminOutput {
+    shelter: {
+        id: number;
+        nombre: string;
+    };
+    admin: {
+        id: number;
+        //authUserId: string;
+        email: string;
+        nombreCompleto: string;
+    };
+}
 
 // Tipos para filtros en repository
 export type ShelterQueryParams = {
@@ -28,23 +42,13 @@ export type ShelterQueryParams = {
     limit?: number;
     offset?: number;
 };
-
 export type ShelterListItem = Pick<
     Shelter,
-    'id' | 'nombre' | 'ciudad' | 'estado' | 'activo'
+    'id' | 'nombre_albergue' | 'ciudad' | 'estado' | 'activo'
 >;
 
-/*
-// ===== DTOs =====
-// DTO para listado (versión reducida)
-
-
-// DTO para detalles completos
-export type ShelterDetails = Shelter;
-
-*/
-
-export type ShelterRecord = {
+//
+/*export type ShelterRecord = {
     id_refugio: number;
     nombre: string;
     ciudad: string;
@@ -53,39 +57,28 @@ export type ShelterRecord = {
     telefono: string | null;
     fecha_registro: Date;
     activo: boolean;
-};
+};*/
+/*export interface ShelterFormProps {
+    form: UseFormReturn<ShelterFormData>;
+    onSubmit: (data: ShelterFormData) => Promise<void> | void;
+    isLoading?: boolean;
+    mode?: 'create' | 'edit';
+}*/
 
-/*
-// ===== TIPOS COMPARTIDOS =====
-// Tipos para el repository
+interface ShelterFormProps {
+    form: UseFormReturn<ShelterFormValues>;
+    onSubmit: (data: ShelterFormValues) => Promise<void>;
+    mode: "create" | "edit";
+    isLoading?: boolean;
+}
 
-
-// Tipos para el service
-export type ShelterCreationResult = {
+export interface EditShelterFormProps {
     shelter: Shelter;
-    message: string;
-};
+    id: number;
+}
 
-export type ShelterUpdateResult = {
+
+export interface ShelterWithAdminOutput {
     shelter: Shelter;
-    changes: string[];
-};
-
-
-
-// ===== TIPOS DE AUTORIZACIÓN =====
-export type ShelterPermissions = {
-    canView: boolean;
-    canEdit: boolean;
-    canDelete: boolean;
-    canManageAnimals: boolean;
-};
-
-// ===== TIPOS DE ERRORES =====
-export type ShelterErrorCode =
-    | 'NOT_FOUND'
-    | 'DUPLICATE_NAME'
-    | 'INVALID_STATUS'
-    | 'PERMISSION_DENIED'
-    | 'VALIDATION_ERROR'
-    | 'DB_ERROR';*/
+    nombreCompleto: string;
+}

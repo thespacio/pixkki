@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 
-import InfrastructureSection from "@/modules/dashboard/components/InfrastructureSection";
-import SpacesTable from "@/modules/dashboard/components/SpacesTable";
+import InfrastructureSection from "@/modules/spaces/components/InfrastructureSection";
+import SpacesTable from "@/modules/spaces/components/SpacesTable";
 import {Button} from "@/components/ui/button";
 import {ArrowRight, Plus} from "lucide-react";
-import ShelterForm from "@/modules/dashboard/components/ShelterForm";
+import ShelterForm from "@/modules/spaces/components/ShelterForm";
 
 
 export interface ShelterSpace {

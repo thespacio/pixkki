@@ -1,4 +1,4 @@
-// modules/users/types.ts
+// modules/users/animales.types.ts
 
 import { z } from 'zod';
 import {

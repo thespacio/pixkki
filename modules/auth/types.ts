@@ -7,16 +7,6 @@ export interface CreateUserInput {
     nombre_rol: string;
 }
 
-export interface CreateShelterInput {
-    nombre_refugio: string,
-    ciudad: string,
-    estado: string,
-    telefono: string,
-    correo_contacto: string,
-    correo_admin: string,
-    password: string
-}
-
 export interface RoleReference {
     id_rol: number;
 }

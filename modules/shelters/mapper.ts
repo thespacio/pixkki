@@ -2,7 +2,6 @@
 
 import {
     Shelter,
-    ShelterRecord,
     ShelterListItem,
     CreateShelterInput,
     UpdateShelterInput
@@ -15,7 +14,7 @@ import { ShelterRow, ShelterInsert, ShelterUpdate } from './repository';
 export function mapShelterRowToDomain(row: ShelterRow): Shelter {
     return {
         id: row.id_refugio,
-        nombre: row.nombre,
+        nombre_albergue: row.nombre,
         ciudad: row.ciudad,
         estado: row.estado,
         correo_contacto: row.correo_contacto,
@@ -31,7 +30,7 @@ export function mapShelterRowToDomain(row: ShelterRow): Shelter {
 export function mapShelterRowToListItem(row: ShelterRow): ShelterListItem {
     return {
         id: row.id_refugio,
-        nombre: row.nombre,
+        nombre_albergue: row.nombre,
         ciudad: row.ciudad,
         estado: row.estado,
         activo: row.activo
@@ -47,8 +46,8 @@ export function mapShelterToRow(
 ): ShelterInsert {
     const row: ShelterInsert = {ciudad: "", correo_contacto: "", estado: "", nombre: ""};
 
-    if ('nombre' in data && data.nombre !== undefined) {
-        row.nombre = data.nombre;
+    if ('nombre_albergue' in data && data.nombre_albergue !== undefined) {
+        row.nombre = data.nombre_albergue;
     }
 
     if ('ciudad' in data && data.ciudad !== undefined) {
@@ -74,13 +73,16 @@ export function mapShelterToRow(
     return row;
 }
 
-/**
+/*
+
+
+/!**
  * Mapea una entidad de dominio a ShelterRecord (para operaciones internas)
- */
+ *!/
 export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
     return {
         id_refugio: shelter.id,
-        nombre: shelter.nombre,
+        nombre: shelter.nombre_albergue,
         ciudad: shelter.ciudad,
         estado: shelter.estado,
         correo_contacto: shelter.correo_contacto,
@@ -90,13 +92,13 @@ export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
     };
 }
 
-/**
+/!**
  * Mapea datos de formulario (CreateShelterInput) a ShelterRecord
  * Útil para pre-procesar datos antes de enviar al repository
- */
+ *!/
 export function mapShelterInputToRecord(input: CreateShelterInput): Omit<ShelterRecord, 'id_refugio' | 'fecha_registro' | 'activo'> {
     return {
-        nombre: input.nombre,
+        nombre: input.nombre_albergue,
         ciudad: input.ciudad,
         estado: input.estado,
         correo_contacto: input.correo_contacto,
@@ -104,13 +106,13 @@ export function mapShelterInputToRecord(input: CreateShelterInput): Omit<Shelter
     };
 }
 
-/**
+/!**
  * Mapea un ShelterRecord a Shelter (convierte de registro interno a dominio)
- */
+ *!/
 export function mapShelterRecordToDomain(record: ShelterRecord): Shelter {
     return {
         id: record.id_refugio,
-        nombre: record.nombre,
+        nombre_albergue: record.nombre,
         ciudad: record.ciudad,
         estado: record.estado,
         correo_contacto: record.correo_contacto,
@@ -120,13 +122,13 @@ export function mapShelterRecordToDomain(record: ShelterRecord): Shelter {
     };
 }
 
-/**
+/!**
  * Mapea un Shelter a ShelterRecord (convierte de dominio a registro interno)
- */
+ *!/
 export function mapShelterDomainToRow(shelter: Shelter): ShelterRow {
     return {
         id_refugio: shelter.id,
-        nombre: shelter.nombre,
+        nombre: shelter.nombre_albergue,
         ciudad: shelter.ciudad,
         estado: shelter.estado,
         correo_contacto: shelter.correo_contacto,
@@ -136,16 +138,16 @@ export function mapShelterDomainToRow(shelter: Shelter): ShelterRow {
     };
 }
 
-/**
+/!**
  * Mapea datos de actualización a ShelterUpdate (para operaciones de actualización en Supabase)
- */
+ *!/
 export function mapShelterUpdateToRow(
     updates: Partial<Omit<Shelter, 'id' | 'fecha_registro'>>
 ): ShelterUpdate {
     const row: ShelterUpdate = {};
 
-    if (updates.nombre !== undefined) {
-        row.nombre = updates.nombre;
+    if (updates.nombre_albergue !== undefined) {
+        row.nombre = updates.nombre_albergue;
     }
 
     if (updates.ciudad !== undefined) {
@@ -171,27 +173,27 @@ export function mapShelterUpdateToRow(
     return row;
 }
 
-/**
+/!**
  * Función helper para mapear arrays de ShelterRow a Shelter[]
- */
+ *!/
 export function mapShelterRowsToDomain(rows: ShelterRow[]): Shelter[] {
     return rows.map(mapShelterRowToDomain);
 }
 
-/**
+/!**
  * Función helper para mapear arrays de ShelterRow a ShelterListItem[]
- */
+ *!/
 export function mapShelterRowsToListItems(rows: ShelterRow[]): ShelterListItem[] {
     return rows.map(mapShelterRowToListItem);
 }
 
-/**
+/!**
  * Mapea datos de entrada para crear a los campos requeridos por Supabase
  * Asegura que todos los campos obligatorios estén presentes
- */
+ *!/
 export function mapCreateShelterToInsert(input: CreateShelterInput): ShelterInsert {
     return {
-        nombre: input.nombre,
+        nombre: input.nombre_albergue,
         ciudad: input.ciudad,
         estado: input.estado,
         correo_contacto: input.correo_contacto,
@@ -199,4 +201,4 @@ export function mapCreateShelterToInsert(input: CreateShelterInput): ShelterInse
         fecha_registro: new Date().toISOString(),
         activo: true
     };
-}
+}*/

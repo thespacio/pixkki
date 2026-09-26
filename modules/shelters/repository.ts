@@ -99,7 +99,7 @@ export class ShelterRepository {
         try {
             let query = this.supabase
                 .from('refugio')
-                .select('*', { count: 'exact', head: false });
+                .select('*', { count: 'exact' });
 
             // Aplicar filtros
             if (params.ciudad) {
@@ -122,17 +122,20 @@ export class ShelterRepository {
                 );
             }
 
-            // Aplicar ordenamiento (por defecto por nombre)
+            // Ordenamiento
             query = query.order('nombre', { ascending: true });
 
-            // Aplicar paginación
+            // Paginación
             if (params.limit !== undefined) {
-                query = query.limit(params.limit);
+                const offset = params.offset ?? 0;
+
+                query = query.range(
+                    offset,
+                    offset + params.limit - 1
+                );
             }
 
-            if (params.offset !== undefined) {
-                query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
-            }
+            console.log(params.limit, params.offset);
 
             const { data, error, count } = await query;
 
@@ -143,16 +146,21 @@ export class ShelterRepository {
                 );
             }
 
+
+
             return {
-                data: data ? data.map(mapShelterRowToListItem) : [],
-                total: count || 0
+                data: (data ?? []).map(mapShelterRowToListItem),
+                total: count ?? 0
             };
         } catch (error) {
             if (error instanceof ShelterRepositoryError) {
                 throw error;
             }
+
             throw new ShelterRepositoryError(
-                `Error inesperado al listar refugios: ${error instanceof Error ? error.message : 'Unknown error'}`
+                `Error inesperado al listar refugios: ${
+                    error instanceof Error ? error.message : 'Unknown error'
+                }`
             );
         }
     }
@@ -161,7 +169,7 @@ export class ShelterRepository {
      * Crea un nuevo refugio en la base de datos
      * @returns Shelter creado
      */
-    async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo'>): Promise<Shelter> {
+    async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo' | 'nombre_admin'>): Promise<Shelter> {
         try {
             const insertData: ShelterInsert = {
                 ...mapShelterToRow(shelterData),

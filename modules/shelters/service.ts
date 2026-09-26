@@ -99,11 +99,13 @@ export class ShelterService {
             return {
                 data: result.data,
                 pagination: {
-                    total: result.data.length,
+                    total: result.total,
                     limit: filters.limit || 10,
                     offset: filters.offset || 0,
-                    hasMore: result.data.length === (filters.limit || 10)
+                    hasMore:
+                        (filters.offset ?? 0) + result.data.length < result.total
                 }
+
             };
         }
 
@@ -131,12 +133,12 @@ export class ShelterService {
         ShelterAuthorization.ensureCanCreate(authContext);
 
         // 2. Reglas de negocio: Validar unicidad del nombre
-        const existingShelter = await this.repository.findByName(input.nombre);
+        const existingShelter = await this.repository.findByName(input.nombre_albergue);
         if (existingShelter) {
             throw new ShelterBusinessError(
-                `Ya existe un refugio con el nombre "${input.nombre}"`,
+                `Ya existe un refugio con el nombre "${input.nombre_albergue}"`,
                 'DUPLICATE_NAME',
-                { nombre: input.nombre }
+                { nombre: input.nombre_albergue }
             );
         }
 
@@ -152,7 +154,7 @@ export class ShelterService {
 
         return {
             shelter,
-            message: `Refugio "${shelter.nombre}" creado exitosamente`
+            message: `Refugio "${shelter.nombre_albergue}" creado exitosamente`
         };
     }
 
@@ -198,17 +200,17 @@ export class ShelterService {
         const changes: string[] = [];
 
         // Validar nombre (si se está actualizando)
-        if (updates.nombre && updates.nombre !== currentShelter.nombre) {
+        if (updates.nombre_albergue && updates.nombre_albergue !== currentShelter.nombre_albergue) {
             // Verificar que el nuevo nombre no esté en uso por otro refugio
-            const exists = await this.repository.existsByName(updates.nombre, id);
+            const exists = await this.repository.existsByName(updates.nombre_albergue, id);
             if (exists) {
                 throw new ShelterBusinessError(
-                    `Ya existe otro refugio con el nombre "${updates.nombre}"`,
+                    `Ya existe otro refugio con el nombre "${updates.nombre_albergue}"`,
                     'DUPLICATE_NAME',
-                    { nombre: updates.nombre, currentId: id }
+                    { nombre: updates.nombre_albergue, currentId: id }
                 );
             }
-            changes.push(`nombre: "${currentShelter.nombre}" → "${updates.nombre}"`);
+            changes.push(`nombre: "${currentShelter.nombre_albergue}" → "${updates.nombre_albergue}"`);
         }
 
         // Validar ubicación (si se está actualizando)
@@ -229,17 +231,17 @@ export class ShelterService {
             changes.push(`correo_contacto: "${currentShelter.correo_contacto}" → "${updates.correo_contacto}"`);
         }
 
-        if (updates.telefono !== undefined &&
+        /*if (updates.telefono !== undefined &&
             updates.telefono !== currentShelter.telefono) {
             this.validatePhone(updates.telefono);
             changes.push(`teléfono: "${currentShelter.telefono}" → "${updates.telefono}"`);
-        }
+        }*/
 
         // Validar cambio de estado (activo/inactivo)
-        if (updates.activo !== undefined &&
+        /*if (updates.activo !== undefined &&
             updates.activo !== currentShelter.activo) {
             changes.push(`estado: ${currentShelter.activo ? 'activo' : 'inactivo'} → ${updates.activo ? 'activo' : 'inactivo'}`);
-        }
+        }*/
 
         // 5. Si no hay cambios, retornar el refugio actual sin modificaciones
         if (changes.length === 0) {
@@ -336,10 +338,10 @@ export class ShelterService {
 
         // Regla de negocio: Números de teléfono deben comenzar con código de país (+52 para México)
         // Esta regla asume que todos los shelters están en México
-        const phoneRegex = /^\+52[0-9]{10}$/;
+        const phoneRegex = /^\+[0-9]{10}$/;
         if (!phoneRegex.test(phone)) {
             throw new ShelterBusinessError(
-                'El teléfono debe ser un número válido de México (+52 seguido de 10 dígitos)',
+                'El teléfono debe ser un número válido',
                 'INVALID_PHONE',
                 { phone }
             );
