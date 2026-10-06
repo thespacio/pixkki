@@ -1,0 +1,875 @@
+Prompt maestro — Arquitectura, Actions, Factories, Forms y flujo CRUD
+
+Estoy desarrollando una aplicación con Next.js (App Router), TypeScript y Supabase.
+
+Quiero que todas las soluciones de código respeten estrictamente la arquitectura descrita a continuación.
+
+La prioridad arquitectónica es:
+
+Separación de responsabilidades
+Clean Architecture
+SOLID
+Bajo acoplamiento
+Alta cohesión
+Una única fuente de verdad para las validaciones
+Flujo de datos claro y predecible
+Evitar duplicación de lógica
+Escalabilidad
+Mantener la solución tan simple como sea posible sin sacrificar estas propiedades
+1. Arquitectura general
+
+La aplicación está organizada por módulos/feature:
+
+app/
+modules/
+components/
+lib/
+app/
+
+Contiene únicamente:
+
+rutas
+páginas
+layouts
+Route Handlers
+configuración propia del App Router
+
+No debe contener lógica de negocio.
+
+Si una lógica pertenece a una feature, debe vivir en modules/.
+
+modules/
+
+Contiene toda la lógica específica de cada dominio o feature.
+
+Ejemplos:
+
+modules/
+├── animals/
+├── auth/
+├── users/
+├── shelters/
+├── spaces/
+└── catalogs/
+
+Cada feature debe encapsular su propia lógica.
+
+components/
+
+Contiene componentes de UI reutilizables que no pertenecen exclusivamente a una feature.
+
+Si un componente está fuertemente relacionado con una feature concreta, debe considerarse primero colocarlo dentro de:
+
+modules/<feature>/components/
+
+No mover lógica de negocio a components/.
+
+lib/
+
+Contiene recursos compartidos globalmente:
+
+clientes de Supabase
+configuración
+utilidades
+helpers
+constantes
+infraestructura transversal
+
+Antes de colocar cualquier archivo en lib/, determinar si realmente es compartido.
+
+No utilizar lib/ como depósito general para lógica específica de una feature.
+
+2. Regla para decidir dónde colocar un archivo
+
+Antes de proponer una ubicación para cualquier archivo, analizar:
+
+¿Pertenece exclusivamente a una feature?
+
+→ modules/<feature>/
+
+¿Es infraestructura o utilidad compartida por múltiples features?
+
+→ lib/
+
+¿Pertenece exclusivamente al sistema de routing de Next.js?
+
+→ app/
+
+Explicar brevemente la decisión cuando la ubicación no sea obvia.
+
+3. Organización de una feature
+
+Una feature puede tener una estructura como:
+
+modules/
+└── spaces/
+    ├── actions/
+    │   └── space.actions.ts
+    │
+    ├── components/
+    │   ├── SpaceForm.tsx
+    │   ├── CreateSpaceModal.tsx
+    │   ├── EditSpaceModal.tsx
+    │   ├── SpacesTable.tsx
+    │   └── InfrastructureSection.tsx
+    │
+    ├── factories/
+    │   └── create-space-service.ts
+    │
+    ├── repositories/
+    │   └── space.repository.ts
+    │
+    ├── services/
+    │   └── space.service.ts
+    │
+    ├── validators/
+    │   └── space.validators.ts
+    │
+    ├── dtos/
+    │   ├── create-space.dto.ts
+    │   └── update-space.dto.ts
+    │
+    └── types/
+        └── space.animales.types.ts
+
+La estructura puede adaptarse cuando el caso de uso lo requiera.
+
+No crear carpetas o capas innecesarias solamente para seguir una estructura rígida.
+
+4. No utilizar index.ts como barrel
+
+No utilizar:
+
+index.ts
+
+para:
+
+centralizar exports
+ocultar dependencias
+crear puntos de acceso artificiales
+resolver imports
+
+Cada archivo debe importarse directamente desde su ubicación.
+
+Ejemplo:
+
+import { createSpaceService } from "@/modules/spaces/factories/create-space-service";
+
+No:
+
+import { createSpaceService } from "@/modules/spaces";
+5. Flujo arquitectónico principal
+
+El flujo estándar para operaciones de aplicación debe ser:
+
+UI
+ ↓
+Form
+ ↓
+Server Action
+ ↓
+Service
+ ↓
+Repository
+ ↓
+Supabase
+
+Cada capa tiene una responsabilidad específica.
+
+No saltarse capas sin una razón arquitectónica clara.
+
+Por ejemplo, una Action no debe llamar directamente al Repository.
+
+6. Validación con Zod: única fuente de verdad
+
+Zod es la única fuente de verdad para la validación estructural de los datos de entrada.
+
+Los schemas Zod deben definir, cuando corresponda:
+
+tipos
+campos requeridos
+tipos de datos
+longitudes
+rangos
+formatos
+restricciones estructurales
+
+Por ejemplo:
+
+export const CreateSpaceSchema = z.object({
+    name: z.string().min(3).max(100),
+    description: z.string().max(500),
+    capacity: z.number().int().positive(),
+});
+
+No crear validaciones equivalentes en:
+
+Components
+Forms
+Actions
+Services
+DTOs
+Repositories
+Helpers
+
+si la regla ya está definida por Zod.
+
+Regla fundamental
+
+No duplicar reglas de validación.
+
+Si Zod ya establece:
+
+z.string().min(3)
+
+no crear posteriormente:
+
+if (name.length < 3) ...
+
+en otra capa.
+
+7. Validación cliente y servidor
+
+El mismo schema Zod puede utilizarse:
+
+En el cliente
+
+Para proporcionar feedback inmediato al usuario.
+
+En el servidor
+
+Como frontera de seguridad antes de ejecutar la lógica de negocio.
+
+Ejemplo:
+
+                 SpaceSchema
+                /           \
+               ↓             ↓
+          SpaceForm      Server Action
+          UX rápida      frontera servidor
+
+No crear un segundo schema para el servidor.
+
+No crear un segundo conjunto de reglas para el cliente.
+
+Existe un solo schema, aunque pueda ejecutarse en ambas fronteras.
+
+8. DTOs
+
+Los DTOs representan los datos que necesita una operación de aplicación.
+
+Puede haber DTOs diferentes para distintas operaciones:
+
+CreateSpaceDTO
+UpdateSpaceDTO
+
+No asumir que Create y Update deben utilizar necesariamente el mismo DTO.
+
+Cuando una operación tenga requisitos diferentes, utilizar DTOs y schemas diferentes.
+
+Los tipos de TypeScript y los schemas Zod deben mantenerse coherentes.
+
+No crear manualmente en otro archivo reglas que ya estén expresadas por Zod.
+
+9. Transformación de entrada
+
+El formulario puede trabajar con valores propios de la UI.
+
+La transformación:
+
+UI/Form
+ ↓
+DTO
+
+debe ocurrir antes de entregar el dato al Service.
+
+La Server Action funciona como frontera entre Next.js/UI y la aplicación.
+
+El Service debe recibir un DTO limpio y validado.
+
+No hacer que el Service conozca FormData, eventos de React, inputs HTML o detalles de la UI.
+
+10. Server Actions
+
+Las Server Actions pertenecen a:
+
+modules/<feature>/actions/
+
+Debe existir un único archivo de Actions por feature:
+
+space.actions.ts
+
+No crear:
+
+create-space.action.ts
+update-space.action.ts
+delete-space.action.ts
+
+salvo que exista una razón excepcional y explícita.
+
+Dentro de space.actions.ts pueden existir:
+
+createSpaceAction()
+updateSpaceAction()
+deleteSpaceAction()
+getSpaceAction()
+searchSpacesAction()
+
+etc.
+
+11. Responsabilidad de una Server Action
+
+Una Server Action es un adaptador entre Next.js y la capa de aplicación.
+
+Debe:
+
+Tener "use server" al inicio del archivo.
+Recibir el DTO correspondiente.
+Validar el DTO mediante el schema Zod correspondiente.
+Obtener el Service mediante su Factory.
+Delegar la operación al Service.
+Ejecutar tareas específicas de Next.js cuando sean necesarias.
+Revalidar los datos afectados después de mutaciones exitosas.
+
+Una Action no debe:
+
+contener reglas de negocio
+acceder directamente al Repository
+crear manualmente el cliente de Supabase
+instanciar Services
+instanciar Repositories
+duplicar schemas Zod
+duplicar reglas de validación
+manipular directamente la base de datos
+
+Ejemplo:
+
+"use server";
+
+export async function createSpaceAction(dto: CreateSpaceDTO) {
+    const data = CreateSpaceSchema.parse(dto);
+
+    const service = await createSpaceService();
+
+    const result = await service.create(data);
+
+    revalidatePath("/ruta-afectada");
+
+    return result;
+}
+
+La Action debe permanecer pequeña.
+
+12. Revalidación y actualización de UI
+
+Después de una mutación exitosa:
+
+create
+update
+delete
+
+la Server Action debe encargarse de la invalidación/revalidación necesaria de Next.js.
+
+Por ejemplo:
+
+revalidatePath(...)
+
+El Service no debe conocer ni utilizar APIs de Next.js.
+
+No colocar:
+
+revalidatePath()
+
+en:
+
+Services
+Repositories
+entidades de dominio
+lógica de negocio
+
+porque eso acoplaría esas capas a Next.js.
+
+13. Estado del servidor vs estado del cliente
+
+Los datos obtenidos del servidor no deben duplicarse innecesariamente como estado cliente.
+
+Si spaces proviene de un Server Component, no crear automáticamente:
+
+const [spaces, setSpaces] = useState(...)
+
+solamente para mantener una copia local.
+
+Evitar patrones como:
+
+setSpaces={() => {}}
+
+o setters artificiales que no tengan una responsabilidad real.
+
+Preferir:
+
+Server Component
+      ↓
+server data
+      ↓
+Client UI
+
+y después de una mutación:
+
+Server Action
+      ↓
+mutation
+      ↓
+revalidatePath
+      ↓
+Server Components
+      ↓
+UI actualizada
+
+El estado cliente debe reservarse principalmente para estado verdaderamente interactivo o efímero:
+
+modal abierto/cerrado
+inputs
+loading
+selección temporal
+confirmaciones
+estado visual
+
+No utilizar estado cliente para duplicar innecesariamente la fuente de verdad del servidor.
+
+14. Forms
+
+Cuando una entidad tenga operaciones de creación y edición, preferir reutilizar un único formulario.
+
+Ejemplo:
+
+SpaceForm
+    ↑
+    ├── CreateSpaceModal
+    └── EditSpaceModal
+
+SpaceForm debe ser un componente genérico respecto a la operación.
+
+Preferir:
+
+<SpaceForm
+    defaultValues={...}
+    onSubmit={handleSubmit}
+/>
+
+en lugar de acoplarlo directamente a:
+
+<SpaceForm mode="create" />
+
+cuando no sea necesario.
+
+El formulario debe encargarse de:
+
+renderizar inputs
+interacción con el usuario
+feedback inmediato
+validación cliente mediante el schema Zod
+preparar los datos para el submit
+
+No debe:
+
+acceder directamente a Supabase
+contener lógica de negocio
+acceder directamente al Repository
+implementar reglas de negocio
+duplicar schemas
+15. Create y Update
+
+Crear y editar son operaciones diferentes aunque compartan formulario.
+
+Ejemplo:
+
+CreateSpaceModal
+    ↓
+SpaceForm
+    ↓
+createSpaceAction
+    ↓
+SpaceService.create
+
+y:
+
+EditSpaceModal
+    ↓
+SpaceForm
+    ↓
+updateSpaceAction
+    ↓
+SpaceService.update
+
+El formulario puede reutilizar:
+
+inputs
+componentes
+schemas compartidos
+presentación
+mensajes
+lógica de UX
+
+pero Create y Update pueden tener:
+
+DTOs diferentes
+schemas diferentes
+Actions diferentes
+reglas de negocio diferentes
+
+No forzar una abstracción común si reduce claridad.
+
+16. Factories
+
+Las factories tienen una única responsabilidad:
+
+Construir y ensamblar dependencias.
+
+Ejemplo:
+
+Supabase Client
+      ↓
+Repository
+      ↓
+Service
+
+Una factory:
+
+crea el cliente necesario
+instancia el Repository
+instancia el Service
+devuelve el Service listo para utilizar
+
+Ejemplo:
+
+export async function createSpaceService() {
+    const supabase = await createSupabaseServerClient();
+
+    const repository = new SpaceRepository(supabase);
+
+    return new SpaceService(repository);
+}
+
+Una Factory NO debe:
+
+validar datos
+contener reglas de negocio
+transformar respuestas
+hacer redirects
+ejecutar revalidatePath
+manejar UI
+acceder a formularios
+realizar operaciones de negocio
+
+Únicamente construye el grafo de dependencias.
+
+17. Services
+
+Toda la lógica de negocio pertenece al Service.
+
+El Service puede:
+
+validar reglas de negocio
+comprobar invariantes
+coordinar múltiples repositories
+determinar si una operación está permitida
+ejecutar operaciones de aplicación
+coordinar transacciones cuando corresponda
+
+El Service NO debe:
+
+conocer Next.js
+utilizar revalidatePath
+utilizar redirect
+manipular FormData
+conocer componentes React
+acceder directamente a Supabase
+crear clientes de Supabase
+duplicar validaciones que ya pertenecen al schema Zod
+18. Diferencia entre validación de entrada y regla de negocio
+
+Esta distinción debe respetarse siempre.
+
+Validación estructural
+
+Pertenece a Zod:
+
+capacity: z.number().int().positive()
+Regla de negocio
+
+Pertenece al Service:
+
+El refugio no permite crear otro espacio porque
+se alcanzó una restricción de capacidad.
+
+La regla:
+
+"capacity debe ser un entero positivo"
+
+no debe implementarse nuevamente en el Service si ya está garantizada por Zod.
+
+Pero una regla que dependa del estado actual del sistema sí pertenece al Service.
+
+19. Autenticación y autorización
+
+La aplicación puede confiar en el contexto de autenticación obtenido en el servidor.
+
+Sin embargo, nunca debe considerarse confiable un identificador enviado por el cliente simplemente porque el usuario lo haya enviado.
+
+Por ejemplo:
+
+shelterId
+userId
+ownerId
+
+Cuando un identificador determina la propiedad, tenant o alcance de una operación, debe:
+
+obtenerse del contexto autenticado cuando sea posible, o
+verificarse en servidor antes de ejecutar la operación.
+
+No permitir que el cliente pueda modificar libremente el alcance de una operación simplemente cambiando un ID.
+
+La decisión concreta debe adaptarse al caso de uso.
+
+No introducir mecanismos complejos de autorización si no aportan valor real, pero tampoco confiar ciegamente en identificadores sensibles enviados por el cliente.
+
+20. Repositories
+
+Los Repositories son la única capa que accede directamente a Supabase.
+
+Responsabilidades:
+
+select
+insert
+update
+delete
+queries
+filtros
+paginación
+operaciones de persistencia
+
+No contienen:
+
+reglas de negocio
+validaciones de negocio
+lógica de UI
+redirects
+revalidatePath
+lógica de formularios
+
+El Repository debe abstraer los detalles de persistencia del Service.
+
+21. Errores
+
+Utilizar errores tipados de aplicación/dominio cuando exista una razón real para distinguirlos.
+
+Ejemplos:
+
+SpaceNotFoundError
+UnauthorizedSpaceAccessError
+SpaceCapacityExceededError
+
+Los errores técnicos de infraestructura no deben filtrarse innecesariamente hacia la UI.
+
+El Repository puede producir errores de infraestructura.
+
+El Service puede traducirlos cuando sea necesario a errores significativos para la aplicación.
+
+Las Server Actions pueden dejar propagar los errores.
+
+No convertir automáticamente todos los errores en:
+
+{ success: false }
+
+si eso no aporta valor.
+
+Preferir errores reales y tipados cuando el caso lo requiera.
+
+22. Mappers
+
+No crear una capa de Mappers por defecto.
+
+Introducir:
+
+mappers/
+
+solamente cuando exista una diferencia significativa entre:
+
+modelo de persistencia
+modelo de dominio/aplicación
+DTO
+respuesta de API
+
+Si Repository, Service y DTO pueden trabajar correctamente sin una transformación adicional, no introducir un Mapper artificial.
+
+La arquitectura debe evitar abstracciones innecesarias.
+
+23. No sobre-ingenierizar
+
+No crear capas, interfaces, factories, mappers, tipos, schemas o abstracciones solamente para aumentar la cantidad de archivos.
+
+Cada abstracción debe tener una responsabilidad clara.
+
+Si una solución más sencilla cumple Clean Architecture, SOLID, separación de responsabilidades y los requisitos de escalabilidad, preferir la solución más sencilla.
+
+24. Regla contra duplicación
+
+Antes de crear código nuevo, comprobar si la funcionalidad ya existe.
+
+No crear:
+
+un segundo schema que duplica otro
+una segunda validación
+un segundo formulario
+una segunda función para la misma responsabilidad
+una segunda instancia manual de un Service
+un acceso alternativo a Supabase
+una abstracción que ya existe
+
+Si existe una implementación reutilizable, utilizarla o refactorizarla.
+
+25. Flujo CRUD estándar
+
+Para una operación de creación:
+
+User
+ ↓
+SpaceForm
+ ↓
+Zod
+ ↓
+createSpaceAction
+ ↓
+CreateSpaceSchema
+ ↓
+createSpaceService
+ ↓
+SpaceService.create
+ ↓
+SpaceRepository.create
+ ↓
+Supabase
+ ↓
+revalidatePath
+ ↓
+Server Component
+ ↓
+UI actualizada
+
+Para actualización:
+
+User
+ ↓
+SpaceForm
+ ↓
+Zod
+ ↓
+updateSpaceAction
+ ↓
+UpdateSpaceSchema
+ ↓
+SpaceService.update
+ ↓
+SpaceRepository.update
+ ↓
+Supabase
+ ↓
+revalidatePath
+ ↓
+UI actualizada
+
+Para eliminación:
+
+User
+ ↓
+deleteSpaceAction
+ ↓
+SpaceService.delete
+ ↓
+SpaceRepository.delete
+ ↓
+Supabase
+ ↓
+revalidatePath
+ ↓
+UI actualizada
+26. Responsabilidad de cada capa
+
+Antes de generar código, utilizar esta tabla mental:
+
+Capa	Responsabilidad
+UI	Presentación e interacción
+Form	Captura y UX del formulario
+Zod	Validación estructural
+Action	Adaptador Next.js + frontera servidor + revalidación
+Factory	Construcción de dependencias
+Service	Lógica de negocio
+Repository	Persistencia
+Supabase	Base de datos
+app/	Routing de Next.js
+lib/	Infraestructura/utilidades compartidas
+27. Cuando solicite código
+
+Antes de generar código:
+
+Identificar el feature afectado.
+Identificar la capa correspondiente.
+Comprobar si ya existe una implementación reutilizable.
+Evitar crear una segunda implementación de la misma responsabilidad.
+Comprobar si ya existe un schema Zod para la operación.
+Comprobar si Create y Update requieren DTOs/schemas diferentes.
+Mantener las Actions delgadas.
+Mantener los Services independientes de Next.js.
+Mantener los Repositories independientes de la UI.
+Utilizar la Factory para construir el Service.
+Evitar estado cliente redundante.
+Considerar la revalidación después de mutaciones.
+No introducir abstracciones innecesarias.
+
+Si detectas una violación de Clean Architecture o SOLID en el código existente, señalarla y proponer la alternativa correspondiente.
+
+28. Regla final de diseño
+
+El código debe poder responder claramente a estas preguntas:
+
+¿Dónde se valida la forma de los datos?
+
+Zod.
+
+¿Dónde se decide si una operación de negocio está permitida?
+
+Service.
+
+¿Dónde se accede a Supabase?
+
+Repository.
+
+¿Dónde se construyen las dependencias?
+
+Factory.
+
+¿Dónde se conecta Next.js con la aplicación?
+
+Server Action.
+
+¿Dónde se actualiza/invalida el caché de Next.js?
+
+Server Action.
+
+¿Dónde vive la UI?
+
+Components/Form.
+
+¿Dónde se obtiene el dato actualizado después de una mutación?
+
+Desde la fuente de datos del servidor mediante revalidación/refresco, evitando copias redundantes en estado cliente.
+
+Regla de oro:
+
+Una regla debe tener una única definición y cada responsabilidad debe tener una única capa propietaria.
+
+Si una solución propone duplicar una regla, mover lógica entre capas o crear una abstracción adicional, primero explicar por qué es necesario antes de implementarla.
+
+
+---
+Responde con "OK" cuando tengas todo el anterior contexto

@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import {createSupabaseServerClient} from "@/lib/supabase/server-client";
+
 
 export async function GET(request: Request) {
-    const requestUrl = new URL(request.url);
+    const url = new URL(request.url);
 
-    const code = requestUrl.searchParams.get("code");
+    const code = url.searchParams.get("code");
 
-    if (code) {
-        const supabase = await createSupabaseServerClient();
-
-        await supabase.auth.exchangeCodeForSession(code);
+    if (!code) {
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
+    const supabase = await createSupabaseServerClient();
+
+    await supabase.auth.exchangeCodeForSession(code);
+
     return NextResponse.redirect(
-        new URL("/dashboard", request.url)
+        new URL("/reset-password", request.url)
     );
 }

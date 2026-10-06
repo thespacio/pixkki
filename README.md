@@ -180,34 +180,15 @@ Linter y formateo:
 npm run lint
 npm run format
 ```
-
-## Flujo de trabajo con Git
-
-Pixkki adopta un flujo basado en ramas con integración continua. La rama `main` está protegida mediante un ruleset que impide push directo, exige pull requests revisados y requiere que los checks de CI pasen antes de integrar.
-
-Ramas principales:
-
-- `main`: rama de producción. Solo recibe cambios vía pull request aprobado.
-- `develop`: rama de integración. Concentra los cambios antes de promoverse a `main`.
-
-Ramas de trabajo:
-
-- `feature/*`: nuevas funcionalidades.
-- `bugfix/*`: corrección de errores no críticos.
-- `hotfix/*`: corrección urgente sobre producción.
-- `docs/*`: cambios exclusivos de documentación.
-- `refactor/*`: mejoras internas sin cambio funcional.
-
-Flujo típico:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/nombre-descriptivo
-# realizar cambios
-git add .
-git commit -m "feat(modulo): descripción breve"
-git push -u origin feature/nombre-descriptivo
+├── app/
+│   ├── email-password/     # Email + Password demo
+│   ├── google-login/        # Google OAuth demo
+│   └── test.tsx             # Home page with demo links
+├── lib/
+│   └── supabase/
+│       ├── browser-client.ts    # Client-side Supabase client
+│       └── server-client.ts     # Server-side Supabase client
+└── proxy.ts                 # Next.js proxy for protected routes
 ```
 
 Luego abre una pull request hacia `develop` (o `main` según corresponda), asigna al menos un revisor, atiende las observaciones y espera la aprobación antes del merge.
