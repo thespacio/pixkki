@@ -62,3 +62,21 @@ export const UserFiltersSchema = z.object({
 export const UserParamsSchema = z.object({
     userId: UserIdSchema
 });
+
+export const STAFF_ROLES = [
+    "veterinarian",
+    "operator",
+    "coordinator",
+    "evaluator",
+] as const;
+
+export type StaffRole = (typeof STAFF_ROLES)[number];
+
+export const CreateStaffSchema = z.object({
+    fullName: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres").max(120),
+    email: z.string().trim().toLowerCase().email("Ingresa un email válido"),
+    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(72),
+    role: z.enum(STAFF_ROLES, { message: "Selecciona un rol válido" }),
+});
+
+export type CreateStaffInput = z.infer<typeof CreateStaffSchema>;

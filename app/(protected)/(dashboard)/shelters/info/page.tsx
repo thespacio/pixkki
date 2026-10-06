@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-
-import InfrastructureSection from "@/modules/spaces/components/InfrastructureSection";
 import SpacesTable from "@/modules/spaces/components/SpacesTable";
 import {Button} from "@/components/ui/button";
 import {ArrowRight, Plus} from "lucide-react";

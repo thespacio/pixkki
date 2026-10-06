@@ -1,14 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { PawPrint } from "lucide-react";
-import {Animal} from "@/modules/animals/types/animales.types";
-import {AnimalSearchBar} from "@/modules/animals/components/AnimalSearchBar";
-import {AnimalDetailPanel} from "@/modules/animals/components/AnimalDetailPanel";
-
+import { PawPrint, Cat, Dog, Bird, Rabbit, Fish, Turtle } from "lucide-react";
+import { Animal } from "@/modules/animals/types/animales.types";
+import { AnimalSearchBar } from "@/modules/animals/components/AnimalSearchBar";
+import { AnimalDetailPanel } from "@/modules/animals/components/AnimalDetailPanel";
 
 type Props = {
     animales: Animal[];
+};
+
+// Mapa de especies a iconos/imágenes representativas
+const getAnimalIcon = (especie: string) => {
+    const especieLower = especie?.toLowerCase() ?? "";
+    if (especieLower.includes("perro") || especieLower.includes("can")) return Dog;
+    if (especieLower.includes("gato") || especieLower.includes("fel")) return Cat;
+    if (especieLower.includes("ave") || especieLower.includes("pájaro") || especieLower.includes("pajaro")) return Bird;
+    if (especieLower.includes("conejo") || especieLower.includes("liebre")) return Rabbit;
+    if (especieLower.includes("pez") || especieLower.includes("fish")) return Fish;
+    if (especieLower.includes("tortuga") || especieLower.includes("reptil")) return Turtle;
+    return PawPrint;
+};
+
+// Colores de fondo según especie para darle personalidad
+const getAnimalColor = (especie: string) => {
+    const especieLower = especie?.toLowerCase() ?? "";
+    if (especieLower.includes("perro") || especieLower.includes("can"))
+        return "from-amber-100 to-orange-100 text-amber-600";
+    if (especieLower.includes("gato") || especieLower.includes("fel"))
+        return "from-purple-100 to-pink-100 text-purple-600";
+    if (especieLower.includes("ave") || especieLower.includes("pájaro") || especieLower.includes("pajaro"))
+        return "from-sky-100 to-cyan-100 text-sky-600";
+    if (especieLower.includes("conejo") || especieLower.includes("liebre"))
+        return "from-rose-100 to-pink-100 text-rose-600";
+    if (especieLower.includes("pez") || especieLower.includes("fish"))
+        return "from-blue-100 to-indigo-100 text-blue-600";
+    if (especieLower.includes("tortuga") || especieLower.includes("reptil"))
+        return "from-emerald-100 to-green-100 text-emerald-600";
+    return "from-slate-100 to-gray-100 text-slate-600";
 };
 
 export function AnimalsTable({ animales }: Props) {
@@ -34,7 +63,7 @@ export function AnimalsTable({ animales }: Props) {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {filtrados.map((animal) => (
                         <AnimalCard
                             key={animal.idAnimal}
@@ -62,57 +91,75 @@ function AnimalCard({
     animal: Animal;
     onClick: () => void;
 }) {
+    const Icon = getAnimalIcon(animal.especie);
+    const colorClasses = getAnimalColor(animal.especie);
+
     return (
         <div
-            className="rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-all cursor-pointer"
             onClick={onClick}
+            className="group relative rounded-2xl border border-border bg-card overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
         >
-            <div className="flex items-start justify-between mb-3">
-                <div>
-                    <p className="font-semibold text-foreground text-sm">
-                        {animal.nombre ?? `${animal.especie} sin nombre`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        {animal.raza ?? animal.especie} ·{" "}
-                        {animal.sexo === "M" ? "Macho" : "Hembra"}
-                    </p>
-                </div>
-                {/*<span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        animal.disponibleAdopcion
-                            ? "bg-green-100 text-green-700"
-                            : "bg-secondary text-muted-foreground"
-                    }`}
-                >
-                    {animal.disponibleAdopcion ? "En adopción" : "No disponible"}
-                </span>*/}
+            {/* Imagen / Icono representativo */}
+            <div
+                className={`relative h-40 bg-gradient-to-br ${colorClasses} flex items-center justify-center overflow-hidden`}
+            >
+                <Icon
+                    size={80}
+                    strokeWidth={1.2}
+                    className="transition-transform duration-500 group-hover:scale-110 opacity-90"
+                />
+
+                {/* Badge de estado (esquina superior derecha) */}
                 <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    className={`absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full font-medium backdrop-blur-sm ${
                         animal.estadoNombre
-                            ? "bg-green-100 text-green-700"
-                            : "bg-secondary text-muted-foreground"
+                            ? "bg-green-500/90 text-white shadow-sm"
+                            : "bg-gray-400/90 text-white shadow-sm"
                     }`}
                 >
                     {animal.estadoNombre}
                 </span>
-            </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+                {/* Badge cuarentena (esquina superior izquierda) */}
                 {animal.enCuarentena && (
-                    <span className="text-xs px-2 py-1 rounded-lg bg-orange-100 text-orange-600">
-            Cuarentena
-          </span>
-                )}
-                {animal.esterilizado && (
-                    <span className="text-xs px-2 py-1 rounded-lg bg-blue-100 text-blue-600">
-            Esterilizado
-          </span>
+                    <span className="absolute top-3 left-3 text-xs px-2.5 py-1 rounded-full font-medium bg-orange-500/90 text-white shadow-sm">
+                        ⚠ Cuarentena
+                    </span>
                 )}
             </div>
 
-            <p className="text-xs text-muted-foreground mt-3">
-                📍 {animal.espacioNombre}
-            </p>
+            {/* Contenido */}
+            <div className="p-4">
+                <div className="mb-2">
+                    <h3 className="font-semibold text-foreground text-base truncate">
+                        {animal.nombre ?? `${animal.especie} sin nombre`}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                        {animal.raza ?? animal.especie} ·{" "}
+                        {animal.sexo === "M" ? "Macho" : "Hembra"}
+                    </p>
+                </div>
+
+                {/* Etiquetas */}
+                <div className="flex items-center gap-1.5 flex-wrap min-h-[28px]">
+                    {animal.esterilizado && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-medium">
+                            Esterilizado
+                        </span>
+                    )}
+                    {animal.enCuarentena && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 font-medium">
+                            Cuarentena
+                        </span>
+                    )}
+                </div>
+
+                {/* Ubicación */}
+                <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>📍</span>
+                    <span className="truncate">{animal.espacioNombre}</span>
+                </div>
+            </div>
         </div>
     );
 }

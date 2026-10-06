@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { PawPrint, ArrowRight, BarChart2, Heart, Stethoscope, DollarSign, CheckCircle, Star, ChevronRight, HandCoins } from "lucide-react";
 import { useRouter } from "next/navigation";
+import AIAssistant from "@/components/AIAssistant";
 const logo = "/images/logo.png";
 
 
@@ -435,6 +436,8 @@ export default function Landing() {
               <a href="/login" className="hover:text-foreground transition-colors">Iniciar Sesión</a>
             </div>
           </div>
+
+          <AIAssistant />
         </footer>
       </div>
   );
