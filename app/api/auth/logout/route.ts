@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
-import {logout} from "@/modules/auth/client";
+import {createSupabaseServerClient} from "@/lib/supabase/server-client";
 
 export async function POST() {
 
     try {
 
-        await logout();
+        // El route handler corre en el servidor: se usa el cliente
+        // de servidor para que el cierre de sesión invalide y limpie
+        // las cookies de sesión (F-AUTH-06).
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase.auth.signOut();
+
+        if (error) {
+            throw error;
+        }
 
         return NextResponse.json(
             {

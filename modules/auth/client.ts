@@ -1,8 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
-import {AuthError} from "@/modules/auth/errors";
-import { AuthError as SupabaseAuthError } from "@supabase/supabase-js";
-import {createSupabaseAdminClient} from "@/lib/supabase/admin-client";
-import {createAuthService} from "@/modules/auth/index";
+import {AuthError, EmailNotVerifiedError} from "@/modules/auth/errors";
 
 
 export interface LoginRequest {
@@ -13,7 +10,7 @@ export interface LoginRequest {
 export async function login(
     email: string,
     password: string,
-) {
+): Promise<void> {
     const supabase = getSupabaseBrowserClient();
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -22,6 +19,14 @@ export async function login(
     });
 
     if (error) {
+
+        // F-AUTH-04: bloquear inicio de sesión si el correo no está verificado
+        if (
+            error.status === 400 &&
+            /email not confirmed/i.test(error.message)
+        ) {
+            throw new EmailNotVerifiedError();
+        }
 
         switch (error.status) {
 

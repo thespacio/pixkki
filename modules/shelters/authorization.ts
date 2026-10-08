@@ -50,14 +50,15 @@ export class ShelterAuthorization {
             );
         }
 
-        const allowedRoles = ['Superadmin'];
-        if (!allowedRoles.includes(context.role)) {
+        // Comparación case-insensitive: el valor real proviene de
+        // `rol.nombre_rol` en BD y no está estandarizado.
+        if (context.role.trim().toLowerCase() !== 'superadmin') {
             throw new ShelterAuthorizationError(
                 `Usuario con rol "${context.role}" no tiene permisos para crear refugios`,
                 {
                     userId: context.id,
                     userRole: context.role,
-                    requiredRoles: allowedRoles
+                    requiredRoles: ['superadmin']
                 }
             );
         }
@@ -85,7 +86,6 @@ export class ShelterAuthorization {
             );
         }
 
-        const adminRoles = ['admin'];
         const managerRoles = ['admin', 'shelter_manager'];
 
         if (context.userRole === 'admin') {

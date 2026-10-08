@@ -92,15 +92,16 @@ export class SpaceRepository {
     }
 
     /**
-     * Obtiene un espacio por su ID
-     */
-    async findById(id: number): Promise<Space | null> {
-        try {
-            const { data, error } = await this.supabase
-                .from('espacio')
-                .select()
-                .eq('id_espacio', id)
-                .single();
+      * Obtiene un espacio por su ID (filtrado por refugio para multitenant)
+      */
+     async findById(id: number, shelterId: number): Promise<Space | null> {
+         try {
+             const { data, error } = await this.supabase
+                 .from('espacio')
+                 .select()
+                 .eq('id_espacio', id)
+                 .eq('id_refugio', shelterId)
+                 .single();
 
             if (error) {
                 if (error.code === 'PGRST116') {
@@ -176,24 +177,25 @@ export class SpaceRepository {
     }
 
     /**
-     * Actualiza un espacio
-     */
-    async update(id: number, dto: UpdateSpaceInput): Promise<Space> {
-        try {
-            const updateData: SpaceUpdate = {};
+      * Actualiza un espacio
+      */
+     async update(id: number, dto: UpdateSpaceInput, shelterId: number): Promise<Space> {
+         try {
+             const updateData: SpaceUpdate = {};
 
-            if (dto.name !== undefined) updateData.nombre_espacio = dto.name;
-            if (dto.description !== undefined) updateData.descripcion = dto.description;
-            if (dto.capacity !== undefined) updateData.capacidad = dto.capacity;
-            if (dto.type !== undefined) updateData.tipo = dto.type;
-            if (dto.available !== undefined) updateData.disponible = dto.available;
+             if (dto.name !== undefined) updateData.nombre_espacio = dto.name;
+             if (dto.description !== undefined) updateData.descripcion = dto.description;
+             if (dto.capacity !== undefined) updateData.capacidad = dto.capacity;
+             if (dto.type !== undefined) updateData.tipo = dto.type;
+             if (dto.available !== undefined) updateData.disponible = dto.available;
 
-            const { data, error } = await this.supabase
-                .from('espacio')
-                .update(updateData)
-                .eq('id_espacio', id)
-                .select()
-                .single();
+             const { data, error } = await this.supabase
+                 .from('espacio')
+                 .update(updateData)
+                 .eq('id_espacio', id)
+                 .eq('id_refugio', shelterId)
+                 .select()
+                 .single();
 
             if (error) {
                 if (error.code === 'PGRST116') {
@@ -221,53 +223,54 @@ export class SpaceRepository {
     }
 
     /**
-     * Elimina un espacio (solo si no tiene animales asociados)
-     */
-    async delete(id: number): Promise<void> {
-        try {
-            // Primero verificamos que no tenga animales asociados
-            const { count, error: countError } = await this.supabase
-                .from('animal')
-                .select('*', { count: 'exact', head: true })
-                .eq('id_espacio', id);
+      * Elimina un espacio (solo si no tiene animales asociados)
+      */
+     async delete(id: number, shelterId: number): Promise<void> {
+         try {
+             // Primero verificamos que no tenga animales asociados
+             const { count, error: countError } = await this.supabase
+                 .from('animal')
+                 .select('*', { count: 'exact', head: true })
+                 .eq('id_espacio', id);
 
-            if (countError) {
-                throw new SpaceRepositoryError(
-                    `Error al verificar animales asociados: ${countError.message}`,
-                    countError.code
-                );
-            }
+             if (countError) {
+                 throw new SpaceRepositoryError(
+                     `Error al verificar animales asociados: ${countError.message}`,
+                     countError.code
+                 );
+             }
 
-            if (count && count > 0) {
-                throw new SpaceRepositoryError(
-                    'No se puede eliminar el espacio porque tiene animales asociados',
-                    'HAS_ANIMALS'
-                );
-            }
+             if (count && count > 0) {
+                 throw new SpaceRepositoryError(
+                     'No se puede eliminar el espacio porque tiene animales asociados',
+                     'HAS_ANIMALS'
+                 );
+             }
 
-            const { error } = await this.supabase
-                .from('espacio')
-                .delete()
-                .eq('id_espacio', id);
+             const { error } = await this.supabase
+                 .from('espacio')
+                 .delete()
+                 .eq('id_espacio', id)
+                 .eq('id_refugio', shelterId);
 
-            if (error) {
-                if (error.code === 'PGRST116') {
-                    throw new SpaceRepositoryError('Espacio no encontrado', 'NOT_FOUND');
-                }
-                throw new SpaceRepositoryError(
-                    `Error al eliminar espacio: ${error.message}`,
-                    error.code
-                );
-            }
-        } catch (error) {
-            if (error instanceof SpaceRepositoryError) {
-                throw error;
-            }
-            throw new SpaceRepositoryError(
-                `Error inesperado al eliminar espacio: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-        }
-    }
+             if (error) {
+                 if (error.code === 'PGRST116') {
+                     throw new SpaceRepositoryError('Espacio no encontrado', 'NOT_FOUND');
+                 }
+                 throw new SpaceRepositoryError(
+                     `Error al eliminar espacio: ${error.message}`,
+                     error.code
+                 );
+             }
+         } catch (error) {
+             if (error instanceof SpaceRepositoryError) {
+                 throw error;
+             }
+             throw new SpaceRepositoryError(
+                 `Error inesperado al eliminar espacio: ${error instanceof Error ? error.message : 'Unknown error'}`
+             );
+         }
+     }
 
     /**
      * Obtiene la cantidad de animales en un espacio
@@ -298,28 +301,28 @@ export class SpaceRepository {
     }
 
     /**
-     * Verifica si un espacio está disponible (tiene capacidad libre)
-     */
-    async isSpaceAvailable(spaceId: number): Promise<boolean> {
-        try {
-            const space = await this.findById(spaceId);
-            if (!space) {
-                throw new SpaceRepositoryError('Espacio no encontrado', 'NOT_FOUND');
-            }
+      * Verifica si un espacio está disponible (tiene capacidad libre)
+      */
+     async isSpaceAvailable(spaceId: number, shelterId: number): Promise<boolean> {
+         try {
+             const space = await this.findById(spaceId, shelterId);
+             if (!space) {
+                 throw new SpaceRepositoryError('Espacio no encontrado', 'NOT_FOUND');
+             }
 
-            if (!space.available) {
-                return false;
-            }
+             if (!space.available) {
+                 return false;
+             }
 
-            const animalCount = await this.getAnimalCount(spaceId);
-            return animalCount < space.capacity;
-        } catch (error) {
-            if (error instanceof SpaceRepositoryError) {
-                throw error;
-            }
-            throw new SpaceRepositoryError(
-                `Error inesperado al verificar disponibilidad: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-        }
-    }
+             const animalCount = await this.getAnimalCount(spaceId);
+             return animalCount < space.capacity;
+         } catch (error) {
+             if (error instanceof SpaceRepositoryError) {
+                 throw error;
+             }
+             throw new SpaceRepositoryError(
+                 `Error inesperado al verificar disponibilidad: ${error instanceof Error ? error.message : 'Unknown error'}`
+             );
+         }
+     }
 }

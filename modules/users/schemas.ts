@@ -72,11 +72,46 @@ export const STAFF_ROLES = [
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
-export const CreateStaffSchema = z.object({
+/**
+ * Alta de personal (F-USERS-01): la contraseña temporal se auto-genera
+ * y se envía por correo; el formulario ya no la recibe.
+ */
+export const CreateStaffFormSchema = z.object({
     fullName: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres").max(120),
     email: z.string().trim().toLowerCase().email("Ingresa un email válido"),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(72),
     role: z.enum(STAFF_ROLES, { message: "Selecciona un rol válido" }),
 });
 
-export type CreateStaffInput = z.infer<typeof CreateStaffSchema>;
+export type CreateStaffFormInput = z.infer<typeof CreateStaffFormSchema>;
+
+/**
+ * Mapea la entrada del formulario (CreateStaffFormInput) a la entrada
+ * de dominio (CreateUserInput), fijando idRefugio desde el contexto.
+ */
+export function mapCreateStaffFormToUserInput(
+    input: CreateStaffFormInput,
+    idRefugio: number,
+): CreateUserInput {
+    return {
+        authUserId: '', // El authUserId se asigna en el Service (createAuthUser)
+        nombreCompleto: input.fullName,
+        correo: input.email,
+        rol: ROLE_NAME_TO_ID[input.role],
+        idRefugio,
+        activo: true,
+    };
+}
+
+/**
+ * Filtros server-side del personal (F-USERS-02) y de la vista global (F-USERS-03).
+ */
+export const StaffQuerySchema = z.object({
+    search: z.string().trim().max(100).optional(),
+    role: z.enum(STAFF_ROLES).optional(),
+    activo: z.boolean().optional(),
+    refugioId: z.number().int().positive().optional(),
+    limit: z.number().int().positive().max(200).optional(),
+    offset: z.number().int().min(0).optional(),
+});
+
+export type StaffQueryInput = z.infer<typeof StaffQuerySchema>;

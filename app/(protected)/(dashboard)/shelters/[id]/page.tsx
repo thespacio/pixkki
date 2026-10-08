@@ -23,11 +23,10 @@ export default async function ShelterDetailPage({ params }: ShelterDetailPagePro
             <div className="container mx-auto py-8">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-600">Acceso Denegado</h1>
-                    {/*<p className="text-muted-foreground">{result.error}</p>*/}
+                    <p className="text-muted-foreground mt-2">{result.message}</p>
                 </div>
             </div>
         );
-        notFound();
     }
 
     // Verificar permisos para mostrar botón de editar

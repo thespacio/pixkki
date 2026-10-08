@@ -76,3 +76,10 @@ export const roleConfig: Record<
     coordinator: { label: "Coordinador", color: "#E8A87C", bg: "#FDF2EA" },
     evaluator: { label: "Evaluador", color: "#7A7670", bg: "#EDE9E1" },
 };
+
+/**
+ * Item de la vista global de usuarios (F-USERS-03): usuario + nombre de su refugio.
+ */
+export type GlobalUserItem = User & {
+    shelterNombre: string | null;
+};

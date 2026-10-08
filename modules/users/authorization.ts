@@ -1,24 +1,35 @@
-import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
+import { AuthenticatedUser } from "@/modules/auth/types";
+import { isSuperadminRole } from "@/modules/auth/authorization";
+import { UserAuthorizationError } from "./errors";
 
-const SUPER_ADMIN_EMAIL = "pixkki@pixkki.es";
+/**
+ * Roles con capacidad de gestionar personal (crear / activar / eliminar).
+ * Comparación case-insensitive: el valor real proviene de `rol.nombre_rol`
+ * en BD y no está estandarizado.
+ */
+export function isStaffManager(role: string): boolean {
+    const normalized = role.trim().toLowerCase();
+    return normalized === "administrador" || normalized === "admin" || isSuperadminRole(role);
+}
 
-export async function ensureIsAdministrator(idUsuario: number) {
-    const { data } = await getSupabaseBrowserClient()
-        .from("usuario_rol")
-        .select("rol(nombre_rol)")
-        .eq("id_usuario", idUsuario)
-        .single();
-
-    // Idealmente tipar la respuesta para evitar `any`.
-    const nombreRol = (data as { rol?: { nombre_rol?: string } })?.rol?.nombre_rol;
-
-    if (nombreRol !== "Administrador") {
-        throw new Error("No autorizado");
+/**
+ * Autoriza la gestión de personal del refugio (F-USERS-01): solo Admin/Superadmin.
+ */
+export function ensureCanManageStaff(user: AuthenticatedUser): void {
+    if (!isStaffManager(user.role)) {
+        throw new UserAuthorizationError(
+            "Solo administradores o superadmins pueden gestionar el personal del refugio."
+        );
     }
 }
 
-export async function ensureIsSuperAdmin(email: string) {
-    if (email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
-        throw new Error("No autorizado");
+/**
+ * Autoriza operaciones exclusivas del superadmin (F-USERS-03: vista global).
+ */
+export function ensureIsSuperAdmin(user: AuthenticatedUser): void {
+    if (!isSuperadminRole(user.role)) {
+        throw new UserAuthorizationError(
+            "Solo un superadmin puede realizar esta acción."
+        );
     }
 }

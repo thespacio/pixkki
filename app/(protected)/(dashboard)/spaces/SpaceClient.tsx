@@ -1,6 +1,6 @@
 'use client';
 
-import CreateSpaceModal from '@/app/(protected)/(dashboard)/spaces/CreateSpaceModal';
+import CreateSpaceModal from '@/modules/spaces/components/CreateSpaceModal';
 import { Space } from '@/modules/spaces/types/types';
 import {InfrastructureSection} from "@/modules/spaces/components/InfrastructureSection";
 

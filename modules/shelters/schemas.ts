@@ -1,7 +1,6 @@
 // modules/shelters/schemas.ts
 
 import { z } from 'zod';
-import {CreateShelterInput} from "@/modules/shelters/types";
 
 // ===== ESQUEMAS BASE =====
 // Validación de campos individuales para reutilización
@@ -32,7 +31,34 @@ export const ContactEmailSchema = z.string({
 export const PhoneSchema = z.string({
     error: "El número de teléfono es obligatorio"
 })
-    .regex(/^\+?[0-9\s\-()]{10,10}$/, 'Formato de teléfono inválido').nullable();
+    // El teléfono es opcional: acepta vacío (formularios) o null (persistencia)
+    .regex(/^(\+?[0-9\s\-()]{10})?$/, 'Formato de teléfono inválido').nullable();
+
+// ===== ESQUEMAS DE DIRECCIÓN (F-SHELTER-04) =====
+export const StreetSchema = z.string({
+    error: "La calle es obligatoria"
+})
+    .trim()
+    .min(3, "La calle debe tener al menos 3 caracteres")
+    .max(100, "La calle no puede exceder los 100 caracteres");
+export const StreetNumberSchema = z.string({
+    error: "El número es obligatorio"
+})
+    .trim()
+    .min(1, "El número es obligatorio")
+    .max(10, "El número no puede exceder los 10 caracteres")
+    .regex(/^[0-9A-Za-z\s.\-]+$/, "El número solo puede contener letras, números, espacios, puntos o guiones");
+export const ColoniaSchema = z.string({
+    error: "La colonia es obligatoria"
+})
+    .trim()
+    .min(2, "La colonia debe tener al menos 2 caracteres")
+    .max(100, "La colonia no puede exceder los 100 caracteres");
+export const PostalCodeSchema = z.string({
+    error: "El código postal es obligatorio"
+})
+    .trim()
+    .regex(/^\d{5}$/, "El código postal debe tener 5 dígitos");
 // ===== ESQUEMAS DE DOMINIO =====
 // Shelter completo (para respuestas de API)
 export const ShelterFieldsSchema = z.object({
@@ -41,11 +67,20 @@ export const ShelterFieldsSchema = z.object({
     estado: StateSchema,
     correo_contacto: ContactEmailSchema,
     telefono: PhoneSchema,
+    calle: StreetSchema.optional(),
+    numero: StreetNumberSchema.optional(),
+    colonia: ColoniaSchema.optional(),
+    codigo_postal: PostalCodeSchema.optional(),
 });
 export const ShelterSchema = ShelterFieldsSchema.extend({
     id: ShelterIdSchema,
     fecha_registro: z.date(),
-    activo: z.boolean().default(true)
+    activo: z.boolean().default(true),
+    // En dominio/persistencia los campos de dirección pueden ser null (registros previos)
+    calle: StreetSchema.nullable().optional(),
+    numero: StreetNumberSchema.nullable().optional(),
+    colonia: ColoniaSchema.nullable().optional(),
+    codigo_postal: PostalCodeSchema.nullable().optional(),
 });
 // ===== ESQUEMAS DE INPUT =====
 // Para creación de refugio
@@ -58,7 +93,32 @@ export const ShelterSchema = ShelterFieldsSchema.extend({
     telefono: PhoneSchema
 });*/
 export const CreateShelterSchema = ShelterFieldsSchema.extend({
-    nombre_admin: ShelterNameSchema,
+    // Obligatorios en altas nuevas (se refuerzan con refine más abajo);
+    // el tipo del formulario compartido necesita campos opcionales.
+    nombre_admin: ShelterNameSchema.optional(),
+}).refine(
+    // F-SHELTER-04: la dirección completa es obligatoria en altas nuevas
+    (data) =>
+        Boolean(data.calle && data.numero && data.colonia && data.codigo_postal),
+    {
+        message: "La dirección completa es obligatoria (calle, número, colonia y código postal)",
+        path: ["calle"],
+    }
+).refine(
+    // F-SHELTER-02: el nombre del administrador es obligatorio
+    (data) => Boolean(data.nombre_admin),
+    {
+        message: "El nombre del administrador es obligatorio",
+        path: ["nombre_admin"],
+    }
+);
+
+/**
+ * Envoltorio para la Server Action de creación (F-SHELTER-02).
+ * Zod como fuente única de verdad del contrato de entrada.
+ */
+export const CreateShelterWithAdminSchema = z.object({
+    shelter: CreateShelterSchema,
 });
 /*
 export const CreateShelterSchema = ShelterSchema.extend({

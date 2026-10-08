@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import SpacesTable from "@/modules/spaces/components/SpacesTable";
 import {Button} from "@/components/ui/button";
-import {ArrowRight, Plus} from "lucide-react";
+import {ArrowRight} from "lucide-react";
 import ShelterForm from "@/modules/spaces/components/ShelterForm";
 
 
@@ -17,7 +16,6 @@ export interface ShelterSpace {
 
 export default function NewShelterPage() {
     const [shelterName, setShelterName] = useState("");
-    const [spaces, setSpaces] = useState<ShelterSpace[]>([]);
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">

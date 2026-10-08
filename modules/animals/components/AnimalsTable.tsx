@@ -10,17 +10,35 @@ type Props = {
     animales: Animal[];
 };
 
-// Mapa de especies a iconos/imágenes representativas
-const getAnimalIcon = (especie: string) => {
-    const especieLower = especie?.toLowerCase() ?? "";
-    if (especieLower.includes("perro") || especieLower.includes("can")) return Dog;
-    if (especieLower.includes("gato") || especieLower.includes("fel")) return Cat;
-    if (especieLower.includes("ave") || especieLower.includes("pájaro") || especieLower.includes("pajaro")) return Bird;
-    if (especieLower.includes("conejo") || especieLower.includes("liebre")) return Rabbit;
-    if (especieLower.includes("pez") || especieLower.includes("fish")) return Fish;
-    if (especieLower.includes("tortuga") || especieLower.includes("reptil")) return Turtle;
-    return PawPrint;
+/**
+ * Icono de especie con referencias estáticas a componentes
+ * (evita crear componentes durante el render — react-hooks/static-components).
+ */
+type AnimalIconProps = {
+    especie: string;
+    size?: number;
+    strokeWidth?: number;
+    className?: string;
 };
+
+function AnimalIcon({ especie, size = 24, strokeWidth = 2, className }: AnimalIconProps) {
+    const especieLower = especie?.toLowerCase() ?? "";
+
+    if (especieLower.includes("perro") || especieLower.includes("can"))
+        return <Dog size={size} strokeWidth={strokeWidth} className={className} />;
+    if (especieLower.includes("gato") || especieLower.includes("fel"))
+        return <Cat size={size} strokeWidth={strokeWidth} className={className} />;
+    if (especieLower.includes("ave") || especieLower.includes("pájaro") || especieLower.includes("pajaro"))
+        return <Bird size={size} strokeWidth={strokeWidth} className={className} />;
+    if (especieLower.includes("conejo") || especieLower.includes("liebre"))
+        return <Rabbit size={size} strokeWidth={strokeWidth} className={className} />;
+    if (especieLower.includes("pez") || especieLower.includes("fish"))
+        return <Fish size={size} strokeWidth={strokeWidth} className={className} />;
+    if (especieLower.includes("tortuga") || especieLower.includes("reptil"))
+        return <Turtle size={size} strokeWidth={strokeWidth} className={className} />;
+
+    return <PawPrint size={size} strokeWidth={strokeWidth} className={className} />;
+}
 
 // Colores de fondo según especie para darle personalidad
 const getAnimalColor = (especie: string) => {
@@ -91,7 +109,6 @@ function AnimalCard({
     animal: Animal;
     onClick: () => void;
 }) {
-    const Icon = getAnimalIcon(animal.especie);
     const colorClasses = getAnimalColor(animal.especie);
 
     return (
@@ -103,7 +120,8 @@ function AnimalCard({
             <div
                 className={`relative h-40 bg-gradient-to-br ${colorClasses} flex items-center justify-center overflow-hidden`}
             >
-                <Icon
+                <AnimalIcon
+                    especie={animal.especie}
                     size={80}
                     strokeWidth={1.2}
                     className="transition-transform duration-500 group-hover:scale-110 opacity-90"

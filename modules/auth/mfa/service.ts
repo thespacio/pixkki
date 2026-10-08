@@ -1,12 +1,5 @@
 import { authRepository } from './repository';
-import {
-    UnauthorizedError,
-    EmailNotVerifiedError,
-    MfaRequiredError,
-    InactiveUserError,
-    OnboardingRequiredError
-} from '@/modules/auth/errors';
-import {AuthenticatedUser} from "@/modules/auth/types";
+import { UnauthorizedError } from '@/modules/auth/errors';
 
 /**
  * Verifica si el usuario tiene MFA habilitado

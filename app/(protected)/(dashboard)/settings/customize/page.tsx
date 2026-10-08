@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser-client'
+import type { Json } from '@/types/database'
 import {
   GripVertical, Eye, EyeOff, Trash2, Save,
   Type, Image, Grid, Phone, MapPin, Share2, Heart, Layers
@@ -15,6 +16,35 @@ type Bloque = {
   orden: number
   visible: boolean
   contenido: Record<string, unknown>
+}
+
+/**
+ * Convierte un valor desconocido del formulario a Json (tipo de BD)
+ * mediante estrechamiento profundo — sin casts.
+ */
+function toJsonValue(value: unknown): Json {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string' || typeof value === 'boolean') return value
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  if (Array.isArray(value)) return value.map(toJsonValue)
+
+  if (typeof value === 'object') {
+    const out: { [key: string]: Json } = {}
+    for (const [key, entry] of Object.entries(value)) {
+      out[key] = toJsonValue(entry)
+    }
+    return out
+  }
+
+  return null
+}
+
+function toDbContenido(contenido: Record<string, unknown>): Json {
+  const out: { [key: string]: Json } = {}
+  for (const [key, value] of Object.entries(contenido)) {
+    out[key] = toJsonValue(value)
+  }
+  return out
 }
 
 const TIPO_META: Record<BloqueType, { label: string; icon: React.ElementType; color: string }> = {
@@ -144,7 +174,7 @@ export default function MiAlberguePage() {
           tipo: bloque.tipo,
           orden: bloque.orden,
           visible: bloque.visible,
-          contenido: bloque.contenido,
+          contenido: toDbContenido(bloque.contenido),
         }).eq('id_bloque', bloque.id_bloque)
         if (error) { setErrorMsg('Error al guardar: ' + error.message); setSaving(false); return }
       } else {
@@ -153,7 +183,7 @@ export default function MiAlberguePage() {
           tipo: bloque.tipo,
           orden: bloque.orden,
           visible: bloque.visible,
-          contenido: bloque.contenido,
+          contenido: toDbContenido(bloque.contenido),
         })
         if (error) { setErrorMsg('Error al guardar: ' + error.message); setSaving(false); return }
       }

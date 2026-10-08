@@ -1,5 +1,3 @@
-import type { Database } from "@/types/database";
-
 export interface CreateUserInput {
     correo: string;
     password: string;
@@ -31,10 +29,6 @@ export interface AuthenticatedUser {
     lastLogin: string | null;
 }
 
-interface AccountStatus {
-    requiresMFA: boolean;
-}
-
 export interface TotpEnrollment {
     factorId: string;
     uri: string;
@@ -51,6 +45,15 @@ export type LoginStep =
     | "credentials"
     | "mfa"
     | "success";
+
+/**
+ * Requisitos posteriores al login que deben resolverse
+ * antes de acceder al dashboard (F-AUTH-03 / F-AUTH-05).
+ */
+export type LoginRequirements = {
+    mustChangePassword: boolean;
+    mustAcceptTerms: boolean;
+};
 
 export interface LoginResult {
 

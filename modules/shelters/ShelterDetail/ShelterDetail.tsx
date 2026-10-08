@@ -50,6 +50,15 @@ export function ShelterDetail({ shelter, canEdit = false }: ShelterDetailProps) 
             </CardHeader>
             <CardContent>
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* F-SHELTER-04: dirección completa */}
+                    <div className="md:col-span-2">
+                        <dt className="text-sm font-medium text-muted-foreground">Dirección</dt>
+                        <dd className="text-lg">
+                            {shelter.calle
+                                ? `${shelter.calle}${shelter.numero ? `, ${shelter.numero}` : ''}${shelter.colonia ? `, ${shelter.colonia}` : ''}${shelter.codigo_postal ? `, CP ${shelter.codigo_postal}` : ''}`
+                                : 'No especificada'}
+                        </dd>
+                    </div>
                     <div>
                         <dt className="text-sm font-medium text-muted-foreground">Ciudad</dt>
                         <dd className="text-lg">{shelter.ciudad}</dd>

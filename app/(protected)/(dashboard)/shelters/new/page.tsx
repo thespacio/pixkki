@@ -1,18 +1,12 @@
 "use client";
 
-import { Metadata } from 'next';
+import { useRouter } from "next/navigation";
+
 import {ShelterForm} from "@/modules/shelters/ShelterForm/ShelterForm";
 import {createShelterAction} from "@/modules/shelters/actions";
-import {redirect, useRouter} from "next/navigation";
 import {CreateShelterSchema} from "@/modules/shelters/schemas";
 import {useCreateShelterForm} from "@/modules/shelters/hooks/useCreateShelterForm";
 import {ShelterFormValues} from "@/modules/shelters/types";
-
-
-/*export const metadata: Metadata = {
-    title: 'Nuevo Albergue - Sistema de Gestión',
-    description: 'Registrar un nuevo albergue en el sistema',
-};*/
 
 
 export default function NewShelterPage() {
@@ -27,11 +21,12 @@ export default function NewShelterPage() {
                 shelter: CreateShelterSchema.parse(data),
             });
 
-            if (result) {
+            if (result.success) {
                 router.push("/shelters");
+                router.refresh();
             } else {
                 form.setError("root", {
-                    message: "Error al crear el refugio",
+                    message: result.message,
                 });
             }
         } catch {

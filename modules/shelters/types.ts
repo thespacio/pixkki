@@ -1,4 +1,4 @@
-// modules/shelters/animales.types.ts
+// modules/shelters/types.ts
 
 import { z } from 'zod';
 import {
@@ -7,19 +7,28 @@ import {
     UpdateShelterSchema,
     ShelterFiltersSchema, ShelterFieldsSchema
 } from './schemas';
-import {DefaultValues, FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
+import {UseFormReturn} from "react-hook-form";
+import {CreateShelterWithAdminSchema} from "@/modules/shelters/schemas";
 
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
 export type Shelter = z.infer<typeof ShelterSchema>;
-export type ShelterFormValues = z.input<typeof ShelterFieldsSchema>;
+/**
+ * Valores compartidos del formulario de refugio (crear / editar).
+ * `nombre_admin` solo aplica en modo creación.
+ */
+export type ShelterFormValues = z.input<typeof ShelterFieldsSchema> & {
+    nombre_admin?: string;
+};
 export type CreateShelterInput = z.infer<typeof CreateShelterSchema>;
 export type UpdateShelterInput = z.infer<typeof UpdateShelterSchema>;
 export type ShelterFilters = z.infer<typeof ShelterFiltersSchema>;
 
-export interface CreateShelterWithAdminInput {
-    shelter: CreateShelterInput;
-}
+/**
+ * Input de creación de refugio con administrador.
+ * Derivado de Zod (fuente única de verdad) — F-SHELTER-02.
+ */
+export type CreateShelterWithAdminInput = z.infer<typeof CreateShelterWithAdminSchema>;
 export interface CreateShelterWithAdminOutput {
     shelter: {
         id: number;
@@ -41,10 +50,12 @@ export type ShelterQueryParams = {
     search?: string;
     limit?: number;
     offset?: number;
+    /** Filtro multitenant: limita el listado a un refugio específico */
+    refugioId?: number;
 };
 export type ShelterListItem = Pick<
     Shelter,
-    'id' | 'nombre_albergue' | 'ciudad' | 'estado' | 'activo'
+    'id' | 'nombre_albergue' | 'ciudad' | 'estado' | 'activo' | 'fecha_registro'
 >;
 
 //
@@ -65,7 +76,7 @@ export type ShelterListItem = Pick<
     mode?: 'create' | 'edit';
 }*/
 
-interface ShelterFormProps {
+export interface ShelterFormProps {
     form: UseFormReturn<ShelterFormValues>;
     onSubmit: (data: ShelterFormValues) => Promise<void>;
     mode: "create" | "edit";

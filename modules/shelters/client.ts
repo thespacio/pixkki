@@ -1,6 +1,5 @@
 // modules/shelters/client.ts
 // Cliente para interactuar con la API de shelters desde el frontend
-import { Shelter, ShelterListItem, ShelterFilters } from './types';
 
 /**
  * Cliente para operaciones de shelters

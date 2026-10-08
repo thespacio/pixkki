@@ -8,6 +8,16 @@ type AnimalRow = Database["public"]["Tables"]["animal"]["Row"];
 type AnimalInsert = Database["public"]["Tables"]["animal"]["Insert"];
 type AnimalUpdate = Database["public"]["Tables"]["animal"]["Update"];
 
+export class AnimalRepositoryError extends Error {
+    constructor(
+        message: string,
+        public readonly code?: string,
+    ) {
+        super(message);
+        this.name = 'AnimalRepositoryError';
+    }
+}
+
 export class AnimalRepository {
     constructor(private readonly supabase: SupabaseClient<Database>) {}
 
@@ -54,11 +64,16 @@ export class AnimalRepository {
             .is("deleted_at", null)
             .order("fecha_ingreso", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al listar animales: ${error.message}`,
+                error.code,
+            );
+        }
         return data.map((row) => this.toDomain(row));
     }
 
-    async findById(id: number): Promise<Animal | null> {
+    async findById(id: number, idRefugio: number): Promise<Animal | null> {
         const { data, error } = await this.supabase
             .from("animal")
             .select(`
@@ -67,10 +82,16 @@ export class AnimalRepository {
               animal_estado:animal_estado(id_estado, nombre_estado)
             `)
             .eq("id_animal", id)
+            .eq("id_refugio", idRefugio)
             .is("deleted_at", null)
             .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al buscar animal: ${error.message}`,
+                error.code,
+            );
+        }
         return data ? this.toDomain(data) : null;
     }
 
@@ -104,7 +125,12 @@ export class AnimalRepository {
             `)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al crear animal: ${error.message}`,
+                error.code,
+            );
+        }
         return this.toDomain(data);
     }
 
@@ -137,7 +163,12 @@ export class AnimalRepository {
             `)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al actualizar animal: ${error.message}`,
+                error.code,
+            );
+        }
         return this.toDomain(data);
     }
 
@@ -147,7 +178,12 @@ export class AnimalRepository {
             .update({ deleted_at: new Date().toISOString() })
             .eq("id_animal", id);
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al eliminar animal: ${error.message}`,
+                error.code,
+            );
+        }
     }
 
     async espacioExistsInRefugio(idEspacio: number, idRefugio: number): Promise<boolean> {
@@ -157,7 +193,12 @@ export class AnimalRepository {
             .eq("id_espacio", idEspacio)
             .eq("id_refugio", idRefugio);
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al verificar espacio: ${error.message}`,
+                error.code,
+            );
+        }
         return (count ?? 0) > 0;
     }
 
@@ -167,7 +208,12 @@ export class AnimalRepository {
             .select("*", { count: "exact", head: true })
             .eq("id_estado", idEstado);
 
-        if (error) throw error;
+        if (error) {
+            throw new AnimalRepositoryError(
+                `Error al verificar estado: ${error.message}`,
+                error.code,
+            );
+        }
         return (count ?? 0) > 0;
     }
 }

@@ -34,6 +34,16 @@ export const CreateAnimalSchema = z.object({
 export type CreateAnimalInput = z.infer<typeof CreateAnimalSchema>;
 
 // ---------------------------------------------------------------------------
+// Schema de actualización — cualquier campo es opcional salvo el id
+// ---------------------------------------------------------------------------
+
+export const UpdateAnimalSchema = CreateAnimalSchema.partial().extend({
+    id: z.number().int().positive(),
+});
+
+export type UpdateAnimalInput = z.infer<typeof UpdateAnimalSchema>;
+
+// ---------------------------------------------------------------------------
 // Schema del formulario — representación del DOM
 // ---------------------------------------------------------------------------
 //

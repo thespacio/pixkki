@@ -1,16 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Factor } from "@supabase/supabase-js";
 
 import { listFactors } from "@/modules/auth/mfa/client";
 
 import EnableMfaCard from "./EnableMfaCard";
 import { DisableMfaDialog } from "@/app/(protected)/(dashboard)/settings/security/DisableMfaDialog";
 
+/** Forma del factor que consume DisableMfaDialog */
+type MfaFactorInfo = {
+    id: string;
+    friendly_name: string;
+};
+
 export default function SecurityPage() {
-    // ✅ Tipo real en lugar de `any`
-    const [factor, setFactor] = useState<Factor | null>(null);
+    const [factor, setFactor] = useState<MfaFactorInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,26 +25,12 @@ export default function SecurityPage() {
         try {
             const factors = await listFactors();
 
-            // 🔍 DEBUG
-            console.log(
-                "🔍 [SecurityPage] factors crudos:",
-                JSON.stringify(factors, null, 2)
-            );
-
             const verified = factors.find(f => f.status === "verified");
 
-            // 🔍 DEBUG
-            console.log("🔍 [SecurityPage] verified:", {
-                id: verified?.factorId,
-                tipoId: typeof verified?.factorId,
-                friendly_name: verified?.friendlyName,
-                status: verified?.status,
-            });
-
-            // ✅ Validación defensiva: si no trae id, no lo pasamos
+            // Validación defensiva: si no trae id, no lo pasamos
             if (verified && !verified.factorId) {
                 console.error(
-                    "❌ [SecurityPage] El factor verificado NO tiene id. Revisa listFactors().",
+                    "[SecurityPage] El factor verificado NO tiene id. Revisa listFactors().",
                     verified
                 );
                 setFactor(null);
@@ -48,10 +38,16 @@ export default function SecurityPage() {
                 return;
             }
 
-
-            //setFactor(verified ?? null);
+            setFactor(
+                verified
+                    ? {
+                        id: verified.factorId,
+                        friendly_name: verified.friendlyName,
+                    }
+                    : null
+            );
         } catch (err) {
-            console.error("❌ [SecurityPage] Error cargando factores:", err);
+            console.error("[SecurityPage] Error cargando factores:", err);
             setError(
                 err instanceof Error ? err.message : "Error cargando MFA"
             );

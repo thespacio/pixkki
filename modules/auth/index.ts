@@ -30,6 +30,10 @@ export async function getPermissions() {
     return (await createAuthService()).getPermissions();
 }
 
+export async function getLoginRequirements() {
+    return (await createAuthService()).getLoginRequirements();
+}
+
 export async function logout() {
     return (await createAuthService()).logout();
 }

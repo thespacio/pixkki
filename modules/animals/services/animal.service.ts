@@ -1,12 +1,12 @@
 import type { AnimalRepository } from "../repositories/animal.repository";
 import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
+import type { Animal } from "../types/animales.types";
 import {
-    Animal,
     AnimalNotFoundError,
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError
-} from "@/modules/animals/types/animales.types";
+} from "../errors";
 
 
 export class AnimalService {
@@ -17,10 +17,8 @@ export class AnimalService {
     }
 
     async getById(id: number, idRefugio: number): Promise<Animal> {
-        const animal = await this.repository.findById(id);
+        const animal = await this.repository.findById(id, idRefugio);
         if (!animal) throw new AnimalNotFoundError(id);
-        // Regla de negocio: solo el refugio propietario puede verlo
-        if (animal.idRefugio !== idRefugio) throw new AnimalNotFoundError(id);
         return animal;
     }
 
@@ -40,9 +38,8 @@ export class AnimalService {
     }
 
     async update(dto: UpdateAnimalDTO, idRefugio: number): Promise<Animal> {
-        const animal = await this.repository.findById(dto.id);
+        const animal = await this.repository.findById(dto.id, idRefugio);
         if (!animal) throw new AnimalNotFoundError(dto.id);
-        if (animal.idRefugio !== idRefugio) throw new AnimalNotFoundError(dto.id);
 
         if (dto.idEspacio !== undefined) {
             const espacioOk = await this.repository.espacioExistsInRefugio(
@@ -61,9 +58,8 @@ export class AnimalService {
     }
 
     async delete(id: number, idRefugio: number): Promise<void> {
-        const animal = await this.repository.findById(id);
+        const animal = await this.repository.findById(id, idRefugio);
         if (!animal) throw new AnimalNotFoundError(id);
-        if (animal.idRefugio !== idRefugio) throw new AnimalNotFoundError(id);
 
         await this.repository.softDelete(id);
     }

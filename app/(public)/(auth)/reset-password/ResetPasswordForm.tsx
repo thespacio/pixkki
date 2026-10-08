@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
-import {resetPasswordAction, sendPasswordResetAction} from "@/modules/auth/action";
+import {resetPasswordAction} from "@/modules/auth/action";
 import {Button} from "@/components/ui/button";
 import {ArrowLeft, Eye, EyeOff} from "lucide-react";
 import {useRouter} from "next/navigation";
@@ -75,9 +75,9 @@ export default function ResetPasswordForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validación básica
-        if (password.length < 6) {
-            setError("La contraseña debe tener al menos 6 caracteres");
+        // Validación alineada con passwordSchema (Zod) del módulo auth
+        if (password.length < 8) {
+            setError("La contraseña debe tener al menos 8 caracteres");
             return;
         }
 
@@ -135,7 +135,7 @@ export default function ResetPasswordForm() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                        placeholder="Nueva contraseña (mínimo 8 caracteres)"
                         className="w-full px-4 py-3 pr-11 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/25 placeholder:text-muted-foreground transition-shadow"
                     />
                     <button

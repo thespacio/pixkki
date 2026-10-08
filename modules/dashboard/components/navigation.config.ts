@@ -47,6 +47,13 @@ export const navigation = [
         section: "Principal"
     },
     {
+        icon: Users,
+        title: "Usuarios globales",
+        href: "/users",
+        permission: "users.global.view",
+        section: "Principal"
+    },
+    {
         icon: BuildingIcon,
         title: "Albergues",
         href: "/shelters",

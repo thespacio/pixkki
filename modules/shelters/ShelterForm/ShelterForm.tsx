@@ -1,6 +1,5 @@
 'use client';
 
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -13,12 +12,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreateShelterSchema } from '@/modules/shelters/schemas';
-import {SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {MEXICAN_STATES} from "@/modules/catalogs/constants/mexican-states";
-import {Select} from "@radix-ui/react-select";
 import {ShelterFormProps} from "@/modules/shelters/types";
-import router from "next/router";
 import {useRouter} from "next/navigation";
 
 export function ShelterForm({
@@ -26,8 +22,6 @@ export function ShelterForm({
                                 onSubmit,
                                 isLoading = false,
                                 mode,
-                                //submitLabel,
-                                //cancelLabel = 'Cancelar',
                             }: ShelterFormProps) {
 
     const router = useRouter();
@@ -38,11 +32,7 @@ export function ShelterForm({
             <CardContent className="pt-6">
                 <Form {...form}>
                     <form
-                        onSubmit={form.handleSubmit(
-                            onSubmit,
-                            (errors) => {
-                            console.log("Errores:", errors);
-                            })}
+                        onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-6">
                         {/* Nombre del albergue*/}
                         <FormField
@@ -112,6 +102,84 @@ export function ShelterForm({
                                 </FormItem>
                             )}
                         />
+
+                        {/* Dirección completa (F-SHELTER-04) */}
+                        <FormField
+                            control={form.control}
+                            name="calle"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Calle *</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ej: Av. Insurgentes"
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="numero"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Número *</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Ej: 123"
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                disabled={isLoading}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="codigo_postal"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Código postal *</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Ej: 06700"
+                                                inputMode="numeric"
+                                                maxLength={5}
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                disabled={isLoading}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="colonia"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Colonia *</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Ej: Roma Norte"
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                disabled={isLoading}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                     {mode == "create" && (
                     <>

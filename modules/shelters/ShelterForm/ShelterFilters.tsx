@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import {CIUDADES_POR_ESTADO, MEXICAN_STATES} from "@/modules/catalogs/constants/mexican-states";
+import {CIUDADES_POR_ESTADO} from "@/modules/catalogs/constants/mexican-states";
 
 export function ShelterFilters() {
     const router = useRouter();
@@ -29,6 +29,11 @@ export function ShelterFilters() {
         estado: searchParams.get('estado') || '',
         activo: searchParams.get('activo') || '',
     });
+    // El catálogo de ciudades depende del estado seleccionado: se
+    // inicializa desde la URL para que funcione al recargar con filtros.
+    const [selectedState, setSelectedState] = useState<Estado | "">(
+        (searchParams.get('estado') || '') as Estado | ""
+    );
     const updateFilters = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
@@ -66,7 +71,6 @@ export function ShelterFilters() {
     };
     // Tipo de las claves del objeto
     type Estado = keyof typeof CIUDADES_POR_ESTADO;
-    const [selectedState, setSelectedState] = useState<Estado | "">("");
     return (
         <Card className="mb-6">
             <CardContent className="pt-6">

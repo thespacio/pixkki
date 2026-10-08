@@ -115,11 +115,22 @@ export class ShelterRepository {
             }
 
             if (params.search) {
-                query = query.or(
-                    `nombre.ilike.%${params.search}%,` +
-                    `ciudad.ilike.%${params.search}%,` +
-                    `estado.ilike.%${params.search}%`
-                );
+                // Sanea caracteres especiales de la sintaxis de filtros de
+                // PostgREST para que la búsqueda textual no rompa el `.or()`
+                const term = params.search.replace(/[(),]/g, ' ').trim();
+
+                if (term) {
+                    query = query.or(
+                        `nombre.ilike.%${term}%,` +
+                        `ciudad.ilike.%${term}%,` +
+                        `estado.ilike.%${term}%`
+                    );
+                }
+            }
+
+            // Filtro multitenant: limitar a un refugio específico
+            if (params.refugioId !== undefined) {
+                query = query.eq('id_refugio', params.refugioId);
             }
 
             // Ordenamiento
@@ -134,8 +145,6 @@ export class ShelterRepository {
                     offset + params.limit - 1
                 );
             }
-
-            console.log(params.limit, params.offset);
 
             const { data, error, count } = await query;
 

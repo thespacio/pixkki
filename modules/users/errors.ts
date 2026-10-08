@@ -11,3 +11,23 @@ export class StaffCreationFailedError extends Error {
         this.name = "StaffCreationFailedError";
     }
 }
+
+/**
+ * Error de autorización del módulo (gestión de personal / vista global).
+ */
+export class UserAuthorizationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "UserAuthorizationError";
+    }
+}
+
+/**
+ * Usuario no encontrado dentro del refugio (multitenant).
+ */
+export class UserNotFoundError extends Error {
+    constructor(id: number) {
+        super(`Usuario ${id} no encontrado`);
+        this.name = "UserNotFoundError";
+    }
+}

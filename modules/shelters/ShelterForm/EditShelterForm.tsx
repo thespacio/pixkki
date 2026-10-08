@@ -2,7 +2,7 @@
 
 
 import { useRouter } from 'next/navigation';
-import {EditShelterFormProps, Shelter, ShelterFormValues} from "@/modules/shelters/types";
+import {EditShelterFormProps, ShelterFormValues} from "@/modules/shelters/types";
 import {updateShelterAction} from "@/modules/shelters/actions";
 import {ShelterForm} from "@/modules/shelters/ShelterForm/ShelterForm";
 import {useUpdateShelterForm} from "@/modules/shelters/hooks/useUpdateShelterForm";
@@ -13,7 +13,7 @@ export function EditShelterForm({ shelter, id}: EditShelterFormProps) {
 
     async function onSubmit(data: ShelterFormValues) {
         setIsLoading(true);
-        console.log("probando...");
+
         try {
             const result = await updateShelterAction(id, data);
             if (result.success) {
@@ -21,10 +21,10 @@ export function EditShelterForm({ shelter, id}: EditShelterFormProps) {
                 router.refresh();
             } else {
                 form.setError('root', {
-                    //message: result.error || 'Error al actualizar el refugio',
+                    message: result.message,
                 });
             }
-        } catch (error) {
+        } catch {
             form.setError('root', {
                 message: 'Error inesperado al actualizar el refugio',
             });

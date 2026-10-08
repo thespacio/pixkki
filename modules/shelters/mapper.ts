@@ -6,7 +6,7 @@ import {
     CreateShelterInput,
     UpdateShelterInput
 } from './types';
-import { ShelterRow, ShelterInsert, ShelterUpdate } from './repository';
+import { ShelterRow, ShelterInsert } from './repository';
 
 /**
  * Mapea una fila de Supabase (ShelterRow) a una entidad de dominio (Shelter)
@@ -20,7 +20,11 @@ export function mapShelterRowToDomain(row: ShelterRow): Shelter {
         correo_contacto: row.correo_contacto,
         telefono: row.telefono,
         fecha_registro: new Date(row.fecha_registro),
-        activo: row.activo
+        activo: row.activo,
+        calle: row.calle,
+        numero: row.numero,
+        colonia: row.colonia,
+        codigo_postal: row.codigo_postal
     };
 }
 
@@ -33,7 +37,8 @@ export function mapShelterRowToListItem(row: ShelterRow): ShelterListItem {
         nombre_albergue: row.nombre,
         ciudad: row.ciudad,
         estado: row.estado,
-        activo: row.activo
+        activo: row.activo,
+        fecha_registro: new Date(row.fecha_registro)
     };
 }
 
@@ -64,6 +69,23 @@ export function mapShelterToRow(
 
     if ('telefono' in data && data.telefono !== undefined) {
         row.telefono = data.telefono;
+    }
+
+    // F-SHELTER-04: dirección completa
+    if ('calle' in data && data.calle !== undefined) {
+        row.calle = data.calle;
+    }
+
+    if ('numero' in data && data.numero !== undefined) {
+        row.numero = data.numero;
+    }
+
+    if ('colonia' in data && data.colonia !== undefined) {
+        row.colonia = data.colonia;
+    }
+
+    if ('codigo_postal' in data && data.codigo_postal !== undefined) {
+        row.codigo_postal = data.codigo_postal;
     }
 
     if ('activo' in data && data.activo !== undefined) {

@@ -1,8 +1,6 @@
 // modules/auth/repository.ts
 
-import { createSupabaseServerClient } from "@/lib/supabase/server-client";
-import { Database } from "@/types/database";
-import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
+import {Database} from "@/types/database";
 import {UserRole} from "@/modules/auth/types";
 import {SupabaseClient} from "@supabase/supabase-js";
 
@@ -21,6 +19,7 @@ export interface AuthUser {
     email: string;
     emailConfirmed: boolean;
     createdAt: string;
+    metadata: Record<string, unknown>;
 }
 
 export interface UserContext {
@@ -54,6 +53,7 @@ export class AuthRepository {
             email: data.user.email!,
             emailConfirmed: !!data.user.email_confirmed_at,
             createdAt: data.user.created_at!,
+            metadata: data.user.user_metadata ?? {},
         };
     }
 
@@ -207,11 +207,53 @@ export class AuthRepository {
     }
 
     /**
-     * Actualizar la contraseña de un usuario
+     * Verifica si un refugio está activo (F-SHELTER-03).
+     * Un refugio inactivo bloquea el login de sus usuarios.
+     * Nota: lectura puntual del dominio de shelters desde el repositorio
+     * de auth para mantener el flujo de login en una sola consulta de contexto.
      */
-    async updatePassword(password: string) {
+    async isShelterActive(shelterId: number): Promise<boolean> {
+        const { data, error } = await this.supabase
+            .from("refugio")
+            .select("activo")
+            .eq("id_refugio", shelterId)
+            .single();
+
+        if (error || !data) {
+            throw new Error("El refugio asociado a la cuenta no existe.");
+        }
+
+        return data.activo;
+    }
+
+    /**
+     * Actualizar la contraseña de un usuario.
+     * Permite actualizar banderas de `user_metadata` en la misma operación
+     * (ej. limpiar `password_change_required` tras el cambio — F-AUTH-03).
+     */
+    async updatePassword(
+        password: string,
+        metadata?: Record<string, unknown>
+    ): Promise<void> {
         const { error } = await this.supabase.auth.updateUser({
             password,
+            ...(metadata ? { data: metadata } : {}),
+        });
+
+        if (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Actualiza banderas del usuario en `user_metadata`
+     * (F-AUTH-03 / F-AUTH-05).
+     */
+    async updateUserMetadata(
+        metadata: Record<string, unknown>
+    ): Promise<void> {
+        const { error } = await this.supabase.auth.updateUser({
+            data: metadata,
         });
 
         if (error) {

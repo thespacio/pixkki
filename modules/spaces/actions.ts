@@ -7,6 +7,7 @@ import {CreateSpaceInput, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces
 import {createSpaceService} from "@/modules/spaces/factories/factories";
 import {getAuthUser, getCurrentUser} from "@/modules/auth";
 import {getShelterDetailsByIdAction} from "@/modules/shelters/actions";
+import {CreateSpaceSchema, UpdateSpaceSchema} from "@/modules/spaces/schemas";
 
 
 /**
@@ -14,12 +15,13 @@ import {getShelterDetailsByIdAction} from "@/modules/shelters/actions";
  */
 export async function createSpaceAction(dto: CreateSpaceInput) {
     try {
+        const parsed = CreateSpaceSchema.parse(dto);
         const user = await getCurrentUser();
         const shelterId = user.shelterId;
         const service = await createSpaceService();
 
         const result = await service.createSpace({
-            dto,
+            dto: parsed,
             shelterId,
         });
 
@@ -46,8 +48,9 @@ export async function createSpaceAction(dto: CreateSpaceInput) {
  */
 export async function getSpaceAction(id: number) {
     try {
+        const user = await getCurrentUser();
         const service = await createSpaceService();
-        const result = await service.getSpaceById(id);
+        const result = await service.getSpaceById(id, user.shelterId);
         return { success: true, data: result };
     } catch (error) {
         return {
@@ -94,12 +97,14 @@ export async function getSpacesByShelterAction(shelterId: number) {
  */
 export async function updateSpaceAction(id: number, dto: UpdateSpaceInput) {
     try {
+        const parsed = UpdateSpaceSchema.parse(dto);
+        const user = await getCurrentUser();
         const service = await createSpaceService();
 
-        // Obtener el shelterId antes de actualizar para revalidar las rutas correctas
-        const currentSpace = await service.getSpaceById(id);
+        // Obtener el espacio antes de actualizar para revalidar las rutas correctas
+        const currentSpace = await service.getSpaceById(id, user.shelterId);
 
-        const result = await service.updateSpace(id, dto);
+        const result = await service.updateSpace(id, parsed, user.shelterId);
 
         // Revalidar rutas relacionadas
         revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
@@ -120,12 +125,13 @@ export async function updateSpaceAction(id: number, dto: UpdateSpaceInput) {
  */
 export async function deleteSpaceAction(id: number) {
     try {
+        const user = await getCurrentUser();
         const service = await createSpaceService();
 
-        // Obtener el shelterId antes de eliminar para revalidar las rutas correctas
-        const currentSpace = await service.getSpaceById(id);
+        // Obtener el espacio antes de eliminar para revalidar las rutas correctas
+        const currentSpace = await service.getSpaceById(id, user.shelterId);
 
-        await service.deleteSpace(id);
+        await service.deleteSpace(id, user.shelterId);
 
         // Revalidar rutas relacionadas
         revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
@@ -145,8 +151,9 @@ export async function deleteSpaceAction(id: number) {
  */
 export async function checkSpaceAvailabilityAction(spaceId: number) {
     try {
+        const user = await getCurrentUser();
         const service = await createSpaceService();
-        const result = await service.checkSpaceAvailability(spaceId);
+        const result = await service.checkSpaceAvailability(spaceId, user.shelterId);
         return { success: true, data: result };
     } catch (error) {
         return {
