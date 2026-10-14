@@ -13,6 +13,7 @@ export async function GET() {
             },
         });
     } catch (error) {
+        console.error('Error en GET /api/catalogs/animal-states:', error);
         return new Response(JSON.stringify({ error: 'Error al obtener los estados' }), {
             status: 500,
             headers: {

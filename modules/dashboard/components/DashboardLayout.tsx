@@ -2,12 +2,118 @@
 
 import Link from "next/link";
 
-import {usePathname, useRouter} from "next/navigation";
-import {logout} from "@/modules/auth/client";
-import {hasPermission} from "@/modules/auth/authorization";
-import {AuthenticatedUser} from "@/modules/auth/types";
-import {navigation} from "@/modules/dashboard/components/navigation.config";
-import {Bell, LogOut, Plus, Search} from "lucide-react";
+import {usePathname} from "next/navigation";
+import {
+    Home,
+    PawPrint,
+    Heart,
+    DollarSign,
+    Stethoscope,
+    Bell,
+    Search,
+    Plus,
+    Settings,
+    LogOut,
+    BarChart2,
+    FileText,
+    Users, BuildingIcon, Syringe, Shield,
+} from "lucide-react";
+
+// navigation.config.ts
+export const navigation = [
+    // Sección Principal
+    {
+        icon: Home,
+        title: "Dashboard",
+        href: "/dashboard",
+        permission: "dashboard.view",
+        section: "Principal"
+    },
+    {
+        icon: PawPrint,
+        title: "Animales",
+        href: "/animals",
+        permission: "animals.view",
+        section: "Principal"
+    },
+    {
+        icon: Heart,
+        title: "Adopciones",
+        href: "/adoptions",
+        permission: "adoptions.view",
+        section: "Principal"
+    },
+
+    // Sección Administración (solo admin/superadmin)
+    {
+        icon: Users,
+        title: "Usuarios",
+        href: "/staff",
+        permission: "users.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Albergues",
+        href: "/shelters",
+        permission: "shelter.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Espacios",
+        href: "/spaces",
+        permission: "spaces.view",
+        section: "Administración"
+    },
+    {
+        icon: BarChart2,
+        title: "Reportes",
+        href: "/reports",
+        permission: "reports.view",
+        section: "Administración"
+    },
+
+    // Sección Veterinaria (solo veterinario)
+    {
+        icon: Stethoscope,
+        title: "Expedientes",
+        href: "/medical",
+        permission: "medical.view",
+        section: "Veterinaria"
+    },
+    {
+        icon: Syringe,
+        title: "Vacunaciones",
+        href: "/vaccinations",
+        permission: "vaccinations.view",
+        section: "Veterinaria"
+    },
+
+    // Sección Configuración (solo superadmin)
+    {
+        icon: Settings,
+        title: "Configuración",
+        href: "/settings",
+        permission: "settings.view",
+        section: "Configuración"
+    },
+    {
+        icon: Shield,
+        title: "Seguridad",
+        href: "/settings/security",
+        permission: "security.view",
+        section: "Configuración"
+    }
+];
+
+const logo = "/images/logo.png";
+const bannerPet = "/images/banner_pet.png";
+
+// Dentro de tu componente
+import { useRouter } from "next/navigation";
+import {logout, hasPermission} from "@/modules/auth/client-index";
+import {useAuth} from "@/components/layouts/AuthProvider";
 
 
 const logo = "/images/logo.png";

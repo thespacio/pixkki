@@ -7,9 +7,6 @@ import {
     UpdateShelterSchema,
     ShelterFiltersSchema, ShelterFieldsSchema
 } from './schemas';
-import {UseFormReturn} from "react-hook-form";
-import {CreateShelterWithAdminSchema} from "@/modules/shelters/schemas";
-
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
 export type Shelter = z.infer<typeof ShelterSchema>;

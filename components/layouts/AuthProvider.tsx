@@ -17,9 +17,48 @@ export const AuthContext = createContext<{
 
 export function AuthProvider({
                                  initialUser,
-                                 children,
-                             }: AuthProviderProps) {
-    const [user, setUser] = useState(initialUser);
+                             }: {
+    children: React.ReactNode;
+    initialUser: AuthenticatedUser | null;
+}) {
+
+    const [user, setUser] =
+        useState(initialUser);
+
+    const [loading, setLoading] =
+        useState(false);
+
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
+
+
+    async function refresh() {
+        setLoading(true);
+        try {
+            const response = await fetch(
+                "/api/auth/me",
+                {
+                    cache: "no-store",
+                }
+            );
+
+            if (!response.ok) {
+                setUser(null);
+                return;
+            }
+
+            const data =
+                await response.json();
+
+            setUser(data);
+
+        } finally {
+            setLoading(false);
+        }
+
+    }
 
     return (
         <AuthContext.Provider

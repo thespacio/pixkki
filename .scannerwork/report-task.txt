@@ -1,0 +1,6 @@
+projectKey=Pixkki
+serverUrl=http://localhost:9000
+serverVersion=26.7.0.124771
+dashboardUrl=http://localhost:9000/dashboard?id=Pixkki
+ceTaskId=f08a41d1-189b-4982-aba3-955cf5fd9080
+ceTaskUrl=http://localhost:9000/api/ce/task?id=f08a41d1-189b-4982-aba3-955cf5fd9080
