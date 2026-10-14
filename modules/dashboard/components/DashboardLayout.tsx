@@ -62,7 +62,7 @@ export const navigation = [
     {
         icon: BuildingIcon,
         title: "Espacios",
-        href: "/shelter-spaces",
+        href: "/spaces",
         permission: "spaces.view",
         section: "Administración"
     },
@@ -112,8 +112,7 @@ const bannerPet = "/images/banner_pet.png";
 
 // Dentro de tu componente
 import { useRouter } from "next/navigation";
-import {logout} from "@/modules/auth/client";
-import {hasPermission} from "@/modules/auth/authorization";
+import {logout, hasPermission} from "@/modules/auth/client-index";
 import {useAuth} from "@/components/layouts/AuthProvider";
 
 export default function DashboardLayout(

@@ -40,6 +40,10 @@ export function AuthProvider({
     const [loading, setLoading] =
         useState(false);
 
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
 
 
     async function refresh() {

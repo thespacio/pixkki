@@ -225,6 +225,8 @@ export default function Login() {
 
         {error && (
             <div
+                role="alert"
+                data-testid="login-error"
                 className="flex items-start gap-2 p-3 rounded-xl text-xs"
                 style={{
                   backgroundColor: '#FDF2EA',

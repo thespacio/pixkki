@@ -7,10 +7,6 @@ import {
     UpdateShelterSchema,
     ShelterFiltersSchema
 } from './schemas';
-import {AuthService} from "@/modules/auth/service";
-import {ShelterRepository} from "@/modules/shelters/repository";
-import {UserRepository} from "@/modules/users/repository";
-
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
 export type Shelter = z.infer<typeof ShelterSchema>;
