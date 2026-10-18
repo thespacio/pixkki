@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+<<<<<<< HEAD
 import {usePathname} from "next/navigation";
 import {
     Home,
@@ -122,12 +123,38 @@ export default function DashboardLayout(
     const pathname = usePathname();
     const router = useRouter();
     const { user, loading } = useAuth();
+=======
+import {usePathname, useRouter} from "next/navigation";
+import {logout} from "@/modules/auth/client";
+import {hasPermission} from "@/modules/auth/authorization";
+import {AuthenticatedUser} from "@/modules/auth/types";
+import {navigation} from "@/modules/dashboard/components/navigation.config";
+import {Bell, LogOut, Plus, Search} from "lucide-react";
+
+
+const logo = "/images/logo.png";
+
+interface Props {
+    children: React.ReactNode;
+    user: AuthenticatedUser;
+    albergue: string;
+}
+
+export default function DashboardLayout({
+                                    children,
+                                    user,
+                                    albergue,
+                                }: Props) {
+    const pathname = usePathname();
+    const router = useRouter();
+>>>>>>> origin/main
     const userInitials = user?.fullName
         .split(' ')
         .map(word => word[0])
         .slice(0, 2)
         .join('')
         .toUpperCase();
+<<<<<<< HEAD
 
     console.log(user);
 
@@ -135,15 +162,21 @@ export default function DashboardLayout(
         return null;
     }
 
+=======
+>>>>>>> origin/main
     // Filtrar items por permisos
     const filteredNavItems = navigation.filter(item =>
         hasPermission(user, item.permission)
     );
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     // Agrupar por sección
     const groupedNavItems = filteredNavItems.reduce(
         (acc,
          item) => {
+<<<<<<< HEAD
         const section = item.section || "Principal";
         if (!acc[section]) {
             acc[section] = [];
@@ -152,6 +185,15 @@ export default function DashboardLayout(
         return acc;
     }, {} as Record<string, typeof navigation>);
 
+=======
+            const section = item.section || "Principal";
+            if (!acc[section]) {
+                acc[section] = [];
+            }
+            acc[section].push(item);
+            return acc;
+        }, {} as Record<string, typeof navigation>);
+>>>>>>> origin/main
     async function handleLogout() {
         try {
             await logout();
@@ -162,7 +204,10 @@ export default function DashboardLayout(
             console.error(error);
         }
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     return (
         <div
             className="flex h-screen w-full overflow-hidden bg-background"
@@ -187,7 +232,11 @@ export default function DashboardLayout(
                         <div className="w-9 h-9 px-1 py-1 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#43AE6D" }}>
                             <img src={logo} alt="Logo" />
                         </div>
+<<<<<<< HEAD
                         <span className="text-lg font-semibold tracking-tight text-white max-w-3/4">Albergue Zorro Tobias</span>
+=======
+                        <span className="text-lg font-semibold tracking-tight text-white max-w-3/4">{albergue}</span>
+>>>>>>> origin/main
                     </div>
                     {/* Nav */}
                     <nav className="flex-1 px-3 py-4 overflow-y-auto">

@@ -2,7 +2,10 @@
 
 import {
     Shelter,
+<<<<<<< HEAD
     ShelterRecord,
+=======
+>>>>>>> origin/main
     ShelterListItem,
     CreateShelterInput,
     UpdateShelterInput
@@ -15,7 +18,11 @@ import { ShelterRow, ShelterInsert, ShelterUpdate } from './repository';
 export function mapShelterRowToDomain(row: ShelterRow): Shelter {
     return {
         id: row.id_refugio,
+<<<<<<< HEAD
         nombre: row.nombre,
+=======
+        nombre_albergue: row.nombre,
+>>>>>>> origin/main
         ciudad: row.ciudad,
         estado: row.estado,
         correo_contacto: row.correo_contacto,
@@ -31,7 +38,11 @@ export function mapShelterRowToDomain(row: ShelterRow): Shelter {
 export function mapShelterRowToListItem(row: ShelterRow): ShelterListItem {
     return {
         id: row.id_refugio,
+<<<<<<< HEAD
         nombre: row.nombre,
+=======
+        nombre_albergue: row.nombre,
+>>>>>>> origin/main
         ciudad: row.ciudad,
         estado: row.estado,
         activo: row.activo
@@ -47,8 +58,13 @@ export function mapShelterToRow(
 ): ShelterInsert {
     const row: ShelterInsert = {ciudad: "", correo_contacto: "", estado: "", nombre: ""};
 
+<<<<<<< HEAD
     if ('nombre' in data && data.nombre !== undefined) {
         row.nombre = data.nombre;
+=======
+    if ('nombre_albergue' in data && data.nombre_albergue !== undefined) {
+        row.nombre = data.nombre_albergue;
+>>>>>>> origin/main
     }
 
     if ('ciudad' in data && data.ciudad !== undefined) {
@@ -74,6 +90,7 @@ export function mapShelterToRow(
     return row;
 }
 
+<<<<<<< HEAD
 /**
  * Mapea una entidad de dominio a ShelterRecord (para operaciones internas)
  */
@@ -81,6 +98,18 @@ export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
     return {
         id_refugio: shelter.id,
         nombre: shelter.nombre,
+=======
+/*
+
+
+/!**
+ * Mapea una entidad de dominio a ShelterRecord (para operaciones internas)
+ *!/
+export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
+    return {
+        id_refugio: shelter.id,
+        nombre: shelter.nombre_albergue,
+>>>>>>> origin/main
         ciudad: shelter.ciudad,
         estado: shelter.estado,
         correo_contacto: shelter.correo_contacto,
@@ -90,6 +119,7 @@ export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
     };
 }
 
+<<<<<<< HEAD
 /**
  * Mapea datos de formulario (CreateShelterInput) a ShelterRecord
  * Útil para pre-procesar datos antes de enviar al repository
@@ -97,6 +127,15 @@ export function mapShelterDomainToRecord(shelter: Shelter): ShelterRecord {
 export function mapShelterInputToRecord(input: CreateShelterInput): Omit<ShelterRecord, 'id_refugio' | 'fecha_registro' | 'activo'> {
     return {
         nombre: input.nombre,
+=======
+/!**
+ * Mapea datos de formulario (CreateShelterInput) a ShelterRecord
+ * Útil para pre-procesar datos antes de enviar al repository
+ *!/
+export function mapShelterInputToRecord(input: CreateShelterInput): Omit<ShelterRecord, 'id_refugio' | 'fecha_registro' | 'activo'> {
+    return {
+        nombre: input.nombre_albergue,
+>>>>>>> origin/main
         ciudad: input.ciudad,
         estado: input.estado,
         correo_contacto: input.correo_contacto,
@@ -104,6 +143,7 @@ export function mapShelterInputToRecord(input: CreateShelterInput): Omit<Shelter
     };
 }
 
+<<<<<<< HEAD
 /**
  * Mapea un ShelterRecord a Shelter (convierte de registro interno a dominio)
  */
@@ -111,6 +151,15 @@ export function mapShelterRecordToDomain(record: ShelterRecord): Shelter {
     return {
         id: record.id_refugio,
         nombre: record.nombre,
+=======
+/!**
+ * Mapea un ShelterRecord a Shelter (convierte de registro interno a dominio)
+ *!/
+export function mapShelterRecordToDomain(record: ShelterRecord): Shelter {
+    return {
+        id: record.id_refugio,
+        nombre_albergue: record.nombre,
+>>>>>>> origin/main
         ciudad: record.ciudad,
         estado: record.estado,
         correo_contacto: record.correo_contacto,
@@ -120,6 +169,7 @@ export function mapShelterRecordToDomain(record: ShelterRecord): Shelter {
     };
 }
 
+<<<<<<< HEAD
 /**
  * Mapea un Shelter a ShelterRecord (convierte de dominio a registro interno)
  */
@@ -127,6 +177,15 @@ export function mapShelterDomainToRow(shelter: Shelter): ShelterRow {
     return {
         id_refugio: shelter.id,
         nombre: shelter.nombre,
+=======
+/!**
+ * Mapea un Shelter a ShelterRecord (convierte de dominio a registro interno)
+ *!/
+export function mapShelterDomainToRow(shelter: Shelter): ShelterRow {
+    return {
+        id_refugio: shelter.id,
+        nombre: shelter.nombre_albergue,
+>>>>>>> origin/main
         ciudad: shelter.ciudad,
         estado: shelter.estado,
         correo_contacto: shelter.correo_contacto,
@@ -136,16 +195,27 @@ export function mapShelterDomainToRow(shelter: Shelter): ShelterRow {
     };
 }
 
+<<<<<<< HEAD
 /**
  * Mapea datos de actualización a ShelterUpdate (para operaciones de actualización en Supabase)
  */
+=======
+/!**
+ * Mapea datos de actualización a ShelterUpdate (para operaciones de actualización en Supabase)
+ *!/
+>>>>>>> origin/main
 export function mapShelterUpdateToRow(
     updates: Partial<Omit<Shelter, 'id' | 'fecha_registro'>>
 ): ShelterUpdate {
     const row: ShelterUpdate = {};
 
+<<<<<<< HEAD
     if (updates.nombre !== undefined) {
         row.nombre = updates.nombre;
+=======
+    if (updates.nombre_albergue !== undefined) {
+        row.nombre = updates.nombre_albergue;
+>>>>>>> origin/main
     }
 
     if (updates.ciudad !== undefined) {
@@ -171,20 +241,33 @@ export function mapShelterUpdateToRow(
     return row;
 }
 
+<<<<<<< HEAD
 /**
  * Función helper para mapear arrays de ShelterRow a Shelter[]
  */
+=======
+/!**
+ * Función helper para mapear arrays de ShelterRow a Shelter[]
+ *!/
+>>>>>>> origin/main
 export function mapShelterRowsToDomain(rows: ShelterRow[]): Shelter[] {
     return rows.map(mapShelterRowToDomain);
 }
 
+<<<<<<< HEAD
 /**
  * Función helper para mapear arrays de ShelterRow a ShelterListItem[]
  */
+=======
+/!**
+ * Función helper para mapear arrays de ShelterRow a ShelterListItem[]
+ *!/
+>>>>>>> origin/main
 export function mapShelterRowsToListItems(rows: ShelterRow[]): ShelterListItem[] {
     return rows.map(mapShelterRowToListItem);
 }
 
+<<<<<<< HEAD
 /**
  * Mapea datos de entrada para crear a los campos requeridos por Supabase
  * Asegura que todos los campos obligatorios estén presentes
@@ -192,6 +275,15 @@ export function mapShelterRowsToListItems(rows: ShelterRow[]): ShelterListItem[]
 export function mapCreateShelterToInsert(input: CreateShelterInput): ShelterInsert {
     return {
         nombre: input.nombre,
+=======
+/!**
+ * Mapea datos de entrada para crear a los campos requeridos por Supabase
+ * Asegura que todos los campos obligatorios estén presentes
+ *!/
+export function mapCreateShelterToInsert(input: CreateShelterInput): ShelterInsert {
+    return {
+        nombre: input.nombre_albergue,
+>>>>>>> origin/main
         ciudad: input.ciudad,
         estado: input.estado,
         correo_contacto: input.correo_contacto,
@@ -199,4 +291,8 @@ export function mapCreateShelterToInsert(input: CreateShelterInput): ShelterInse
         fecha_registro: new Date().toISOString(),
         activo: true
     };
+<<<<<<< HEAD
 }
+=======
+}*/
+>>>>>>> origin/main

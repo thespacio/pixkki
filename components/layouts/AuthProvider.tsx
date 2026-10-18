@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import {
     createContext,
     useContext,
@@ -71,19 +72,47 @@ export function AuthProvider({
         }
 
     }
+=======
+
+import { createContext, useState } from "react";
+import {Props} from "next/script";
+import {AuthUser} from "@/modules/auth/repository";
+
+interface AuthProviderProps {
+    children: React.ReactNode;
+    initialUser: AuthUser | null;
+}
+export const AuthContext = createContext<{
+    user: AuthUser | null;
+    isAuthenticated: boolean;
+    setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+} | undefined>(undefined);
+
+export function AuthProvider({
+                                 initialUser,
+                                 children,
+                             }: AuthProviderProps) {
+    const [user, setUser] = useState(initialUser);
+>>>>>>> origin/main
 
     return (
         <AuthContext.Provider
             value={{
                 user,
+<<<<<<< HEAD
                 loading,
                 isAuthenticated: !!user,
                 refresh,
+=======
+                isAuthenticated: user !== null,
+                setUser,
+>>>>>>> origin/main
             }}
         >
             {children}
         </AuthContext.Provider>
     );
+<<<<<<< HEAD
 
 }
 
@@ -100,4 +129,6 @@ export function useAuth() {
 
     return context;
 
+=======
+>>>>>>> origin/main
 }

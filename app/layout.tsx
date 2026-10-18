@@ -1,17 +1,15 @@
-
-
 import {AuthProvider} from "@/components/layouts/AuthProvider";
 import "@/styles/index.css"
-import {getCurrentUser} from "@/modules/auth";
+import {getAuthUser, getCurrentUser} from "@/modules/auth";
 
 export default async function RootLayout({
                                              children,
                                          }: {
     children: React.ReactNode;
 }) {
-    let user = null;
+    let user;
     try {
-        user = await getCurrentUser();
+        user = await getAuthUser();
     } catch {
         user = null;
     }

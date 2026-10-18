@@ -99,7 +99,11 @@ export class ShelterRepository {
         try {
             let query = this.supabase
                 .from('refugio')
+<<<<<<< HEAD
                 .select('*', { count: 'exact', head: false });
+=======
+                .select('*', { count: 'exact' });
+>>>>>>> origin/main
 
             // Aplicar filtros
             if (params.ciudad) {
@@ -122,6 +126,7 @@ export class ShelterRepository {
                 );
             }
 
+<<<<<<< HEAD
             // Aplicar ordenamiento (por defecto por nombre)
             query = query.order('nombre', { ascending: true });
 
@@ -133,6 +138,22 @@ export class ShelterRepository {
             if (params.offset !== undefined) {
                 query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
             }
+=======
+            // Ordenamiento
+            query = query.order('nombre', { ascending: true });
+
+            // Paginación
+            if (params.limit !== undefined) {
+                const offset = params.offset ?? 0;
+
+                query = query.range(
+                    offset,
+                    offset + params.limit - 1
+                );
+            }
+
+            console.log(params.limit, params.offset);
+>>>>>>> origin/main
 
             const { data, error, count } = await query;
 
@@ -143,16 +164,32 @@ export class ShelterRepository {
                 );
             }
 
+<<<<<<< HEAD
             return {
                 data: data ? data.map(mapShelterRowToListItem) : [],
                 total: count || 0
+=======
+
+
+            return {
+                data: (data ?? []).map(mapShelterRowToListItem),
+                total: count ?? 0
+>>>>>>> origin/main
             };
         } catch (error) {
             if (error instanceof ShelterRepositoryError) {
                 throw error;
             }
+<<<<<<< HEAD
             throw new ShelterRepositoryError(
                 `Error inesperado al listar refugios: ${error instanceof Error ? error.message : 'Unknown error'}`
+=======
+
+            throw new ShelterRepositoryError(
+                `Error inesperado al listar refugios: ${
+                    error instanceof Error ? error.message : 'Unknown error'
+                }`
+>>>>>>> origin/main
             );
         }
     }
@@ -161,7 +198,11 @@ export class ShelterRepository {
      * Crea un nuevo refugio en la base de datos
      * @returns Shelter creado
      */
+<<<<<<< HEAD
     async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo'>): Promise<Shelter> {
+=======
+    async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo' | 'nombre_admin'>): Promise<Shelter> {
+>>>>>>> origin/main
         try {
             const insertData: ShelterInsert = {
                 ...mapShelterToRow(shelterData),

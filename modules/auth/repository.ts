@@ -35,7 +35,13 @@ export interface UserContext {
 }
 
 export class AuthRepository {
+<<<<<<< HEAD
     constructor(private readonly supabase = SupabaseClient) {}
+=======
+    constructor(
+        private readonly supabase: SupabaseClient
+    ) {}
+>>>>>>> origin/main
 
     /**
      * Obtiene el usuario autenticado de Supabase Auth
@@ -90,6 +96,7 @@ export class AuthRepository {
         };
     }
 
+<<<<<<< HEAD
     /**
      * Busca un usuario por auth_user_id
      */
@@ -108,13 +115,42 @@ export class AuthRepository {
                 auth_user_id
             `)
             .eq("auth_user_id", authUserId)
+=======
+    async findUserContextById(userId: number): Promise<UserContext> {
+        const { data, error } = await this.supabase
+            .from("usuario")
+            .select(`
+            id_usuario,
+            id_refugio,
+            nombre_completo,
+            correo,
+            activo,
+            ultimo_login,
+            rol,
+            auth_user_id
+        `)
+            .eq("id_usuario", userId)
+>>>>>>> origin/main
             .single();
 
         if (error || !data) {
             throw new Error('Usuario no encontrado');
         }
 
+<<<<<<< HEAD
         return data;
+=======
+        return {
+            idUsuario: data.id_usuario,
+            idRefugio: data.id_refugio,
+            nombreCompleto: data.nombre_completo,
+            correo: data.correo,
+            rol: data.rol,
+            activo: data.activo,
+            ultimoLogin: data.ultimo_login,
+            authUserId: data.auth_user_id,
+        };
+>>>>>>> origin/main
     }
 
     /**
@@ -156,6 +192,7 @@ export class AuthRepository {
     }
 
     /**
+<<<<<<< HEAD
      * Crea un usuario en Supabase Auth
      */
     async createAuthUser(email: string, password: string): Promise<AuthUser> {
@@ -193,6 +230,8 @@ export class AuthRepository {
     }
 
     /**
+=======
+>>>>>>> origin/main
      * Actualiza el último login de un usuario
      */
     async updateLastLogin(idUsuario: number): Promise<void> {
@@ -235,4 +274,55 @@ export class AuthRepository {
 
         return data?.activo ?? false;
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Actualizar la contraseña de un usuario
+     */
+    async updatePassword(password: string) {
+        const { error } = await this.supabase.auth.updateUser({
+            password,
+        });
+
+        if (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Buscar usuarios por ID de refugio con rol = 1
+     */
+    async findUsersByShelterId(shelterId: number): Promise<UserContext[]> {
+        const { data, error } = await this.supabase
+            .from("usuario")
+            .select(`
+            id_usuario,
+            id_refugio,
+            nombre_completo,
+            correo,
+            activo,
+            ultimo_login,
+            rol,
+            auth_user_id
+        `)
+            .eq("id_refugio", shelterId)
+            .eq("rol", 1);
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        return (data ?? []).map(user => ({
+            idUsuario: user.id_usuario,
+            idRefugio: user.id_refugio,
+            nombreCompleto: user.nombre_completo,
+            correo: user.correo,
+            rol: user.rol,
+            activo: user.activo,
+            ultimoLogin: user.ultimo_login,
+            authUserId: user.auth_user_id,
+        }));
+    }
+>>>>>>> origin/main
 }

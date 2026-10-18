@@ -99,11 +99,21 @@ export class ShelterService {
             return {
                 data: result.data,
                 pagination: {
+<<<<<<< HEAD
                     total: result.data.length,
                     limit: filters.limit || 10,
                     offset: filters.offset || 0,
                     hasMore: result.data.length === (filters.limit || 10)
                 }
+=======
+                    total: result.total,
+                    limit: filters.limit || 10,
+                    offset: filters.offset || 0,
+                    hasMore:
+                        (filters.offset ?? 0) + result.data.length < result.total
+                }
+
+>>>>>>> origin/main
             };
         }
 
@@ -131,12 +141,21 @@ export class ShelterService {
         ShelterAuthorization.ensureCanCreate(authContext);
 
         // 2. Reglas de negocio: Validar unicidad del nombre
+<<<<<<< HEAD
         const existingShelter = await this.repository.findByName(input.nombre);
         if (existingShelter) {
             throw new ShelterBusinessError(
                 `Ya existe un refugio con el nombre "${input.nombre}"`,
                 'DUPLICATE_NAME',
                 { nombre: input.nombre }
+=======
+        const existingShelter = await this.repository.findByName(input.nombre_albergue);
+        if (existingShelter) {
+            throw new ShelterBusinessError(
+                `Ya existe un refugio con el nombre "${input.nombre_albergue}"`,
+                'DUPLICATE_NAME',
+                { nombre: input.nombre_albergue }
+>>>>>>> origin/main
             );
         }
 
@@ -152,7 +171,11 @@ export class ShelterService {
 
         return {
             shelter,
+<<<<<<< HEAD
             message: `Refugio "${shelter.nombre}" creado exitosamente`
+=======
+            message: `Refugio "${shelter.nombre_albergue}" creado exitosamente`
+>>>>>>> origin/main
         };
     }
 
@@ -198,6 +221,7 @@ export class ShelterService {
         const changes: string[] = [];
 
         // Validar nombre (si se está actualizando)
+<<<<<<< HEAD
         if (updates.nombre && updates.nombre !== currentShelter.nombre) {
             // Verificar que el nuevo nombre no esté en uso por otro refugio
             const exists = await this.repository.existsByName(updates.nombre, id);
@@ -209,6 +233,19 @@ export class ShelterService {
                 );
             }
             changes.push(`nombre: "${currentShelter.nombre}" → "${updates.nombre}"`);
+=======
+        if (updates.nombre_albergue && updates.nombre_albergue !== currentShelter.nombre_albergue) {
+            // Verificar que el nuevo nombre no esté en uso por otro refugio
+            const exists = await this.repository.existsByName(updates.nombre_albergue, id);
+            if (exists) {
+                throw new ShelterBusinessError(
+                    `Ya existe otro refugio con el nombre "${updates.nombre_albergue}"`,
+                    'DUPLICATE_NAME',
+                    { nombre: updates.nombre_albergue, currentId: id }
+                );
+            }
+            changes.push(`nombre: "${currentShelter.nombre_albergue}" → "${updates.nombre_albergue}"`);
+>>>>>>> origin/main
         }
 
         // Validar ubicación (si se está actualizando)
@@ -229,6 +266,7 @@ export class ShelterService {
             changes.push(`correo_contacto: "${currentShelter.correo_contacto}" → "${updates.correo_contacto}"`);
         }
 
+<<<<<<< HEAD
         if (updates.telefono !== undefined &&
             updates.telefono !== currentShelter.telefono) {
             this.validatePhone(updates.telefono);
@@ -240,6 +278,19 @@ export class ShelterService {
             updates.activo !== currentShelter.activo) {
             changes.push(`estado: ${currentShelter.activo ? 'activo' : 'inactivo'} → ${updates.activo ? 'activo' : 'inactivo'}`);
         }
+=======
+        /*if (updates.telefono !== undefined &&
+            updates.telefono !== currentShelter.telefono) {
+            this.validatePhone(updates.telefono);
+            changes.push(`teléfono: "${currentShelter.telefono}" → "${updates.telefono}"`);
+        }*/
+
+        // Validar cambio de estado (activo/inactivo)
+        /*if (updates.activo !== undefined &&
+            updates.activo !== currentShelter.activo) {
+            changes.push(`estado: ${currentShelter.activo ? 'activo' : 'inactivo'} → ${updates.activo ? 'activo' : 'inactivo'}`);
+        }*/
+>>>>>>> origin/main
 
         // 5. Si no hay cambios, retornar el refugio actual sin modificaciones
         if (changes.length === 0) {
@@ -336,10 +387,17 @@ export class ShelterService {
 
         // Regla de negocio: Números de teléfono deben comenzar con código de país (+52 para México)
         // Esta regla asume que todos los shelters están en México
+<<<<<<< HEAD
         const phoneRegex = /^\+52[0-9]{10}$/;
         if (!phoneRegex.test(phone)) {
             throw new ShelterBusinessError(
                 'El teléfono debe ser un número válido de México (+52 seguido de 10 dígitos)',
+=======
+        const phoneRegex = /^\+[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            throw new ShelterBusinessError(
+                'El teléfono debe ser un número válido',
+>>>>>>> origin/main
                 'INVALID_PHONE',
                 { phone }
             );

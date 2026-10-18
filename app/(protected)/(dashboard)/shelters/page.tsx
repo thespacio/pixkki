@@ -1,15 +1,12 @@
-// app/(dashboard)/shelters/page.tsx
-
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ShelterClient } from '@/modules/shelters/client';
 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import {ShelterFilters} from "@/modules/shelters/ShelterFilters";
-import {ShelterSkeleton} from "@/modules/shelters/ShelterSkeleton";
-import {ShelterList} from "@/modules/shelters/ShelterList";
+import {ShelterFilters} from "@/modules/shelters/ShelterForm/ShelterFilters";
+import {ShelterSkeleton} from "@/modules/shelters/ShelterForm/ShelterSkeleton";
+import {ShelterList} from "@/modules/shelters/ShelterForm/ShelterList";
 
 export const metadata: Metadata = {
     title: 'Albergues - Sistema de Gestión',
@@ -29,7 +26,9 @@ interface PageProps {
 
 export default async function SheltersPage({ searchParams }: PageProps) {
     const page = Number(searchParams.page) || 1;
-    const limit = Number(searchParams.limit) || 10;
+    /*const limit = Number(searchParams.limit) || 5;
+    const offset = (page - 1) * limit;*/
+    const limit = 3;
     const offset = (page - 1) * limit;
 
     // Preparar filtros desde los query params
@@ -41,6 +40,7 @@ export default async function SheltersPage({ searchParams }: PageProps) {
         search: searchParams.search,
         limit: limit,
         offset: offset,
+        page: Number(searchParams.page ?? 1),
     };
 
     return (

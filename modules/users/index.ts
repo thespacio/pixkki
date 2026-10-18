@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // modules/users/index.ts
 import {createSupabaseServerClient} from "@/lib/supabase/server-client";
 import {SupabaseClient} from "@supabase/supabase-js";
@@ -17,3 +18,15 @@ export async function createUserRepositoryFromServer() {
     const supabase = await createSupabaseServerClient();
     return createUserRepository(supabase);
 }
+=======
+import {createSupabaseServerClient} from "@/lib/supabase/server-client";
+import {AnimalRepository} from "@/modules/animals/repository";
+import {AnimalService} from "@/modules/animals/service";
+import {UserRepository} from "@/modules/users/repository";
+
+export async function createUserService() {
+    const supabase = await createSupabaseServerClient();
+    //const repository = new UserRepository(supabase);
+    //return new AnimalService(repository);
+}
+>>>>>>> origin/main
