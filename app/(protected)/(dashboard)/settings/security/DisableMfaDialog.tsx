@@ -1,7 +1,11 @@
 // app/(protected)/settings/security/DisableMfaDialog.tsx
 "use client";
 
+<<<<<<< HEAD
+import { useState } from "react";
+=======
 import { useState, useEffect } from "react";
+>>>>>>> origin/main
 import {
     Dialog,
     DialogContent,
@@ -17,10 +21,13 @@ import { Shield, ShieldOff, AlertTriangle } from "lucide-react";
 import { VerifyTotpForm } from "./VerifyTotpForm";
 import { challenge, verify, unenroll } from "@/modules/auth/mfa/client";
 
+<<<<<<< HEAD
+=======
 // ✅ Regex para validar UUID v4
 const UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+>>>>>>> origin/main
 interface DisableMfaDialogProps {
     factor: {
         id: string;
@@ -29,14 +36,20 @@ interface DisableMfaDialogProps {
     onDisabled: () => void;
 }
 
+<<<<<<< HEAD
+export function DisableMfaDialog({ factor, onDisabled }: DisableMfaDialogProps) {
+=======
 export function DisableMfaDialog(
     { factor, onDisabled }: DisableMfaDialogProps)
 {
+>>>>>>> origin/main
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState<"idle" | "verifying" | "success">("idle");
     const [error, setError] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
 
+<<<<<<< HEAD
+=======
     // 🔍 DEBUG: Ver qué contiene `factor` al montar el componente
     useEffect(() => {
         console.log("🔍 [DisableMfaDialog] factor recibido:", {
@@ -48,10 +61,22 @@ export function DisableMfaDialog(
         });
     }, [factor]);
 
+>>>>>>> origin/main
     const handleDisable = async (code: string) => {
         setIsLoading(true);
         setError("");
 
+<<<<<<< HEAD
+        try {
+            // Crear challenge
+            const challengeResult = await challenge(factor.id);
+
+            // Verificar
+            await verify(factor.id, challengeResult.id, code);
+
+            // Deshabilitar
+            await unenroll(factor.id);
+=======
         // 🔍 DEBUG: Estado inicial del flujo
         console.log("🔍 [handleDisable] Inicio", {
             factorId: factor?.id,
@@ -109,6 +134,7 @@ export function DisableMfaDialog(
 
             await unenroll(factor.id);
             console.log("✅ [handleDisable] Factor deshabilitado correctamente");
+>>>>>>> origin/main
 
             setStep("success");
             setTimeout(() => {
@@ -116,6 +142,9 @@ export function DisableMfaDialog(
                 onDisabled();
             }, 1500);
         } catch (err) {
+<<<<<<< HEAD
+            setError(err instanceof Error ? err.message : "Código incorrecto");
+=======
             // 🔍 DEBUG: mostrar el error completo
             console.error("❌ [handleDisable] Error:", err);
 
@@ -137,6 +166,7 @@ export function DisableMfaDialog(
             }
 
             setError(message);
+>>>>>>> origin/main
         } finally {
             setIsLoading(false);
         }
@@ -156,9 +186,15 @@ export function DisableMfaDialog(
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
+<<<<<<< HEAD
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+              Activada
+            </span>
+=======
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                             Activada
                         </span>
+>>>>>>> origin/main
                     </div>
                 </div>
 
@@ -171,6 +207,8 @@ export function DisableMfaDialog(
                         <span className="text-gray-500">Estado</span>
                         <p className="font-medium text-green-600">Verificado</p>
                     </div>
+<<<<<<< HEAD
+=======
                     {/* 🔍 DEBUG temporal: muestra el ID del factor en pantalla */}
                     <div className="col-span-2">
                         <span className="text-gray-500 text-xs">Factor ID (debug)</span>
@@ -178,6 +216,7 @@ export function DisableMfaDialog(
                             {factor.id || "(vacío)"}
                         </p>
                     </div>
+>>>>>>> origin/main
                 </div>
 
                 <div className="mt-6 pt-6 border-t flex justify-end">
@@ -195,8 +234,12 @@ export function DisableMfaDialog(
                                     Deshabilitar autenticación en dos pasos
                                 </DialogTitle>
                                 <DialogDescription>
+<<<<<<< HEAD
+                                    Para deshabilitar la autenticación en dos pasos, necesitas verificar tu identidad con un código de Google Authenticator.
+=======
                                     Para deshabilitar la autenticación en dos pasos, necesitas
                                     verificar tu identidad con un código de Google Authenticator.
+>>>>>>> origin/main
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -214,8 +257,12 @@ export function DisableMfaDialog(
                                     <div className="space-y-4">
                                         <Alert className="border-yellow-200 bg-yellow-50">
                                             <AlertDescription className="text-sm text-yellow-800">
+<<<<<<< HEAD
+                                                Al deshabilitar, tu cuenta quedará protegida únicamente con tu contraseña.
+=======
                                                 Al deshabilitar, tu cuenta quedará protegida
                                                 únicamente con tu contraseña.
+>>>>>>> origin/main
                                             </AlertDescription>
                                         </Alert>
 

@@ -44,9 +44,10 @@ next-env.d.ts
 node_modules/
 /test-results/
 /playwright-report/
+/qa-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
 
 NEXT_PUBLIC_SUPABASE_URL=https://eokvqqcorktxtbflunuf.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_htcBRzoevOjzjhraoSm-Ww_vwKAao97
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_htcBRzoevOjzjhraoSm-Ww_vwKAao97.scannerwork/

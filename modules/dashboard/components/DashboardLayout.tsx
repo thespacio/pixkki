@@ -2,6 +2,128 @@
 
 import Link from "next/link";
 
+<<<<<<< HEAD
+import {usePathname} from "next/navigation";
+import {
+    Home,
+    PawPrint,
+    Heart,
+    DollarSign,
+    Stethoscope,
+    Bell,
+    Search,
+    Plus,
+    Settings,
+    LogOut,
+    BarChart2,
+    FileText,
+    Users, BuildingIcon, Syringe, Shield,
+} from "lucide-react";
+
+// navigation.config.ts
+export const navigation = [
+    // Sección Principal
+    {
+        icon: Home,
+        title: "Dashboard",
+        href: "/dashboard",
+        permission: "dashboard.view",
+        section: "Principal"
+    },
+    {
+        icon: PawPrint,
+        title: "Animales",
+        href: "/animals",
+        permission: "animals.view",
+        section: "Principal"
+    },
+    {
+        icon: Heart,
+        title: "Adopciones",
+        href: "/adoptions",
+        permission: "adoptions.view",
+        section: "Principal"
+    },
+
+    // Sección Administración (solo admin/superadmin)
+    {
+        icon: Users,
+        title: "Usuarios",
+        href: "/staff",
+        permission: "users.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Albergues",
+        href: "/shelters",
+        permission: "shelter.view",
+        section: "Administración"
+    },
+    {
+        icon: BuildingIcon,
+        title: "Espacios",
+        href: "/spaces",
+        permission: "spaces.view",
+        section: "Administración"
+    },
+    {
+        icon: BarChart2,
+        title: "Reportes",
+        href: "/reports",
+        permission: "reports.view",
+        section: "Administración"
+    },
+
+    // Sección Veterinaria (solo veterinario)
+    {
+        icon: Stethoscope,
+        title: "Expedientes",
+        href: "/medical",
+        permission: "medical.view",
+        section: "Veterinaria"
+    },
+    {
+        icon: Syringe,
+        title: "Vacunaciones",
+        href: "/vaccinations",
+        permission: "vaccinations.view",
+        section: "Veterinaria"
+    },
+
+    // Sección Configuración (solo superadmin)
+    {
+        icon: Settings,
+        title: "Configuración",
+        href: "/settings",
+        permission: "settings.view",
+        section: "Configuración"
+    },
+    {
+        icon: Shield,
+        title: "Seguridad",
+        href: "/settings/security",
+        permission: "security.view",
+        section: "Configuración"
+    }
+];
+
+const logo = "/images/logo.png";
+const bannerPet = "/images/banner_pet.png";
+
+// Dentro de tu componente
+import { useRouter } from "next/navigation";
+import {logout, hasPermission} from "@/modules/auth/client-index";
+import {useAuth} from "@/components/layouts/AuthProvider";
+
+export default function DashboardLayout(
+    {children}: {
+        children: React.ReactNode;
+    }) {
+    const pathname = usePathname();
+    const router = useRouter();
+    const { user, loading } = useAuth();
+=======
 import {usePathname, useRouter} from "next/navigation";
 import {logout} from "@/modules/auth/client";
 import {hasPermission} from "@/modules/auth/authorization";
@@ -25,20 +147,45 @@ export default function DashboardLayout({
                                 }: Props) {
     const pathname = usePathname();
     const router = useRouter();
+>>>>>>> origin/main
     const userInitials = user?.fullName
         .split(' ')
         .map(word => word[0])
         .slice(0, 2)
         .join('')
         .toUpperCase();
+<<<<<<< HEAD
+
+    console.log(user);
+
+    if (loading || !user) {
+        return null;
+    }
+
+=======
+>>>>>>> origin/main
     // Filtrar items por permisos
     const filteredNavItems = navigation.filter(item =>
         hasPermission(user, item.permission)
     );
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     // Agrupar por sección
     const groupedNavItems = filteredNavItems.reduce(
         (acc,
          item) => {
+<<<<<<< HEAD
+        const section = item.section || "Principal";
+        if (!acc[section]) {
+            acc[section] = [];
+        }
+        acc[section].push(item);
+        return acc;
+    }, {} as Record<string, typeof navigation>);
+
+=======
             const section = item.section || "Principal";
             if (!acc[section]) {
                 acc[section] = [];
@@ -46,6 +193,7 @@ export default function DashboardLayout({
             acc[section].push(item);
             return acc;
         }, {} as Record<string, typeof navigation>);
+>>>>>>> origin/main
     async function handleLogout() {
         try {
             await logout();
@@ -56,6 +204,10 @@ export default function DashboardLayout({
             console.error(error);
         }
     }
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     return (
         <div
             className="flex h-screen w-full overflow-hidden bg-background"
@@ -80,7 +232,11 @@ export default function DashboardLayout({
                         <div className="w-9 h-9 px-1 py-1 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#43AE6D" }}>
                             <img src={logo} alt="Logo" />
                         </div>
+<<<<<<< HEAD
+                        <span className="text-lg font-semibold tracking-tight text-white max-w-3/4">Albergue Zorro Tobias</span>
+=======
                         <span className="text-lg font-semibold tracking-tight text-white max-w-3/4">{albergue}</span>
+>>>>>>> origin/main
                     </div>
                     {/* Nav */}
                     <nav className="flex-1 px-3 py-4 overflow-y-auto">

@@ -35,6 +35,10 @@ export function hasPermission(
     user: AuthenticatedUser,
     permission: string
 ): boolean {
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     return user.permissions.includes(permission);
 
 }

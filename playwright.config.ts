@@ -24,7 +24,10 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['./tests/e2e/reporters/qa-html-reporter.ts', { outputFile: 'qa-report/index.html', responsable: 'Esthefania' }],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
@@ -34,8 +37,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Collect trace on failure, incluso sin retries (evidencia rica para el reporte QA). See https://playwright.dev/docs/trace-viewer */
+    trace: 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
@@ -45,25 +48,31 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
+    // Cross-browser: corren solo landing + login (smoke de compatibilidad),
+    // no toda la suite, para no triplicar el tiempo de corrida.
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: /(landing|login)\.spec\.ts/,
+    },
 
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: /(landing|login)\.spec\.ts/,
+    },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    /* Test against mobile viewports (emulados vía user-agent/viewport, no dispositivos físicos). */
+    {
+      name: 'Mobile Chrome',
+      use: { ...devices['Pixel 5'] },
+      testMatch: /responsive\.spec\.ts/,
+    },
+    {
+      name: 'Mobile Safari',
+      use: { ...devices['iPhone 12'] },
+      testMatch: /responsive\.spec\.ts/,
+    },
 
     /* Test against branded browsers. */
     // {

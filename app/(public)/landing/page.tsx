@@ -26,9 +26,32 @@ export default async function HomePage() {
       refugio ( nombre, ciudad, estado )
     `)
         .eq('visible_publico', true)
+        // F-SHELTER-03: ocultar del catálogo los refugios inactivos
+        .eq('refugio.activo', true)
         .order('id_perfil', { ascending: false })
 
-    const lista = (albergues as AlberguePublico[]) ?? []
+    // La relación puede resolverse como objeto o como arreglo según la
+    // definición de la FK: se normaliza sin usar casts.
+    const lista: AlberguePublico[] = []
+
+    for (const row of albergues ?? []) {
+        const refugio = Array.isArray(row.refugio) ? row.refugio[0] : row.refugio
+
+        if (!refugio) continue
+
+        lista.push({
+            slug: row.slug,
+            logo_url: row.logo_url,
+            portada_url: row.portada_url,
+            descripcion_corta: row.descripcion_corta,
+            color_primario: row.color_primario,
+            refugio: {
+                nombre: refugio.nombre,
+                ciudad: refugio.ciudad,
+                estado: refugio.estado,
+            },
+        })
+    }
 
     return (
         <div className="min-h-screen bg-white"

@@ -61,6 +61,9 @@ export const UserFiltersSchema = z.object({
 // ===== ESQUEMAS DE PARAMS =====
 export const UserParamsSchema = z.object({
     userId: UserIdSchema
+<<<<<<< HEAD
+});
+=======
 });
 
 export const STAFF_ROLES = [
@@ -80,3 +83,4 @@ export const CreateStaffSchema = z.object({
 });
 
 export type CreateStaffInput = z.infer<typeof CreateStaffSchema>;
+>>>>>>> origin/main

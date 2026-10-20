@@ -1,3 +1,25 @@
+<<<<<<< HEAD
+// modules/auth/service.ts
+
+import {AuthRepository, AuthUser} from './repository';
+import {AuthenticatedUser, UserRole} from './types';
+import {
+    AuthError,
+    UnauthorizedError,
+    EmailNotVerifiedError,
+    InactiveUserError
+} from './errors';
+
+export class AuthService {
+    constructor(private readonly repository: AuthRepository) {}
+
+    /**
+     * Obtiene el usuario actual autenticado
+     */
+    async getCurrentUser(): Promise<AuthenticatedUser> {
+        // 1. Obtener usuario de Auth
+        const authUser = await this.repository.getAuthUser();
+=======
 import {AuthRepository, AuthUser} from './repository';
 import {AuthenticatedUser, UserRole} from './types';
 import {EmailNotVerifiedError, InactiveUserError} from './errors';
@@ -23,11 +45,15 @@ export class AuthService {
     async getCurrentUser(): Promise<AuthenticatedUser> {
         // 1. Obtener usuario de auth
         const authUser = await this.getAuthUser();
+>>>>>>> origin/main
 
         // 2. Obtener contexto del usuario
         const context = await this.repository.findUserContext(authUser.id);
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
         // 3. Validaciones de negocio
         if (!authUser.emailConfirmed) {
             throw new EmailNotVerifiedError();
@@ -41,6 +67,12 @@ export class AuthService {
         const roleName = await this.repository.findRoleNameById(context.rol) as UserRole;
         const permissions = await this.repository.findPermissionsByRole(context.rol);
 
+<<<<<<< HEAD
+        // 5. Actualizar último login (en background, sin bloquear)
+        this.repository.updateLastLogin(context.idUsuario).catch(console.error);
+
+=======
+>>>>>>> origin/main
         // 6. Construir objeto de usuario autenticado
         return {
             id: context.idUsuario,
@@ -54,18 +86,41 @@ export class AuthService {
             lastLogin: context.ultimoLogin ? context.ultimoLogin : null,
         };
     }
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     /**
      * Crea un usuario autenticado
      */
     async createAuthUser(email: string, password: string): Promise<AuthUser> {
+<<<<<<< HEAD
+        return this.repository.createAuthUser(email, password);
+    }
+
+=======
         return this.adminRepository.createAuthUser(email, password);
     }
+>>>>>>> origin/main
     /**
      * Borra un usuario autenticado
      */
     async deleteUser(authUserId: string): Promise<void> {
+<<<<<<< HEAD
+        return this.repository.deleteAuthUser(authUserId);
+    }
+
+    /**
+     * Refresca el usuario actual
+     */
+    async refreshCurrentUser(): Promise<AuthenticatedUser> {
+        return this.getCurrentUser();
+    }
+
+=======
         return this.adminRepository.deleteAuthUser(authUserId);
     }
+>>>>>>> origin/main
     /**
      * Obtiene los permisos del usuario actual
      */
@@ -73,12 +128,42 @@ export class AuthService {
         const user = await this.getCurrentUser();
         return user.permissions;
     }
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     /**
      * Cierra sesión del usuario
      */
     async logout(): Promise<void> {
         await this.repository.signOut();
     }
+<<<<<<< HEAD
+
+    /**
+     * Verifica si el usuario tiene un permiso específico
+     */
+    async hasPermission(permission: string): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return user.permissions.includes(permission);
+    }
+
+    /**
+     * Verifica si el usuario tiene alguno de los permisos especificados
+     */
+    async hasAnyPermission(permissions: string[]): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return permissions.some(p => user.permissions.includes(p));
+    }
+
+    /**
+     * Verifica si el usuario tiene todos los permisos especificados
+     */
+    async hasAllPermissions(permissions: string[]): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return permissions.every(p => user.permissions.includes(p));
+    }
+=======
     /**
      * Envía correo de recuperación de contraseña
      */
@@ -126,4 +211,5 @@ export class AuthService {
         );
     }
 
+>>>>>>> origin/main
 }

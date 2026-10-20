@@ -1,10 +1,10 @@
-import {AnimalStateService} from "@/modules/catalogs/animal-states/service";
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
+import { AnimalStateService } from '@/modules/catalogs/animal-states/service';
 
-const animalStateService = new AnimalStateService();
-
-// GET /api/catalogs/animal-states
-export async function GET(req: Request) {
+export async function GET() {
     try {
+        const supabase = await createSupabaseServerClient();
+        const animalStateService = new AnimalStateService(supabase);
         const stateNames = await animalStateService.getAllStates();
         return new Response(JSON.stringify(stateNames), {
             status: 200,

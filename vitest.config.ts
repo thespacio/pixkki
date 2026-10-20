@@ -9,5 +9,6 @@ export default defineConfig({
     globals: true,
     setupFiles: "./tests/setup/vitest.setup.ts",
     css: false,
+    reporters: ["default", "./tests/reporters/qa-vitest-reporter.ts"],
   },
 });
