@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useState} from 'react'
 
 import {AuthError} from "@/modules/auth/errors";
+import {requiresMfa} from "@/modules/auth/mfa/service";
 import {login, verifyMfa} from "@/modules/auth/login/service";
+
+const logo = '/images/logo.png'
 
 export default function Login() {
   type LoginStep = "credentials" | "mfa";
@@ -39,17 +42,29 @@ export default function Login() {
 
     e.preventDefault();
     setError("");
+    console.log("========== LOGIN ==========");
 
     try {
       setLoading(true);
       if (step === "credentials") {
+        console.log("Paso: Credenciales");
+        console.log("Correo:", email);
         const result = await login(
             email,
             password
         );
 
+        console.log(
+            "Resultado:",
+            result
+        );
+
         switch (result.step) {
           case "mfa":
+            console.log(
+                "MFA requerido."
+            );
+
             setMfaChallenge({
               factorId: result.factorId!,
               challengeId:
@@ -58,6 +73,9 @@ export default function Login() {
             setStep("mfa");
             return;
           case "success":
+            console.log(
+                "Login completado."
+            );
             router.replace(
                 "/dashboard"
             );
@@ -66,6 +84,13 @@ export default function Login() {
         }
       }
       if (step === "mfa") {
+        console.log(
+            "Paso: Verificación MFA"
+        );
+        console.log(
+            "Código:",
+            twoFactorCode
+        );
         if (!mfaChallenge) {
           throw new Error(
               "No existe un challenge MFA."
@@ -75,6 +100,9 @@ export default function Login() {
             mfaChallenge.factorId,
             mfaChallenge.challengeId,
             twoFactorCode
+        );
+        console.log(
+            "MFA verificado correctamente."
         );
         router.replace(
             "/dashboard"
@@ -102,6 +130,9 @@ export default function Login() {
     }
     finally {
       setLoading(false);
+      console.log(
+          "========== FIN LOGIN =========="
+      );
     }
 
   };
@@ -192,8 +223,6 @@ export default function Login() {
 
         {error && (
             <div
-                role="alert"
-                data-testid="login-error"
                 className="flex items-start gap-2 p-3 rounded-xl text-xs"
                 style={{
                   backgroundColor: '#FDF2EA',

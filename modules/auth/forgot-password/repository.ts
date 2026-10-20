@@ -1,5 +1,6 @@
 
 import { UnableToSendResetEmailError } from "./errors";
+import {createClient} from "@supabase/supabase-js";
 import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
 
 export interface ForgotPasswordRepository {
@@ -10,9 +11,9 @@ export class SupabaseForgotPasswordRepository
     implements ForgotPasswordRepository
 {
     async sendResetEmail(email: string): Promise<void> {
-        const supabase = getSupabaseBrowserClient();
+        const supabase = await getSupabaseBrowserClient();
 
-        const redirectTo = `${process.env.APP_URL}/reset-password`;
+        const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo,

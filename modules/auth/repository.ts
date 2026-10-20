@@ -1,6 +1,8 @@
 // modules/auth/repository.ts
 
-import {Database} from "@/types/database";
+import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { Database } from "@/types/database";
+import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
 import {UserRole} from "@/modules/auth/types";
 import {SupabaseClient} from "@supabase/supabase-js";
 
@@ -19,7 +21,6 @@ export interface AuthUser {
     email: string;
     emailConfirmed: boolean;
     createdAt: string;
-    metadata: Record<string, unknown>;
 }
 
 export interface UserContext {
@@ -34,9 +35,13 @@ export interface UserContext {
 }
 
 export class AuthRepository {
+<<<<<<< HEAD
+    constructor(private readonly supabase = SupabaseClient) {}
+=======
     constructor(
         private readonly supabase: SupabaseClient
     ) {}
+>>>>>>> origin/main
 
     /**
      * Obtiene el usuario autenticado de Supabase Auth
@@ -53,7 +58,6 @@ export class AuthRepository {
             email: data.user.email!,
             emailConfirmed: !!data.user.email_confirmed_at,
             createdAt: data.user.created_at!,
-            metadata: data.user.user_metadata ?? {},
         };
     }
 
@@ -92,6 +96,26 @@ export class AuthRepository {
         };
     }
 
+<<<<<<< HEAD
+    /**
+     * Busca un usuario por auth_user_id
+     */
+    async findUserByAuthId(authUserId: string): Promise<UsuarioRow> {
+        const { data, error } = await this.supabase
+            .from("usuario")
+            .select(`
+                id_usuario,
+                id_refugio,
+                nombre_completo,
+                fecha_creacion,
+                correo,
+                activo,
+                ultimo_login,
+                rol,
+                auth_user_id
+            `)
+            .eq("auth_user_id", authUserId)
+=======
     async findUserContextById(userId: number): Promise<UserContext> {
         const { data, error } = await this.supabase
             .from("usuario")
@@ -106,12 +130,16 @@ export class AuthRepository {
             auth_user_id
         `)
             .eq("id_usuario", userId)
+>>>>>>> origin/main
             .single();
 
         if (error || !data) {
             throw new Error('Usuario no encontrado');
         }
 
+<<<<<<< HEAD
+        return data;
+=======
         return {
             idUsuario: data.id_usuario,
             idRefugio: data.id_refugio,
@@ -122,6 +150,7 @@ export class AuthRepository {
             ultimoLogin: data.ultimo_login,
             authUserId: data.auth_user_id,
         };
+>>>>>>> origin/main
     }
 
     /**
@@ -163,6 +192,46 @@ export class AuthRepository {
     }
 
     /**
+<<<<<<< HEAD
+     * Crea un usuario en Supabase Auth
+     */
+    async createAuthUser(email: string, password: string): Promise<AuthUser> {
+        const { data, error } = await this.supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: false,
+        });
+
+        if (error) {
+            throw new Error(`Error al crear usuario en Auth: ${error.message}`);
+        }
+
+        if (!data.user) {
+            throw new Error('No se pudo crear el usuario en Auth');
+        }
+
+        return {
+            id: data.user.id,
+            email: data.user.email!,
+            emailConfirmed: !!data.user.email_confirmed_at,
+            createdAt: data.user.created_at!,
+        };
+    }
+
+    /**
+     * Elimina un usuario de Supabase Auth
+     */
+    async deleteAuthUser(userId: string): Promise<void> {
+        const { error } = await this.supabase.auth.admin.deleteUser(userId);
+
+        if (error) {
+            throw new Error(`Error al eliminar usuario Auth: ${error.message}`);
+        }
+    }
+
+    /**
+=======
+>>>>>>> origin/main
      * Actualiza el último login de un usuario
      */
     async updateLastLogin(idUsuario: number): Promise<void> {
@@ -205,55 +274,15 @@ export class AuthRepository {
 
         return data?.activo ?? false;
     }
+<<<<<<< HEAD
+=======
 
     /**
-     * Verifica si un refugio está activo (F-SHELTER-03).
-     * Un refugio inactivo bloquea el login de sus usuarios.
-     * Nota: lectura puntual del dominio de shelters desde el repositorio
-     * de auth para mantener el flujo de login en una sola consulta de contexto.
+     * Actualizar la contraseña de un usuario
      */
-    async isShelterActive(shelterId: number): Promise<boolean> {
-        const { data, error } = await this.supabase
-            .from("refugio")
-            .select("activo")
-            .eq("id_refugio", shelterId)
-            .single();
-
-        if (error || !data) {
-            throw new Error("El refugio asociado a la cuenta no existe.");
-        }
-
-        return data.activo;
-    }
-
-    /**
-     * Actualizar la contraseña de un usuario.
-     * Permite actualizar banderas de `user_metadata` en la misma operación
-     * (ej. limpiar `password_change_required` tras el cambio — F-AUTH-03).
-     */
-    async updatePassword(
-        password: string,
-        metadata?: Record<string, unknown>
-    ): Promise<void> {
+    async updatePassword(password: string) {
         const { error } = await this.supabase.auth.updateUser({
             password,
-            ...(metadata ? { data: metadata } : {}),
-        });
-
-        if (error) {
-            throw error;
-        }
-    }
-
-    /**
-     * Actualiza banderas del usuario en `user_metadata`
-     * (F-AUTH-03 / F-AUTH-05).
-     */
-    async updateUserMetadata(
-        metadata: Record<string, unknown>
-    ): Promise<void> {
-        const { error } = await this.supabase.auth.updateUser({
-            data: metadata,
         });
 
         if (error) {
@@ -295,4 +324,5 @@ export class AuthRepository {
             authUserId: user.auth_user_id,
         }));
     }
+>>>>>>> origin/main
 }

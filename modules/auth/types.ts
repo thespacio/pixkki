@@ -1,3 +1,5 @@
+import type { Database } from "@/types/database";
+
 export interface CreateUserInput {
     correo: string;
     password: string;
@@ -5,6 +7,19 @@ export interface CreateUserInput {
     nombre_rol: string;
 }
 
+<<<<<<< HEAD
+export interface CreateShelterInput {
+    nombre_refugio: string,
+    ciudad: string,
+    estado: string,
+    telefono: string,
+    correo_contacto: string,
+    correo_admin: string,
+    password: string
+}
+
+=======
+>>>>>>> origin/main
 export interface RoleReference {
     id_rol: number;
 }
@@ -29,6 +44,10 @@ export interface AuthenticatedUser {
     lastLogin: string | null;
 }
 
+interface AccountStatus {
+    requiresMFA: boolean;
+}
+
 export interface TotpEnrollment {
     factorId: string;
     uri: string;
@@ -45,15 +64,6 @@ export type LoginStep =
     | "credentials"
     | "mfa"
     | "success";
-
-/**
- * Requisitos posteriores al login que deben resolverse
- * antes de acceder al dashboard (F-AUTH-03 / F-AUTH-05).
- */
-export type LoginRequirements = {
-    mustChangePassword: boolean;
-    mustAcceptTerms: boolean;
-};
 
 export interface LoginResult {
 

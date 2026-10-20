@@ -55,15 +55,11 @@ export async function middleware(request: NextRequest) {
         pathname === route || pathname.startsWith(`${route}/`)
     );
 
-    // F-AUTH-04: un correo no verificado se trata como no autenticado,
-    // por lo que solo puede permanecer en rutas públicas (ej. /login).
-    const isEmailVerified = Boolean(user?.email_confirmed_at);
-
-    if ((!user || !isEmailVerified) && !isPublicRoute) {
+    if (!user && !isPublicRoute) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (user && isEmailVerified && authPages.includes(pathname)) {
+    if (user && authPages.includes(pathname)) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 

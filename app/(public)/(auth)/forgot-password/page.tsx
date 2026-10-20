@@ -1,13 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { sendPasswordResetAction } from "@/modules/auth/action";
+import { useRouter } from 'next/navigation';
+import { AuthService } from '@/modules/auth/service';
+import { AuthRepository } from '@/modules/auth/repository';
+import {sendPasswordResetAction} from "@/modules/auth/action";
+import {Button} from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

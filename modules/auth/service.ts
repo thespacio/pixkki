@@ -1,19 +1,30 @@
+<<<<<<< HEAD
+// modules/auth/service.ts
+
 import {AuthRepository, AuthUser} from './repository';
-import {AuthenticatedUser, LoginRequirements, UserRole} from './types';
+import {AuthenticatedUser, UserRole} from './types';
 import {
+    AuthError,
+    UnauthorizedError,
     EmailNotVerifiedError,
-    InactiveShelterError,
-    InactiveUserError,
+    InactiveUserError
 } from './errors';
-import {isSuperadminRole} from './authorization';
+
+export class AuthService {
+    constructor(private readonly repository: AuthRepository) {}
+
+    /**
+     * Obtiene el usuario actual autenticado
+     */
+    async getCurrentUser(): Promise<AuthenticatedUser> {
+        // 1. Obtener usuario de Auth
+        const authUser = await this.repository.getAuthUser();
+=======
+import {AuthRepository, AuthUser} from './repository';
+import {AuthenticatedUser, UserRole} from './types';
+import {EmailNotVerifiedError, InactiveUserError} from './errors';
 import {AuthAdminRepository} from "@/modules/auth/admin-repository";
-import {
-    AuthUserMetadataDTO,
-    ChangePasswordDTO,
-    ResetPasswordDTO,
-    authUserMetadataSchema,
-} from "@/modules/auth/schemas";
-import {TERMINOS_VERSION} from "@/modules/auth/constants";
+import {ResetPasswordDTO} from "@/modules/auth/schemas";
 
 export class AuthService {
     constructor(
@@ -34,11 +45,15 @@ export class AuthService {
     async getCurrentUser(): Promise<AuthenticatedUser> {
         // 1. Obtener usuario de auth
         const authUser = await this.getAuthUser();
+>>>>>>> origin/main
 
         // 2. Obtener contexto del usuario
         const context = await this.repository.findUserContext(authUser.id);
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
         // 3. Validaciones de negocio
         if (!authUser.emailConfirmed) {
             throw new EmailNotVerifiedError();
@@ -48,20 +63,16 @@ export class AuthService {
             throw new InactiveUserError();
         }
 
-        // 4. Obtener rol y permisos del usuario
-        const roleName = await this.repository.findRoleNameById(context.rol);
+        // 4. Obtener permisos del usuario
+        const roleName = await this.repository.findRoleNameById(context.rol) as UserRole;
         const permissions = await this.repository.findPermissionsByRole(context.rol);
 
-        // F-SHELTER-03: un refugio desactivado bloquea el acceso.
-        // Exención: el superadmin nunca se bloquea por estado de refugio.
-        if (!isSuperadminRole(roleName)) {
-            const shelterActive = await this.repository.isShelterActive(context.idRefugio);
+<<<<<<< HEAD
+        // 5. Actualizar último login (en background, sin bloquear)
+        this.repository.updateLastLogin(context.idUsuario).catch(console.error);
 
-            if (!shelterActive) {
-                throw new InactiveShelterError();
-            }
-        }
-
+=======
+>>>>>>> origin/main
         // 6. Construir objeto de usuario autenticado
         return {
             id: context.idUsuario,
@@ -75,18 +86,41 @@ export class AuthService {
             lastLogin: context.ultimoLogin ? context.ultimoLogin : null,
         };
     }
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     /**
      * Crea un usuario autenticado
      */
     async createAuthUser(email: string, password: string): Promise<AuthUser> {
+<<<<<<< HEAD
+        return this.repository.createAuthUser(email, password);
+    }
+
+=======
         return this.adminRepository.createAuthUser(email, password);
     }
+>>>>>>> origin/main
     /**
      * Borra un usuario autenticado
      */
     async deleteUser(authUserId: string): Promise<void> {
+<<<<<<< HEAD
+        return this.repository.deleteAuthUser(authUserId);
+    }
+
+    /**
+     * Refresca el usuario actual
+     */
+    async refreshCurrentUser(): Promise<AuthenticatedUser> {
+        return this.getCurrentUser();
+    }
+
+=======
         return this.adminRepository.deleteAuthUser(authUserId);
     }
+>>>>>>> origin/main
     /**
      * Obtiene los permisos del usuario actual
      */
@@ -94,12 +128,42 @@ export class AuthService {
         const user = await this.getCurrentUser();
         return user.permissions;
     }
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     /**
      * Cierra sesión del usuario
      */
     async logout(): Promise<void> {
         await this.repository.signOut();
     }
+<<<<<<< HEAD
+
+    /**
+     * Verifica si el usuario tiene un permiso específico
+     */
+    async hasPermission(permission: string): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return user.permissions.includes(permission);
+    }
+
+    /**
+     * Verifica si el usuario tiene alguno de los permisos especificados
+     */
+    async hasAnyPermission(permissions: string[]): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return permissions.some(p => user.permissions.includes(p));
+    }
+
+    /**
+     * Verifica si el usuario tiene todos los permisos especificados
+     */
+    async hasAllPermissions(permissions: string[]): Promise<boolean> {
+        const user = await this.getCurrentUser();
+        return permissions.every(p => user.permissions.includes(p));
+    }
+=======
     /**
      * Envía correo de recuperación de contraseña
      */
@@ -107,51 +171,10 @@ export class AuthService {
         await this.adminRepository.sendPasswordReset(email);
     }
     /**
-    * Resetar contraseña de un usuario (flujo de recuperación — F-AUTH-02).
-    * Al establecer una contraseña propia se limpia la bandera de
-    * cambio obligatorio (F-AUTH-03).
+    * Resetar contraseña de un usuario
     */
-    async resetPassword(dto: ResetPasswordDTO): Promise<void> {
-        await this.repository.updatePassword(dto.password, {
-            password_change_required: false,
-        });
-    }
-    /**
-     * Requisitos pendientes tras el login (F-AUTH-03 / F-AUTH-05).
-     * Deben resolverse antes de acceder al dashboard.
-     */
-    async getLoginRequirements(): Promise<LoginRequirements> {
-        const authUser = await this.repository.getAuthUser();
-
-        const parsed = authUserMetadataSchema.safeParse(authUser.metadata);
-        const metadata: AuthUserMetadataDTO = parsed.success
-            ? parsed.data
-            : {};
-
-        return {
-            mustChangePassword: metadata.password_change_required === true,
-            mustAcceptTerms: metadata.terminos_aceptados !== true,
-        };
-    }
-    /**
-     * Cambio obligatorio de contraseña en primer login (F-AUTH-03).
-     * Valida fortaleza (Zod) y limpia la bandera en la misma operación.
-     */
-    async changePassword(dto: ChangePasswordDTO): Promise<void> {
-        await this.repository.updatePassword(dto.password, {
-            password_change_required: false,
-        });
-    }
-    /**
-     * Aceptación auditable de Términos y Condiciones (F-AUTH-05):
-     * registra versión + timestamp de la aceptación.
-     */
-    async acceptTerms(): Promise<void> {
-        await this.repository.updateUserMetadata({
-            terminos_aceptados: true,
-            terminos_version: TERMINOS_VERSION,
-            terminos_aceptado_en: new Date().toISOString(),
-        });
+    async resetPassword(dto: ResetPasswordDTO) {
+        await this.repository.updatePassword(dto.password);
     }
     /**
     * Obtener usuario por ID de refugio
@@ -188,4 +211,5 @@ export class AuthService {
         );
     }
 
+>>>>>>> origin/main
 }

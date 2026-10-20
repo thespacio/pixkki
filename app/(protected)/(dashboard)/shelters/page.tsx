@@ -26,6 +26,10 @@ interface PageProps {
 
 export default async function SheltersPage({ searchParams }: PageProps) {
     const page = Number(searchParams.page) || 1;
+    /*const limit = Number(searchParams.limit) || 5;
+    const offset = (page - 1) * limit;*/
+    const limit = 3;
+    const offset = (page - 1) * limit;
 
     // Preparar filtros desde los query params
     const filters = {
@@ -34,7 +38,9 @@ export default async function SheltersPage({ searchParams }: PageProps) {
         activo: searchParams.activo === 'true' ? true :
             searchParams.activo === 'false' ? false : undefined,
         search: searchParams.search,
-        page,
+        limit: limit,
+        offset: offset,
+        page: Number(searchParams.page ?? 1),
     };
 
     return (

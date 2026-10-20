@@ -1,21 +1,34 @@
 "use client";
 
+<<<<<<< HEAD
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 
-import { createContext, useState } from "react";
-import {Props} from "next/script";
-import {AuthUser} from "@/modules/auth/repository";
+import type {
+    AuthenticatedUser,
+} from "@/modules/auth/types";
 
-interface AuthProviderProps {
-    children: React.ReactNode;
-    initialUser: AuthUser | null;
-}
-export const AuthContext = createContext<{
-    user: AuthUser | null;
+type AuthContextValue = {
+
+    user: AuthenticatedUser | null;
+
+    loading: boolean;
+
     isAuthenticated: boolean;
-    setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
-} | undefined>(undefined);
+
+    refresh: () => Promise<void>;
+
+};
+
+const AuthContext =
+    createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({
+                                 children,
                                  initialUser,
                              }: {
     children: React.ReactNode;
@@ -59,16 +72,63 @@ export function AuthProvider({
         }
 
     }
+=======
+
+import { createContext, useState } from "react";
+import {Props} from "next/script";
+import {AuthUser} from "@/modules/auth/repository";
+
+interface AuthProviderProps {
+    children: React.ReactNode;
+    initialUser: AuthUser | null;
+}
+export const AuthContext = createContext<{
+    user: AuthUser | null;
+    isAuthenticated: boolean;
+    setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+} | undefined>(undefined);
+
+export function AuthProvider({
+                                 initialUser,
+                                 children,
+                             }: AuthProviderProps) {
+    const [user, setUser] = useState(initialUser);
+>>>>>>> origin/main
 
     return (
         <AuthContext.Provider
             value={{
                 user,
+<<<<<<< HEAD
+                loading,
+                isAuthenticated: !!user,
+                refresh,
+=======
                 isAuthenticated: user !== null,
                 setUser,
+>>>>>>> origin/main
             }}
         >
             {children}
         </AuthContext.Provider>
     );
+<<<<<<< HEAD
+
+}
+
+export function useAuth() {
+
+    const context =
+        useContext(AuthContext);
+
+    if (!context) {
+        throw new Error(
+            "useAuth must be used within AuthProvider"
+        );
+    }
+
+    return context;
+
+=======
+>>>>>>> origin/main
 }

@@ -1,47 +1,36 @@
 // modules/use-cases/createShelterWithAdmin.ts
 
 import { ShelterRepository } from '@/modules/shelters/repository';
-import { ShelterService } from '@/modules/shelters/service';
 import { UserRepository } from '@/modules/users/repository';
 import { CreateUserInput } from '@/modules/users/types';
 import {AuthService} from "@/modules/auth/service";
+<<<<<<< HEAD
+import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/schemas";
+import {randomBytes} from "node:crypto";
+=======
 
 import {randomBytes} from "node:crypto";
-import {
-    CreateShelterWithAdminInput,
-    CreateShelterWithAdminOutput
-} from "@/modules/shelters/types";
-import {AuthenticatedUser} from "@/modules/auth/types";
-import {ShelterAuthorization} from "@/modules/shelters/authorization";
+import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/types";
+>>>>>>> origin/main
 
 function generateTemporaryPassword(): string {
-    // Contraseña aleatoria de alta entropía; Supabase Auth se encarga
-    // de hashearla internamente (bcrypt) antes de persistirla.
     return randomBytes(16).toString("base64url");
 }
 
 export class CreateShelterWithAdminUseCase {
     constructor(
         private readonly authAdminService: AuthService,
-        private readonly shelterService: ShelterService,
         private readonly shelterRepository: ShelterRepository,
         private readonly userRepository: UserRepository
     ) {}
 
-    async execute(
-        input: CreateShelterWithAdminInput,
-        authContext: AuthenticatedUser
-    ): Promise<CreateShelterWithAdminOutput> {
+    async execute(input: CreateShelterWithAdminInput): Promise<CreateShelterWithAdminOutput> {
         let authUserId: string | null = null;
         let shelterId: number | null = null;
         let userId: number | null = null;
 
         try {
-            // 0. Autorización (F-SHELTER-02): Solo superadmin — falla rápido
-            //    antes de crear cualquier recurso.
-            ShelterAuthorization.ensureCanCreate(authContext);
-
-            // 1. Crear usuario en Auth (credenciales temporales)
+            // 1. Crear usuario en Auth
             const temporaryPassword = generateTemporaryPassword();
             const authUser = await this.authAdminService.createAuthUser(
                 input.shelter.correo_contacto,
@@ -49,19 +38,18 @@ export class CreateShelterWithAdminUseCase {
             );
             authUserId = authUser.id;
 
-            // 2. Crear refugio pasando por el service (autorización,
-            //    unicidad de nombre y validación de ubicación)
-            const { shelter } = await this.shelterService.create(
-                input.shelter,
-                authContext
-            );
+            // 2. Crear refugio
+            const shelter = await this.shelterRepository.create(input.shelter);
             shelterId = shelter.id;
 
-            // 3. Crear usuario administrador en BD
-            // (nombre_admin está garantizado por el refine de Zod en la action)
+            // 3. Crear usuario en BD
             const userData: CreateUserInput = {
                 authUserId: authUser.id,
-                nombreCompleto: input.shelter.nombre_admin ?? "",
+<<<<<<< HEAD
+                nombreCompleto: input.shelter.nombre,
+=======
+                nombreCompleto: input.shelter.nombre_admin,
+>>>>>>> origin/main
                 correo: input.shelter.correo_contacto,
                 rol: 1, //Admin
                 idRefugio: shelter.id,
@@ -70,8 +58,17 @@ export class CreateShelterWithAdminUseCase {
             const user = await this.userRepository.create(userData);
             userId = user.id;
 
-            // 4. Enviar correo de bienvenida con enlace para establecer
-            //    la contraseña temporal (F-SHELTER-02)
+<<<<<<< HEAD
+            return {
+                shelter: {
+                    id: shelter.id,
+                    nombre: shelter.nombre,
+                },
+                admin: {
+                    id: user.id,
+                    authUserId: user.authUserId,
+=======
+            // Enviar correo de recuperación/confirmación
             await this.authAdminService.sendPasswordReset(input.shelter.correo_contacto);
 
             return {
@@ -81,6 +78,8 @@ export class CreateShelterWithAdminUseCase {
                 },
                 admin: {
                     id: user.id,
+                    //authUserId: user.authUserId,
+>>>>>>> origin/main
                     email: user.correo,
                     nombreCompleto: user.nombreCompleto,
                 },
@@ -88,15 +87,27 @@ export class CreateShelterWithAdminUseCase {
 
         } catch (error) {
             // Compensación (ROLLBACK)
+<<<<<<< HEAD
+            if (authUserId) {
+                await this.authAdminService.deleteUser(authUserId);
+=======
             if (userId) {
                 await this.userRepository.delete(userId);
+>>>>>>> origin/main
             }
             if (shelterId) {
                 await this.shelterRepository.delete(shelterId);
             }
+<<<<<<< HEAD
+            if (userId) {
+                await this.userRepository.delete(userId);
+            }
+
+=======
             if (authUserId) {
                 await this.authAdminService.deleteUser(authUserId);
             }
+>>>>>>> origin/main
             throw error;
         }
     }

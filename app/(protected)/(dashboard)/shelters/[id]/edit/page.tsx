@@ -1,5 +1,5 @@
 // app/shelters/[id]/edit/page.tsx
-import { notFound } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import {getShelterDetailsByIdAction} from "@/modules/shelters/actions";
 import {EditShelterForm} from "@/modules/shelters/ShelterForm/EditShelterForm";
 

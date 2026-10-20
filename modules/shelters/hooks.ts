@@ -1,9 +1,15 @@
 'use client';
 
-/*
- * Hooks legados de formulario de refugio.
- * El flujo actual usa `hooks/useCreateShelterForm` y
- * `hooks/useUpdateShelterForm`.
+import {Shelter, UpdateShelterInput} from "@/modules/shelters/types";
+import {useState} from "react";
+import {FieldValues, useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {CreateShelterSchema, UpdateShelterSchema} from "@/modules/shelters/schemas";
+import {updateShelterAction} from "@/modules/shelters/actions";
+import {useRouter} from "next/navigation";
+
+
+//hooks: manejan el estado y la lógica del formulario
 
 
 

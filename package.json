@@ -14,9 +14,7 @@
     "test": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:watch": "vitest",
-    "test:load": "node tests/scripts/run-k6-load.js",
-    "test:report": "node tests/scripts/run-all-and-report.js"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

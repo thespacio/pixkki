@@ -7,18 +7,13 @@ export class AuthAdminRepository {
     ) {}
 
     /**
-     * Crea un usuario en Supabase Auth.
-     * Se marca `password_change_required` porque siempre recibe
-     * una contraseña temporal (F-AUTH-03).
+     * Crea un usuario en Supabase Auth
      */
     async createAuthUser(email: string, password: string): Promise<AuthUser> {
         const { data, error } = await this.supabase.auth.admin.createUser({
             email,
             password,
             email_confirm: true,
-            user_metadata: {
-                password_change_required: true,
-            },
         });
         if (error) {
             throw new Error(`Error al crear usuario en Auth: ${error.message}`);
@@ -31,7 +26,6 @@ export class AuthAdminRepository {
         email: data.user.email!,
         emailConfirmed: !!data.user.email_confirmed_at,
         createdAt: data.user.created_at!,
-        metadata: data.user.user_metadata ?? {},
     };
     }
 

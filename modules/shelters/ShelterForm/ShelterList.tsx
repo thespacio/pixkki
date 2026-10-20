@@ -1,13 +1,14 @@
+
+import { ShelterClient } from '@/modules/shelters/client';
 import { ShelterCard } from './ShelterCard';
 
-import { ShelterListItem} from '@/modules/shelters/types';
+
+import { ShelterFilters as ShelterFiltersType, ShelterListItem} from '@/modules/shelters/types';
 import {Button} from "@/components/ui/button";
 import {getCurrentUser} from "@/modules/auth";
 import {createShelterService} from "@/modules/shelters/factories";
 import {Pagination, PaginationContent, PaginationItem, PaginationLink} from "@/components/ui/pagination";
 
-/** Tamaño de página del tablero de refugios (F-SHELTER-01) */
-const PAGE_SIZE = 9;
 
 interface ShelterListProps {
     filters: {
@@ -15,6 +16,8 @@ interface ShelterListProps {
         estado?: string;
         activo?: boolean;
         search?: string;
+        limit: number;
+        offset: number;
         page: number;
     };
 }
@@ -41,30 +44,12 @@ function EmptyState({
     );
 }
 
-/**
- * Construye la query string base conservando los filtros activos
- * para que la paginación no los pierda (F-SHELTER-05).
- */
-function buildBaseQuery(filters: ShelterListProps['filters']): string {
-    const params = new URLSearchParams();
-
-    if (filters.search) params.set('search', filters.search);
-    if (filters.ciudad) params.set('ciudad', filters.ciudad);
-    if (filters.estado) params.set('estado', filters.estado);
-    if (filters.activo !== undefined) params.set('activo', String(filters.activo));
-
-    return params.toString();
-}
-
-/**
- * Carga los datos del listado separada del render para no construir
- * JSX dentro de try/catch (react-hooks/error-boundaries).
- */
-async function loadShelters(filters: ShelterListProps['filters']) {
+export async function ShelterList({ filters }: ShelterListProps) {
     const service = await createShelterService();
     const user = await getCurrentUser();
 
-    const page = filters.page > 0 ? filters.page : 1;
+    const page = Number(filters.page ?? 1);
+    const limit = 9;
 
     const result = await service.findAll(
         {
@@ -72,49 +57,19 @@ async function loadShelters(filters: ShelterListProps['filters']) {
             estado: filters.estado,
             activo: filters.activo,
             search: filters.search,
-            limit: PAGE_SIZE,
-            offset: (page - 1) * PAGE_SIZE,
+            limit,
+            offset: (page - 1) * limit,
         },
         user
     );
+    console.log({
+        page,
+        limit,
+        offset: (page - 1) * limit,
+    });
 
-    // F-SHELTER-01/03: el tablero global es del superadmin; solo él
-    // ve el switch de activación.
-    const canManage = user.role.trim().toLowerCase() === 'superadmin';
 
-    return {
-        shelters: result.data,
-        pagination: result.pagination,
-        canManage,
-        baseQuery: buildBaseQuery(filters),
-    };
-}
-
-export async function ShelterList({ filters }: ShelterListProps) {
-    let loaded: Awaited<ReturnType<typeof loadShelters>> | null = null;
-
-    try {
-        loaded = await loadShelters(filters);
-    } catch (error) {
-        console.error('Error al cargar albergues:', error);
-    }
-
-    if (!loaded) {
-        return (
-            <div className="text-center py-12">
-                <h3 className="text-lg font-semibold text-destructive">
-                    Error al cargar los albergues
-                </h3>
-                <p className="text-muted-foreground mt-2">
-                    No se pudieron cargar los albergues. Por favor, intenta de nuevo.
-                </p>
-            </div>
-        );
-    }
-
-    const { shelters, pagination, canManage, baseQuery } = loaded;
-
-    if (shelters.length === 0) {
+    if (!result.data || result.data.length === 0) {
         return (
             <EmptyState
                 title="No hay albergues registrados"
@@ -127,30 +82,55 @@ export async function ShelterList({ filters }: ShelterListProps) {
         );
     }
 
+    const {data: shelters, pagination} = result;
     const totalPages = Math.ceil(pagination.total / pagination.limit);
     const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
 
+    const goToPage = (page: number) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set("page", String(page));
+        window.location.search = params.toString();
+    };
+
+    try {
+
+    } catch (error) {
+        console.error('Error al cargar albergues:', error);
+        return (
+            <div className="text-center py-12">
+                <h3 className="text-lg font-semibold text-destructive">
+                    Error al cargar los albergues
+                </h3>
+                <p className="text-muted-foreground mt-2">
+                    No se pudieron cargar los albergues. Por favor, intenta de nuevo.
+                </p>
+                <Button
+                    variant="outline"
+                    className="mt-4"
+                >
+                    Reintentar
+                </Button>
+            </div>
+        );
+    }
+    console.log(result.pagination);
+    console.log(result.data.length);
     return (
         <div className="space-y-6">
             {/* Grid de albergues */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {shelters.map((shelter: ShelterListItem) => (
-                    <ShelterCard
-                        key={shelter.id}
-                        shelter={shelter}
-                        canManage={canManage}
-                    />
-                ))}
-            </div>
+                        <ShelterCard key={shelter.id} shelter={shelter} />
+                    ))}
+                </div>
 
-            {/* Paginación (conserva los filtros activos) */}
-            {totalPages > 1 && (
+                {/* Paginación */}
                 <Pagination>
                     <PaginationContent>
                         {Array.from({ length: totalPages }, (_, index) => (
                             <PaginationItem key={index}>
                                 <PaginationLink
-                                    href={`?${baseQuery ? `${baseQuery}&` : ''}page=${index + 1}`}
+                                    href={`?page=${index + 1}`}
                                     isActive={currentPage === index + 1}
                                 >
                                     {index + 1}
@@ -159,12 +139,11 @@ export async function ShelterList({ filters }: ShelterListProps) {
                         ))}
                     </PaginationContent>
                 </Pagination>
-            )}
 
-            {/* Información de resultados */}
-            <div className="text-sm text-muted-foreground text-center">
-                Mostrando {shelters.length} de {pagination.total} albergues
+                {/* Información de resultados */}
+                <div className="text-sm text-muted-foreground text-center">
+                    Mostrando {shelters.length} de {pagination.total} albergues
+                </div>
             </div>
-        </div>
-    );
+        );
 }

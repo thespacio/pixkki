@@ -8,7 +8,7 @@ export class LandingPage {
     constructor(page: Page) {
         this.page = page;
         this.mainTitle = page.getByRole('navigation').getByText('Pixkki')
-        this.loginLink = page.getByRole('link', { name: /Iniciar Sesión/i });
+        this.loginLink = page.getByRole('button', { name: /quiero donar/i });
     }
 
     async navigate() {

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CreateStaffFormSchema, STAFF_ROLES } from "@/modules/users/schemas";
+import { CreateStaffSchema, STAFF_ROLES } from "@/modules/users/schemas";
 import { createStaffAction } from "@/modules/users/actions/user.actions";
 import {roleConfig} from "@/modules/users/types";
 
@@ -11,18 +11,18 @@ export default function AddStaffForm() {
     const [isPending, startTransition] = useTransition();
 
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
+        password: "",
         role: STAFF_ROLES[0] as string,
     });
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const parsed = CreateStaffFormSchema.safeParse(formData);
+        const parsed = CreateStaffSchema.safeParse(formData);
 
         if (!parsed.success) {
             const fieldErrors: Record<string, string> = {};
@@ -40,18 +40,12 @@ export default function AddStaffForm() {
         }
 
         setErrors({});
-        setGeneratedPassword(null);
 
         startTransition(async () => {
             try {
-                const result = await createStaffAction(parsed.data);
-
-                // La contraseña temporal se muestra solo una vez.
-                setGeneratedPassword(result.tempPassword);
+                await createStaffAction(parsed.data);
                 router.push("/dashboard/staff");
             } catch (error) {
-                setGeneratedPassword(null);
-
                 setErrors({
                     email:
                         error instanceof Error
@@ -115,6 +109,25 @@ export default function AddStaffForm() {
 
                 {errors.email && (
                     <p>{errors.email}</p>
+                )}
+            </div>
+
+            <div>
+                <label htmlFor="password">
+                    Contraseña
+                </label>
+
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    disabled={isPending}
+                />
+
+                {errors.password && (
+                    <p>{errors.password}</p>
                 )}
             </div>
 

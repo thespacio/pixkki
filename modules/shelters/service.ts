@@ -7,18 +7,11 @@ import {
     UpdateShelterInput, ShelterQueryParams, ShelterListItem
 } from './types';
 import {
+    ShelterNotFoundError,
     ShelterBusinessError,
     ShelterAuthorizationError
 } from './errors';
 import {AuthenticatedUser} from "@/modules/auth/types";
-
-/**
- * Normaliza el rol para comparaciones case-insensitive
- * (el valor real proviene de `rol.nombre_rol` en BD y no está estandarizado).
- */
-function isSuperadminRole(role: string): boolean {
-    return role.trim().toLowerCase() === 'superadmin';
-}
 
 export class ShelterService {
     constructor(
@@ -39,18 +32,31 @@ export class ShelterService {
         // 2. Acceso a datos: Obtener el refugio
         const shelter = await this.repository.findById(id);
 
-        // 3. Reglas de negocio (multitenant): el superadmin accede a cualquier
-        //    refugio; el resto solo al suyo propio.
-        if (!isSuperadminRole(authContext.role) && authContext.shelterId !== id) {
-            throw new ShelterAuthorizationError(
-                'No tienes acceso a este refugio',
-                {
-                    userId: authContext.id,
-                    role: authContext.role,
-                    shelterId: id
-                }
+        // 3. Reglas de negocio: Verificar acceso específico al shelter
+        // Si el usuario es admin, tiene acceso a todos los shelters
+        if (authContext.role !== 'superadmin') {
+            // Para otros roles, verificar acceso específico
+            const hasAccess = await this.checkUserShelterAccess(
+                Number(authContext.id),
+                id
             );
+
+            if (!hasAccess) {
+                throw new ShelterAuthorizationError(
+                    'No tienes acceso a este refugio',
+                    {
+                        userId: authContext.id,
+                        role: authContext.role,
+                        shelterId: id
+                    }
+                );
+            }
         }
+
+        // 4. Reglas de negocio: Los usuarios 'user' solo ven información básica
+        // Los roles con más permisos ven información completa
+        // Nota: Como la entidad Shelter ya es completa, aquí no hay transformación adicional
+        // Si necesitáramos diferentes vistas, se podría mapear a DTOs diferentes
 
         return shelter;
     }
@@ -74,68 +80,52 @@ export class ShelterService {
         // 1. Autorización: Verificar que el usuario puede ver refugios
         ShelterAuthorization.ensureCanView(authContext);
 
-        // 2. Reglas de negocio (multitenant / F-SHELTER-01): el tablero global
-        //    es exclusivo del superadmin; otros roles solo ven su propio refugio.
-        const filtersWithTenant: ShelterQueryParams = isSuperadminRole(authContext.role)
-            ? filters
-            : { ...filters, refugioId: authContext.shelterId };
+        // 2. Acceso a datos: Obtener todos los refugios con filtros
+        const result = await this.repository.findAll(filters);
 
-        // 3. Acceso a datos: Obtener refugios con filtros
-        const result = await this.repository.findAll(filtersWithTenant);
+        // 3. Reglas de negocio: Si no es admin, filtrar por acceso
+        if (authContext.role !== 'superadmin') {
+            /*// Obtener IDs de shelters a los que tiene acceso
+            const accessibleShelterIds = await this.getUserShelterIds(
+                Number(authContext.id)
+            );
 
-        // 4. Retornar resultado con la estructura correcta
+            // Filtrar resultados
+            const filteredData = result.data.filter(shelter =>
+                accessibleShelterIds.includes(shelter.id)
+            );*/
+
+            // Retornar con la estructura correcta
+            return {
+                data: result.data,
+                pagination: {
+<<<<<<< HEAD
+                    total: result.data.length,
+                    limit: filters.limit || 10,
+                    offset: filters.offset || 0,
+                    hasMore: result.data.length === (filters.limit || 10)
+                }
+=======
+                    total: result.total,
+                    limit: filters.limit || 10,
+                    offset: filters.offset || 0,
+                    hasMore:
+                        (filters.offset ?? 0) + result.data.length < result.total
+                }
+
+>>>>>>> origin/main
+            };
+        }
+
+        // 4. Retornar resultado original con la estructura correcta
         return {
             data: result.data,
             pagination: {
                 total: result.total,
                 limit: filters.limit || 10,
                 offset: filters.offset || 0,
-                hasMore:
-                    (filters.offset ?? 0) + result.data.length < result.total
+                hasMore: result.data.length === (filters.limit || 10)
             }
-        };
-    }
-
-    /**
-     * Activa o desactiva un refugio (F-SHELTER-03).
-     * Solo el superadmin puede hacerlo; el refugio inactivo bloquea el
-     * login de sus usuarios y lo oculta del catálogo público.
-     */
-    async setStatus(
-        id: number,
-        activo: boolean,
-        authContext: AuthenticatedUser
-    ): Promise<{
-        shelter: Shelter;
-        message: string;
-    }> {
-        // 1. Autorización: solo superadmin
-        if (!isSuperadminRole(authContext.role)) {
-            throw new ShelterAuthorizationError(
-                'Solo un superadmin puede activar o desactivar refugios',
-                {
-                    userId: authContext.id,
-                    role: authContext.role
-                }
-            );
-        }
-
-        // 2. Verificar que el refugio existe
-        const currentShelter = await this.repository.findById(id);
-
-        if (currentShelter.activo === activo) {
-            return {
-                shelter: currentShelter,
-                message: `El refugio ya estaba ${activo ? 'activo' : 'inactivo'}`
-            };
-        }
-
-        // 3. Aplicar el cambio de estado
-        const shelter = await this.repository.updateStatus(id, activo);
-
-        return {
-            shelter,
-            message: `Refugio "${shelter.nombre_albergue}" ${activo ? 'activado' : 'desactivado'} exitosamente`
         };
     }
 
@@ -151,12 +141,21 @@ export class ShelterService {
         ShelterAuthorization.ensureCanCreate(authContext);
 
         // 2. Reglas de negocio: Validar unicidad del nombre
+<<<<<<< HEAD
+        const existingShelter = await this.repository.findByName(input.nombre);
+        if (existingShelter) {
+            throw new ShelterBusinessError(
+                `Ya existe un refugio con el nombre "${input.nombre}"`,
+                'DUPLICATE_NAME',
+                { nombre: input.nombre }
+=======
         const existingShelter = await this.repository.findByName(input.nombre_albergue);
         if (existingShelter) {
             throw new ShelterBusinessError(
                 `Ya existe un refugio con el nombre "${input.nombre_albergue}"`,
                 'DUPLICATE_NAME',
                 { nombre: input.nombre_albergue }
+>>>>>>> origin/main
             );
         }
 
@@ -172,7 +171,11 @@ export class ShelterService {
 
         return {
             shelter,
+<<<<<<< HEAD
+            message: `Refugio "${shelter.nombre}" creado exitosamente`
+=======
             message: `Refugio "${shelter.nombre_albergue}" creado exitosamente`
+>>>>>>> origin/main
         };
     }
 
@@ -185,26 +188,52 @@ export class ShelterService {
         updates: UpdateShelterInput,
         authContext: AuthenticatedUser
     ) {
-        // 1. Autorización (multitenant): superadmin puede editar cualquier
-        //    refugio; el resto solo el suyo propio.
-        if (!isSuperadminRole(authContext.role) && authContext.shelterId !== id) {
-            throw new ShelterAuthorizationError(
-                'No tienes permisos para editar este refugio',
-                {
-                    userId: authContext.id,
-                    role: authContext.role,
-                    shelterId: id
-                }
-            );
-        }
+        // 1. Autorización: Verificar que el usuario puede editar refugios
+        const authContextWithShelter = {
+            ...authContext,
+            shelterId: id
+        };
+        //ShelterAuthorization.ensureCanEdit(authContextWithShelter);
 
         // 2. Obtener el refugio actual (verifica que existe)
         const currentShelter = await this.repository.findById(id);
+
+        // 3. Reglas de negocio: Verificar acceso específico al shelter
+        if (authContext.role !== 'admin') {
+            const hasAccess = await this.checkUserShelterAccess(
+                Number(authContext.id),
+                id
+            );
+
+            if (!hasAccess) {
+                throw new ShelterAuthorizationError(
+                    'No tienes permisos para editar este refugio',
+                    {
+                        userId: authContext.id,
+                        role: authContext.role,
+                        shelterId: id
+                    }
+                );
+            }
+        }
 
         // 4. Reglas de negocio: Validar campos de actualización
         const changes: string[] = [];
 
         // Validar nombre (si se está actualizando)
+<<<<<<< HEAD
+        if (updates.nombre && updates.nombre !== currentShelter.nombre) {
+            // Verificar que el nuevo nombre no esté en uso por otro refugio
+            const exists = await this.repository.existsByName(updates.nombre, id);
+            if (exists) {
+                throw new ShelterBusinessError(
+                    `Ya existe otro refugio con el nombre "${updates.nombre}"`,
+                    'DUPLICATE_NAME',
+                    { nombre: updates.nombre, currentId: id }
+                );
+            }
+            changes.push(`nombre: "${currentShelter.nombre}" → "${updates.nombre}"`);
+=======
         if (updates.nombre_albergue && updates.nombre_albergue !== currentShelter.nombre_albergue) {
             // Verificar que el nuevo nombre no esté en uso por otro refugio
             const exists = await this.repository.existsByName(updates.nombre_albergue, id);
@@ -216,6 +245,7 @@ export class ShelterService {
                 );
             }
             changes.push(`nombre: "${currentShelter.nombre_albergue}" → "${updates.nombre_albergue}"`);
+>>>>>>> origin/main
         }
 
         // Validar ubicación (si se está actualizando)
@@ -236,26 +266,31 @@ export class ShelterService {
             changes.push(`correo_contacto: "${currentShelter.correo_contacto}" → "${updates.correo_contacto}"`);
         }
 
-        // Registrar cambios de dirección (F-SHELTER-04)
-        const addressFields = ['calle', 'numero', 'colonia', 'codigo_postal'] as const;
-
-        for (const field of addressFields) {
-            const nextValue = updates[field];
-
-            if (nextValue !== undefined && nextValue !== currentShelter[field]) {
-                changes.push(`${field}: "${currentShelter[field] ?? ''}" → "${nextValue}"`);
-            }
-        }
-
-        // Validar teléfono (si se está actualizando)
+<<<<<<< HEAD
         if (updates.telefono !== undefined &&
             updates.telefono !== currentShelter.telefono) {
             this.validatePhone(updates.telefono);
             changes.push(`teléfono: "${currentShelter.telefono}" → "${updates.telefono}"`);
         }
 
-        // Validar cambio de estado (activo/inactivo) — F-SHELTER-03:
-        // el estado se gestiona exclusivamente vía setStatus().
+        // Validar cambio de estado (activo/inactivo)
+        if (updates.activo !== undefined &&
+            updates.activo !== currentShelter.activo) {
+            changes.push(`estado: ${currentShelter.activo ? 'activo' : 'inactivo'} → ${updates.activo ? 'activo' : 'inactivo'}`);
+        }
+=======
+        /*if (updates.telefono !== undefined &&
+            updates.telefono !== currentShelter.telefono) {
+            this.validatePhone(updates.telefono);
+            changes.push(`teléfono: "${currentShelter.telefono}" → "${updates.telefono}"`);
+        }*/
+
+        // Validar cambio de estado (activo/inactivo)
+        /*if (updates.activo !== undefined &&
+            updates.activo !== currentShelter.activo) {
+            changes.push(`estado: ${currentShelter.activo ? 'activo' : 'inactivo'} → ${updates.activo ? 'activo' : 'inactivo'}`);
+        }*/
+>>>>>>> origin/main
 
         // 5. Si no hay cambios, retornar el refugio actual sin modificaciones
         if (changes.length === 0) {
@@ -339,7 +374,8 @@ export class ShelterService {
         }
 
         // Regla de negocio: Solo correos institucionales o Gmail/Outlook
-        // (lista blanca reservada para futura validación)
+        const allowedDomains = ['gmail.com', 'outlook.com', 'hotmail.com'];
+        // Aquí podrías tener una lista de dominios permitidos según tu negocio
     }
 
     /**
@@ -351,13 +387,42 @@ export class ShelterService {
 
         // Regla de negocio: Números de teléfono deben comenzar con código de país (+52 para México)
         // Esta regla asume que todos los shelters están en México
+<<<<<<< HEAD
+        const phoneRegex = /^\+52[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            throw new ShelterBusinessError(
+                'El teléfono debe ser un número válido de México (+52 seguido de 10 dígitos)',
+=======
         const phoneRegex = /^\+[0-9]{10}$/;
         if (!phoneRegex.test(phone)) {
             throw new ShelterBusinessError(
                 'El teléfono debe ser un número válido',
+>>>>>>> origin/main
                 'INVALID_PHONE',
                 { phone }
             );
         }
+    }
+
+    /**
+     * Verifica si un usuario tiene acceso a un shelter específico
+     * Este método se delega a una función de verificación que podría usar un repository de relaciones
+     */
+    private async checkUserShelterAccess(
+        userId: number,
+        shelterId: number
+    ): Promise<boolean> {
+        // Aquí se implementaría la verificación de acceso:
+        // - Verificar si el usuario es shelter_manager de este refugio
+        // - Verificar si el usuario es volunteer en este refugio
+        // - Para este ejemplo, asumimos que el shelter_manager tiene acceso
+        // En una implementación real, esto consultaría un repository de relaciones usuario-shelter
+
+        // Ejemplo de implementación:
+        // const userShelterRepo = new UserShelterRepository(this.supabase);
+        // return await userShelterRepo.userHasAccess(userId, shelterId);
+
+        // Por ahora, retornamos true como placeholder
+        return true;
     }
 }

@@ -2,16 +2,9 @@ import type { AuthenticatedUser } from "./types";
 
 import {
     ForbiddenError,
+    //ForbiddenError,
     UnauthorizedError,
 } from "./errors";
-
-/**
- * Normaliza el rol para comparaciones case-insensitive
- * (el valor real proviene de `rol.nombre_rol` en BD y no está estandarizado).
- */
-export function isSuperadminRole(role: string): boolean {
-    return role.trim().toLowerCase() === "superadmin";
-}
 
 export function ensureAuthenticated(
     user: AuthenticatedUser | null | undefined
@@ -31,8 +24,8 @@ export function ensurePermission(
     ensureAuthenticated(user);
 
     if (!user.permissions.includes(permission)) {
-        throw new ForbiddenError(
-            `Permiso requerido faltante: ${permission}`
+        throw new UnauthorizedError(
+            `Missing permission: ${permission}`
         );
     }
 
@@ -42,6 +35,10 @@ export function hasPermission(
     user: AuthenticatedUser,
     permission: string
 ): boolean {
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
     return user.permissions.includes(permission);
 
 }
@@ -112,6 +109,6 @@ export function ensureSuperAdmin(
     user: AuthenticatedUser
 ): void {
 
-    ensureRole(user, "superadmin");
+    ensureRole(user, "super_admin");
 
 }

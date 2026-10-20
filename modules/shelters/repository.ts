@@ -99,7 +99,11 @@ export class ShelterRepository {
         try {
             let query = this.supabase
                 .from('refugio')
+<<<<<<< HEAD
+                .select('*', { count: 'exact', head: false });
+=======
                 .select('*', { count: 'exact' });
+>>>>>>> origin/main
 
             // Aplicar filtros
             if (params.ciudad) {
@@ -115,24 +119,26 @@ export class ShelterRepository {
             }
 
             if (params.search) {
-                // Sanea caracteres especiales de la sintaxis de filtros de
-                // PostgREST para que la búsqueda textual no rompa el `.or()`
-                const term = params.search.replace(/[(),]/g, ' ').trim();
-
-                if (term) {
-                    query = query.or(
-                        `nombre.ilike.%${term}%,` +
-                        `ciudad.ilike.%${term}%,` +
-                        `estado.ilike.%${term}%`
-                    );
-                }
+                query = query.or(
+                    `nombre.ilike.%${params.search}%,` +
+                    `ciudad.ilike.%${params.search}%,` +
+                    `estado.ilike.%${params.search}%`
+                );
             }
 
-            // Filtro multitenant: limitar a un refugio específico
-            if (params.refugioId !== undefined) {
-                query = query.eq('id_refugio', params.refugioId);
+<<<<<<< HEAD
+            // Aplicar ordenamiento (por defecto por nombre)
+            query = query.order('nombre', { ascending: true });
+
+            // Aplicar paginación
+            if (params.limit !== undefined) {
+                query = query.limit(params.limit);
             }
 
+            if (params.offset !== undefined) {
+                query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
+            }
+=======
             // Ordenamiento
             query = query.order('nombre', { ascending: true });
 
@@ -146,6 +152,9 @@ export class ShelterRepository {
                 );
             }
 
+            console.log(params.limit, params.offset);
+>>>>>>> origin/main
+
             const { data, error, count } = await query;
 
             if (error) {
@@ -155,21 +164,32 @@ export class ShelterRepository {
                 );
             }
 
+<<<<<<< HEAD
+            return {
+                data: data ? data.map(mapShelterRowToListItem) : [],
+                total: count || 0
+=======
 
 
             return {
                 data: (data ?? []).map(mapShelterRowToListItem),
                 total: count ?? 0
+>>>>>>> origin/main
             };
         } catch (error) {
             if (error instanceof ShelterRepositoryError) {
                 throw error;
             }
+<<<<<<< HEAD
+            throw new ShelterRepositoryError(
+                `Error inesperado al listar refugios: ${error instanceof Error ? error.message : 'Unknown error'}`
+=======
 
             throw new ShelterRepositoryError(
                 `Error inesperado al listar refugios: ${
                     error instanceof Error ? error.message : 'Unknown error'
                 }`
+>>>>>>> origin/main
             );
         }
     }
@@ -178,7 +198,11 @@ export class ShelterRepository {
      * Crea un nuevo refugio en la base de datos
      * @returns Shelter creado
      */
+<<<<<<< HEAD
+    async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo'>): Promise<Shelter> {
+=======
     async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo' | 'nombre_admin'>): Promise<Shelter> {
+>>>>>>> origin/main
         try {
             const insertData: ShelterInsert = {
                 ...mapShelterToRow(shelterData),
