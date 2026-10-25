@@ -12,4 +12,5 @@ export {
     ensureRole,
     ensureAnyRole,
     ensureSuperAdmin,
+    isSuperadmin,
 } from "@/modules/auth/authorization";

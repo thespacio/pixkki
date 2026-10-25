@@ -4,14 +4,9 @@ import { ShelterRepository } from '@/modules/shelters/repository';
 import { UserRepository } from '@/modules/users/repository';
 import { CreateUserInput } from '@/modules/users/types';
 import {AuthService} from "@/modules/auth/service";
-<<<<<<< HEAD
-import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/schemas";
-import {randomBytes} from "node:crypto";
-=======
 
 import {randomBytes} from "node:crypto";
 import {CreateShelterWithAdminInput, CreateShelterWithAdminOutput} from "@/modules/shelters/types";
->>>>>>> origin/main
 
 function generateTemporaryPassword(): string {
     return randomBytes(16).toString("base64url");
@@ -45,11 +40,7 @@ export class CreateShelterWithAdminUseCase {
             // 3. Crear usuario en BD
             const userData: CreateUserInput = {
                 authUserId: authUser.id,
-<<<<<<< HEAD
-                nombreCompleto: input.shelter.nombre,
-=======
                 nombreCompleto: input.shelter.nombre_admin,
->>>>>>> origin/main
                 correo: input.shelter.correo_contacto,
                 rol: 1, //Admin
                 idRefugio: shelter.id,
@@ -58,16 +49,6 @@ export class CreateShelterWithAdminUseCase {
             const user = await this.userRepository.create(userData);
             userId = user.id;
 
-<<<<<<< HEAD
-            return {
-                shelter: {
-                    id: shelter.id,
-                    nombre: shelter.nombre,
-                },
-                admin: {
-                    id: user.id,
-                    authUserId: user.authUserId,
-=======
             // Enviar correo de recuperación/confirmación
             await this.authAdminService.sendPasswordReset(input.shelter.correo_contacto);
 
@@ -79,7 +60,6 @@ export class CreateShelterWithAdminUseCase {
                 admin: {
                     id: user.id,
                     //authUserId: user.authUserId,
->>>>>>> origin/main
                     email: user.correo,
                     nombreCompleto: user.nombreCompleto,
                 },
@@ -87,27 +67,15 @@ export class CreateShelterWithAdminUseCase {
 
         } catch (error) {
             // Compensación (ROLLBACK)
-<<<<<<< HEAD
-            if (authUserId) {
-                await this.authAdminService.deleteUser(authUserId);
-=======
             if (userId) {
                 await this.userRepository.delete(userId);
->>>>>>> origin/main
             }
             if (shelterId) {
                 await this.shelterRepository.delete(shelterId);
             }
-<<<<<<< HEAD
-            if (userId) {
-                await this.userRepository.delete(userId);
-            }
-
-=======
             if (authUserId) {
                 await this.authAdminService.deleteUser(authUserId);
             }
->>>>>>> origin/main
             throw error;
         }
     }

@@ -12,8 +12,6 @@ export const loginSchema = z.object({
         .min(1, "La contraseña es obligatoria."),
 });
 
-<<<<<<< HEAD
-=======
 export const ResetPasswordSchema = z.object({
     password: z.string()
         .min(8, 'La contraseña debe tener al menos 8 caracteres')
@@ -24,5 +22,4 @@ export const ResetPasswordSchema = z.object({
 
 export type ResetPasswordDTO = z.infer<typeof ResetPasswordSchema>;
 
->>>>>>> origin/main
 export type LoginInput = z.infer<typeof loginSchema>;

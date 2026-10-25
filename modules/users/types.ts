@@ -1,19 +1,11 @@
-<<<<<<< HEAD
-// modules/users/types.ts
-=======
 // modules/users/animales.types.ts
->>>>>>> origin/main
 
 import { z } from 'zod';
 import {
     UserSchema,
     CreateUserSchema,
     UpdateUserSchema,
-<<<<<<< HEAD
-    UserFiltersSchema
-=======
     UserFiltersSchema, StaffRole
->>>>>>> origin/main
 } from './schemas';
 
 // ===== ENTIDADES DEL DOMINIO =====
@@ -55,8 +47,6 @@ export type UserQueryParams = {
 export type UserCreationResult = {
     user: User;
     message: string;
-<<<<<<< HEAD
-=======
 };
 
 /**
@@ -85,5 +75,4 @@ export const roleConfig: Record<
     operator: { label: "Operador", color: "#6B9FAE", bg: "#EAF3F6" },
     coordinator: { label: "Coordinador", color: "#E8A87C", bg: "#FDF2EA" },
     evaluator: { label: "Evaluador", color: "#7A7670", bg: "#EDE9E1" },
->>>>>>> origin/main
 };

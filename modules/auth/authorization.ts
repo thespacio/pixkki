@@ -35,10 +35,6 @@ export function hasPermission(
     user: AuthenticatedUser,
     permission: string
 ): boolean {
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
     return user.permissions.includes(permission);
 
 }
@@ -105,10 +101,25 @@ export function ensureAnyRole(
 
 }
 
+/**
+ * ¿Es superadmin? El rol llega desde la base con el nombre tal cual se guardó
+ * ("Superadmin"), aunque el tipo `UserRole` lo declare en minúsculas. Se normaliza
+ * para no depender de mayúsculas ni de guiones (superadmin / Superadmin / super_admin).
+ */
+export function isSuperadmin(user: Pick<AuthenticatedUser, "role">): boolean {
+    return String(user.role).toLowerCase().replace(/[^a-z]/g, "") === "superadmin";
+}
+
 export function ensureSuperAdmin(
     user: AuthenticatedUser
 ): void {
 
-    ensureRole(user, "super_admin");
+    ensureAuthenticated(user);
+
+    // Antes comparaba contra "super_admin", valor que la base nunca guarda: ningún
+    // usuario habría pasado esta verificación.
+    if (!isSuperadmin(user)) {
+        throw new ForbiddenError("Required role: Superadmin");
+    }
 
 }

@@ -31,10 +31,14 @@ export async function middleware(request: NextRequest) {
         }
     );
 
-    // Muy importante: getUser() refresca la sesión si es necesario.
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    // getClaims() valida la firma del JWT de la sesión de forma local (con las claves
+    // públicas del proyecto, que se guardan en memoria) y solo va a la red si el token
+    // venció y hay que refrescarlo (actualizando las cookies). Antes se usaba getUser(),
+    // que consulta a Supabase Auth en CADA navegación (~100 ms de espera cada vez).
+    // Esto solo decide la redirección; los datos sensibles se siguen validando en el
+    // servidor con getUser() (ver AuthRepository.getAuthUser).
+    const { data: claimsData } = await supabase.auth.getClaims();
+    const user = claimsData?.claims ?? null;
 
     const pathname = request.nextUrl.pathname;
 
