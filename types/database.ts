@@ -171,18 +171,6 @@ export type Database = {
           raza: string | null
           sexo: string | null
           uuid: string | null
-          color: string | null
-          tamano: string | null
-          microchip: string | null
-          temperamento: string | null
-          vacunado: boolean
-          desparasitado: boolean
-          lugar_rescate: string | null
-          fecha_rescate: string | null
-          situacion_rescate: string | null
-          rescatista_nombre: string | null
-          rescatista_contacto: string | null
-          observaciones: string | null
         }
         Insert: {
           activo?: boolean
@@ -205,18 +193,6 @@ export type Database = {
           raza?: string | null
           sexo?: string | null
           uuid?: string | null
-          color?: string | null
-          tamano?: string | null
-          microchip?: string | null
-          temperamento?: string | null
-          vacunado?: boolean
-          desparasitado?: boolean
-          lugar_rescate?: string | null
-          fecha_rescate?: string | null
-          situacion_rescate?: string | null
-          rescatista_nombre?: string | null
-          rescatista_contacto?: string | null
-          observaciones?: string | null
         }
         Update: {
           activo?: boolean
@@ -239,18 +215,6 @@ export type Database = {
           raza?: string | null
           sexo?: string | null
           uuid?: string | null
-          color?: string | null
-          tamano?: string | null
-          microchip?: string | null
-          temperamento?: string | null
-          vacunado?: boolean
-          desparasitado?: boolean
-          lugar_rescate?: string | null
-          fecha_rescate?: string | null
-          situacion_rescate?: string | null
-          rescatista_nombre?: string | null
-          rescatista_contacto?: string | null
-          observaciones?: string | null
         }
         Relationships: [
           {
@@ -342,99 +306,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuario"
             referencedColumns: ["id_usuario"]
-          },
-        ]
-      }
-      campana: {
-        Row: {
-          contenido: string
-          estado: string
-          fecha_actualizacion: string
-          fecha_creacion: string
-          fecha_publicacion: string | null
-          generada_por_ia: boolean
-          hashtags: string[]
-          id_campana: number
-          id_refugio: number
-          id_usuario_creador: number | null
-          llamado_accion: string | null
-          modelo_ia: string | null
-          titulo: string
-        }
-        Insert: {
-          contenido: string
-          estado?: string
-          fecha_actualizacion?: string
-          fecha_creacion?: string
-          fecha_publicacion?: string | null
-          generada_por_ia?: boolean
-          hashtags?: string[]
-          id_campana?: number
-          id_refugio: number
-          id_usuario_creador?: number | null
-          llamado_accion?: string | null
-          modelo_ia?: string | null
-          titulo: string
-        }
-        Update: {
-          contenido?: string
-          estado?: string
-          fecha_actualizacion?: string
-          fecha_creacion?: string
-          fecha_publicacion?: string | null
-          generada_por_ia?: boolean
-          hashtags?: string[]
-          id_campana?: number
-          id_refugio?: number
-          id_usuario_creador?: number | null
-          llamado_accion?: string | null
-          modelo_ia?: string | null
-          titulo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campana_id_refugio_fkey"
-            columns: ["id_refugio"]
-            isOneToOne: false
-            referencedRelation: "refugio"
-            referencedColumns: ["id_refugio"]
-          },
-          {
-            foreignKeyName: "campana_id_usuario_creador_fkey"
-            columns: ["id_usuario_creador"]
-            isOneToOne: false
-            referencedRelation: "usuario"
-            referencedColumns: ["id_usuario"]
-          },
-        ]
-      }
-      campana_animal: {
-        Row: {
-          id_animal: number
-          id_campana: number
-        }
-        Insert: {
-          id_animal: number
-          id_campana: number
-        }
-        Update: {
-          id_animal?: number
-          id_campana?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campana_animal_id_animal_fkey"
-            columns: ["id_animal"]
-            isOneToOne: false
-            referencedRelation: "animal"
-            referencedColumns: ["id_animal"]
-          },
-          {
-            foreignKeyName: "campana_animal_id_campana_fkey"
-            columns: ["id_campana"]
-            isOneToOne: false
-            referencedRelation: "campana"
-            referencedColumns: ["id_campana"]
           },
         ]
       }
@@ -923,9 +794,6 @@ export type Database = {
           estado: string
           fecha_registro: string
           id_refugio: number
-          direccion: string | null
-          latitud: number | null
-          longitud: number | null
           nombre: string
           numero: string | null
           telefono: string | null
@@ -940,9 +808,6 @@ export type Database = {
           estado: string
           fecha_registro?: string
           id_refugio?: number
-          direccion?: string | null
-          latitud?: number | null
-          longitud?: number | null
           nombre: string
           numero?: string | null
           telefono?: string | null
@@ -957,9 +822,6 @@ export type Database = {
           estado?: string
           fecha_registro?: string
           id_refugio?: number
-          direccion?: string | null
-          latitud?: number | null
-          longitud?: number | null
           nombre?: string
           numero?: string | null
           telefono?: string | null
@@ -1317,21 +1179,7 @@ export type Database = {
       }
     }
     Views: {
-      campana_publica: {
-        Row: {
-          animales: Json | null
-          contenido: string | null
-          fecha_publicacion: string | null
-          hashtags: string[] | null
-          id_campana: number | null
-          llamado_accion: string | null
-          refugio_ciudad: string | null
-          refugio_estado: string | null
-          refugio_nombre: string | null
-          titulo: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       [_ in never]: never

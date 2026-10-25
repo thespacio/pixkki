@@ -26,6 +26,7 @@ export async function createCreateShelterWithAdminUseCase() {
 
     return new CreateShelterWithAdminUseCase(
         authService,
+        shelterService,
         shelterRepository,
         userRepository
     );
