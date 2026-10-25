@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { perRequest } from "@/lib/request-cache";
 
 function getEnvironmentVariables() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,7 +15,9 @@ function getEnvironmentVariables() {
   return { supabaseUrl, supabaseAnonKey };
 }
 
-export async function createSupabaseServerClient() {
+// Un solo cliente por petición: así todo lo que se consulta en el mismo render
+// (layouts, página, acciones) reutiliza la misma conexión y la misma sesión.
+export const createSupabaseServerClient = perRequest(async () => {
   const { supabaseUrl, supabaseAnonKey } = getEnvironmentVariables();
   const cookieStore = await cookies();
 
@@ -34,4 +37,4 @@ export async function createSupabaseServerClient() {
       }
     }
   });
-}
+});

@@ -16,7 +16,7 @@ export const DASHBOARD_SECTIONS = [
 export const PENDING_DASHBOARD_SECTIONS = [
   { title: 'Reportes', href: '/reports' },
   { title: 'Expedientes', href: '/medical' },
-  { title: 'Vacunaciones', href: '/vaccinations' },
+  { title: 'Vacunas', href: '/vaccinations' },
   { title: 'Configuración', href: '/settings' },
 ];
 

@@ -12,7 +12,7 @@ import {
     LogOut,
     BarChart2,
     FileText,
-    Users, BuildingIcon, Syringe, Shield,
+    Users, BuildingIcon, Syringe, Shield, Megaphone, CalendarDays,
 } from "lucide-react";
 export const navigation = [
     // Sección Principal
@@ -35,6 +35,20 @@ export const navigation = [
         title: "Adopciones",
         href: "/adoptions",
         permission: "adoptions.view",
+        section: "Principal"
+    },
+    {
+        icon: Megaphone,
+        title: "Campañas",
+        href: "/campaigns",
+        permission: "campaigns.view",
+        section: "Principal"
+    },
+    {
+        icon: CalendarDays,
+        title: "Eventos",
+        href: "/events",
+        permission: "events.view",
         section: "Principal"
     },
 
@@ -78,7 +92,7 @@ export const navigation = [
     },
     {
         icon: Syringe,
-        title: "Vacunaciones",
+        title: "Vacunas",
         href: "/vaccinations",
         permission: "vaccinations.view",
         section: "Veterinaria"

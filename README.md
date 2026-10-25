@@ -150,6 +150,12 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase | `https://xxxx.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima pública | `eyJhbGci...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (solo servidor) | `eyJhbGci...` |
+| `GEMINI_API_KEY` | Clave de Google AI Studio para sugerir publicaciones en Campañas (solo servidor, nunca `NEXT_PUBLIC_`) | `AIza...` |
+| `GEMINI_MODEL` | Modelo de Gemini a usar (opcional; por defecto `gemini-3.6-flash`) | `gemini-3.8-flash` |
+| `GOOGLE_CALENDAR_API_KEY` | Clave de la Google Calendar API para la sección Eventos (solo servidor, nunca `NEXT_PUBLIC_`) | `AIza...` |
+| `GOOGLE_CALENDAR_ID` | ID del calendario público con los eventos (Configuración del calendario → Integrar calendario) | `abc123@group.calendar.google.com` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Clave de Google Maps para elegir la ubicación del albergue. Va al navegador: **restríngela por dominio (HTTP referrer)** y solo a Maps JavaScript API + Geocoding API | `AIza...` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Map ID de Google Maps (opcional; por defecto `DEMO_MAP_ID`, suficiente para desarrollo) | `a1b2c3d4e5f6` |
 | `NEXT_PUBLIC_APP_URL` | URL base de la aplicación | `http://localhost:3000` |
 | `EMAIL_PROVIDER_API_KEY` | Clave del proveedor de correo | `re_xxxx` |
 | `STORAGE_BUCKET` | Nombre del bucket de imágenes | `animales` |

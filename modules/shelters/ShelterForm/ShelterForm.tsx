@@ -1,5 +1,7 @@
 'use client';
 
+import {useState} from 'react';
+
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +22,8 @@ import {Select} from "@radix-ui/react-select";
 import {ShelterFormProps} from "@/modules/shelters/types";
 import router from "next/router";
 import {useRouter} from "next/navigation";
+import {LocationPicker} from "@/modules/shelters/ShelterForm/LocationPicker";
+import type {PickedLocation} from "@/modules/shelters/google-maps";
 
 export function ShelterForm({
                                 form,
@@ -31,6 +35,27 @@ export function ShelterForm({
                             }: ShelterFormProps) {
 
     const router = useRouter();
+    const [direccion, latitud, longitud] = form.watch(['direccion', 'latitud', 'longitud']);
+    const [autofilled, setAutofilled] = useState(false);
+
+    // Al elegir un punto en el mapa se guardan dirección y coordenadas, y se completan
+    // ciudad y estado con lo que Google reconoce (la persona puede corregirlos después).
+    function handleLocationChange(picked: PickedLocation | null) {
+        const opts = { shouldDirty: true, shouldValidate: true } as const;
+        if (!picked) {
+            form.setValue('direccion', null, opts);
+            form.setValue('latitud', null, opts);
+            form.setValue('longitud', null, opts);
+            setAutofilled(false);
+            return;
+        }
+        form.setValue('direccion', picked.direccion, opts);
+        form.setValue('latitud', picked.latitud, opts);
+        form.setValue('longitud', picked.longitud, opts);
+        if (picked.ciudad) form.setValue('ciudad', picked.ciudad, opts);
+        if (picked.estado) form.setValue('estado', picked.estado, opts);
+        setAutofilled(Boolean(picked.ciudad || picked.estado));
+    }
 
     return (
 
@@ -93,7 +118,7 @@ export function ShelterForm({
                                     <FormLabel>Estado</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        defaultValue={field.value}
+                                        value={field.value ?? ''}
                                     >
                                         <SelectTrigger id="estado">
                                             <SelectValue placeholder="Seleccionar estado" />
@@ -185,6 +210,24 @@ export function ShelterForm({
                                 </FormItem>
                             )}
                         />
+
+                        {/* Ubicación en el mapa */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium leading-none">Ubicación del albergue</p>
+                            <p className="text-sm text-muted-foreground">
+                                Opcional. Busca la dirección o márcala en el mapa.
+                            </p>
+                            <LocationPicker
+                                value={{ direccion, latitud, longitud }}
+                                onChange={handleLocationChange}
+                                disabled={isLoading}
+                            />
+                            {autofilled && (
+                                <p className="text-xs text-muted-foreground">
+                                    Se actualizaron la ciudad y el estado según el mapa. Puedes corregirlos.
+                                </p>
+                            )}
+                        </div>
 
                         {/* Botones */}
                         <div className="flex gap-4">
