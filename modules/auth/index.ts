@@ -1,34 +1,9 @@
-<<<<<<< HEAD
-// modules/auth/index.ts
-import {createSupabaseServerClient} from "@/lib/supabase/server-client";
-import {SupabaseClient} from "@supabase/supabase-js";
-import {Database} from "@/types/database";
-import {AuthService} from "@/modules/auth/service";
-import {AuthRepository} from "@/modules/auth/repository";
-
-/**
- * Fachada pública del módulo auth para composición desde otros módulos:
- * evita que otros módulos importen AuthRepository/AuthService directamente.
- */
-export function createAuthRepository(supabase: SupabaseClient<Database>) {
-    return new AuthRepository(supabase);
-}
-
-export function createAuthServiceFrom(supabase: SupabaseClient<Database>) {
-    return new AuthService(createAuthRepository(supabase));
-}
-
-export async function createAuthService() {
-    const supabase = await createSupabaseServerClient();
-    return createAuthServiceFrom(supabase);
-}
-
-=======
 import {createSupabaseServerClient} from "@/lib/supabase/server-client";
 import {AuthService} from "@/modules/auth/service";
 import {AuthRepository} from "@/modules/auth/repository";
 import {AuthAdminRepository} from "@/modules/auth/admin-repository";
 import {createSupabaseAdminClient} from "@/lib/supabase/admin-client";
+import {perRequest} from "@/lib/request-cache";
 
 export async function createAuthService() {
     const repository = new AuthRepository(
@@ -44,29 +19,25 @@ export async function createAuthService() {
         adminRepository
     );
 }
->>>>>>> origin/main
-export async function getCurrentUser() {
+// El usuario actual se pide desde varios sitios en la MISMA petición (layout raíz,
+// layout protegido, la página, acciones de servidor). `perRequest` hace que todos
+// compartan un único resultado en vez de repetir ~4 consultas cada vez.
+export const getCurrentUser = perRequest(async () => {
     return (await createAuthService()).getCurrentUser();
-}
+});
 
-<<<<<<< HEAD
-=======
-export async function getAuthUser() {
+export const getAuthUser = perRequest(async () => {
     return (await createAuthService()).getAuthUser();
-}
+});
 
->>>>>>> origin/main
 export async function getPermissions() {
     return (await createAuthService()).getPermissions();
 }
 
 export async function logout() {
     return (await createAuthService()).logout();
-<<<<<<< HEAD
-=======
 }
 
 export async function getUsersByShelterId(id: number) {
     return (await createAuthService()).getUsersByShelterId(id);
->>>>>>> origin/main
 }

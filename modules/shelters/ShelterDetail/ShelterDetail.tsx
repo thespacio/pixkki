@@ -6,6 +6,7 @@ import {Button} from '@/components/ui/button';
 import {ArrowLeft, Pencil} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {Shelter} from "@/modules/shelters/types";
+import {googleMapsLink} from "@/modules/shelters/google-maps";
 
 interface ShelterDetailProps {
     shelter: Shelter;
@@ -69,6 +70,22 @@ export function ShelterDetail({ shelter, canEdit = false }: ShelterDetailProps) 
                     <div>
                         <dt className="text-sm font-medium text-muted-foreground">Teléfono</dt>
                         <dd className="text-lg">{shelter.telefono || 'No especificado'}</dd>
+                    </div>
+                    <div className="md:col-span-2">
+                        <dt className="text-sm font-medium text-muted-foreground">Dirección</dt>
+                        <dd className="text-lg">
+                            {shelter.direccion || 'No especificada'}
+                            {typeof shelter.latitud === 'number' && typeof shelter.longitud === 'number' && (
+                                <a
+                                    href={googleMapsLink(shelter.latitud, shelter.longitud)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ml-3 text-sm text-primary hover:underline"
+                                >
+                                    Ver en Google Maps
+                                </a>
+                            )}
+                        </dd>
                     </div>
                     <div className="md:col-span-2">
                         <dt className="text-sm font-medium text-muted-foreground">Fecha de creación</dt>

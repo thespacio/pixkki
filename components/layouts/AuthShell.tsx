@@ -35,11 +35,7 @@ export default function AuthShell(
                 <div className={"pb-3"}>
                     {/*Back Button*/}
                     <button
-<<<<<<< HEAD
-                        onClick={() => router.push("/")}
-=======
                         onClick={() => router.back()}
->>>>>>> origin/main
                         className="flex items-center gap-2 text-sm cursor-pointer text-muted-foreground hover:text-foreground transition-colors mb-12"
                     >
                         <ArrowLeft size={14} />

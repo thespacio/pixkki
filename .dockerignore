@@ -1,0 +1,34 @@
+# Dependencias y builds (se regeneran dentro de la imagen)
+node_modules
+.next
+out
+
+# Secretos: nunca deben entrar a la imagen
+.env
+.env.*
+
+# Git y editores
+.git
+.gitignore
+.idea
+.vscode
+.claude
+.scannerwork
+
+# Artefactos de pruebas y reportes
+tests
+test-results
+playwright-report
+qa-report
+blob-report
+coverage
+*.tsbuildinfo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Logs
+*.log
+npm-debug.log*
