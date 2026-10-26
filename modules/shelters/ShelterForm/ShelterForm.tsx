@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,18 @@ import {useRouter} from "next/navigation";
 import {LocationPicker} from "@/modules/shelters/ShelterForm/LocationPicker";
 import type {PickedLocation} from "@/modules/shelters/google-maps";
 
+const FIELD_LABELS: Record<string, string> = {
+    nombre_albergue: 'Nombre del albergue',
+    ciudad: 'Ciudad',
+    estado: 'Estado',
+    nombre_admin: 'Nombre del administrador',
+    correo_contacto: 'Correo',
+    telefono: 'Teléfono (10 dígitos)',
+    direccion: 'Dirección',
+    latitud: 'Ubicación en el mapa',
+    longitud: 'Ubicación en el mapa',
+};
+
 export function ShelterForm({
                                 form,
                                 onSubmit,
@@ -37,6 +49,16 @@ export function ShelterForm({
     const router = useRouter();
     const [direccion, latitud, longitud] = form.watch(['direccion', 'latitud', 'longitud']);
     const [autofilled, setAutofilled] = useState(false);
+    const [invalidFields, setInvalidFields] = useState<string[]>([]);
+    const alertRef = useRef<HTMLDivElement>(null);
+    const rootError = form.formState.errors.root?.message;
+
+    // Antes un formulario inválido no mostraba nada: ahora se lista qué falta y se baja hasta el aviso.
+    function handleInvalid(errors: Record<string, unknown>) {
+        const labels = Object.keys(errors).map((key) => FIELD_LABELS[key] ?? key);
+        setInvalidFields([...new Set(labels)]);
+        requestAnimationFrame(() => alertRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    }
 
     // Al elegir un punto en el mapa se guardan dirección y coordenadas, y se completan
     // ciudad y estado con lo que Google reconoce (la persona puede corregirlos después).
@@ -52,9 +74,14 @@ export function ShelterForm({
         form.setValue('direccion', picked.direccion, opts);
         form.setValue('latitud', picked.latitud, opts);
         form.setValue('longitud', picked.longitud, opts);
+        // El desglose se reemplaza completo (si Google no trae la colonia, no se queda la anterior).
+        form.setValue('calle', picked.calle, opts);
+        form.setValue('numero', picked.numero, opts);
+        form.setValue('colonia', picked.colonia, opts);
+        form.setValue('codigo_postal', picked.codigoPostal, opts);
         if (picked.ciudad) form.setValue('ciudad', picked.ciudad, opts);
         if (picked.estado) form.setValue('estado', picked.estado, opts);
-        setAutofilled(Boolean(picked.ciudad || picked.estado));
+        setAutofilled(true);
     }
 
     return (
@@ -63,11 +90,10 @@ export function ShelterForm({
             <CardContent className="pt-6">
                 <Form {...form}>
                     <form
-                        onSubmit={form.handleSubmit(
-                            onSubmit,
-                            (errors) => {
-                            console.log("Errores:", errors);
-                            })}
+                        onSubmit={form.handleSubmit(async (data: ShelterFormValues) => {
+                            setInvalidFields([]);
+                            await onSubmit(data);
+                        }, handleInvalid)}
                         className="space-y-6">
                         {/* Nombre del albergue*/}
                         <FormField
@@ -224,10 +250,106 @@ export function ShelterForm({
                             />
                             {autofilled && (
                                 <p className="text-xs text-muted-foreground">
-                                    Se actualizaron la ciudad y el estado según el mapa. Puedes corregirlos.
+                                    Se llenaron calle, número, colonia, código postal, ciudad y estado según el mapa.
+                                    Puedes corregirlos.
                                 </p>
                             )}
+                            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="calle"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Calle</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Ej: Av. Patria"
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="numero"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Número</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Ej: 1891"
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="colonia"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Colonia</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Ej: Jardines Universidad"
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="codigo_postal"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Código postal</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Ej: 45110" inputMode="numeric" maxLength={5}
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => field.onChange(e.target.value || null)}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
+
+                        {(invalidFields.length > 0 || rootError) && (
+                            <div
+                                ref={alertRef}
+                                role="alert"
+                                className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+                            >
+                                {rootError ?? 'Revisa los campos marcados antes de continuar:'}
+                                {invalidFields.length > 0 && !rootError && (
+                                    <ul className="mt-1 list-disc pl-5">
+                                        {invalidFields.map((label) => (
+                                            <li key={label}>{label}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
 
                         {/* Botones */}
                         <div className="flex gap-4">
