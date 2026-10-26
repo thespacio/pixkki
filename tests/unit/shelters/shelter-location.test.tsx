@@ -25,6 +25,10 @@ const base = {
 const result: GeocoderResult = {
     formatted_address: "Av. Patria 1891, Jardines Universidad, 45110 Zapopan, Jal., México",
     address_components: [
+        { long_name: "1891", short_name: "1891", types: ["street_number"] },
+        { long_name: "Avenida Patria", short_name: "Av. Patria", types: ["route"] },
+        { long_name: "Jardines Universidad", short_name: "Jardines Universidad", types: ["sublocality_level_1", "sublocality", "political"] },
+        { long_name: "45110", short_name: "45110", types: ["postal_code"] },
         { long_name: "Zapopan", short_name: "Zapopan", types: ["locality", "political"] },
         { long_name: "Jalisco", short_name: "Jal.", types: ["administrative_area_level_1", "political"] },
     ],
@@ -35,7 +39,7 @@ describe("lectura del resultado de Google Maps", () => {
     it("convierte un resultado en dirección, coordenadas, ciudad y estado", async (ctx) => {
         await qaAnnotate(ctx, {
             id: "TC-U240", categoria: "Funcional", prioridad: "Alta",
-            criterio: "Al elegir un punto se obtiene dirección, coordenadas (6 decimales), ciudad y estado del catálogo.",
+            criterio: "Al elegir un punto se obtiene dirección, coordenadas (6 decimales), calle, número, colonia, código postal, ciudad y estado del catálogo.",
         });
 
         expect(toPickedLocation(result)).toEqual({
@@ -44,6 +48,10 @@ describe("lectura del resultado de Google Maps", () => {
             longitud: -103.412346,
             ciudad: "Zapopan",
             estado: "Jalisco",
+            calle: "Avenida Patria",
+            numero: "1891",
+            colonia: "Jardines Universidad",
+            codigoPostal: "45110",
         });
         expect(roundCoordinate(19.4326077)).toBe(19.432608);
     });
@@ -89,6 +97,8 @@ describe("guardado de la ubicación", () => {
         expect(CreateShelterSchema.safeParse({ ...base, latitud: 91, longitud: 0 }).success).toBe(false);
         expect(CreateShelterSchema.safeParse({ ...base, latitud: 0, longitud: 181 }).success).toBe(false);
         expect(CreateShelterSchema.safeParse({ ...base, direccion: "x".repeat(301) }).success).toBe(false);
+        expect(CreateShelterSchema.safeParse({ ...base, codigo_postal: "45110", calle: "Av. Patria" }).success).toBe(true);
+        expect(CreateShelterSchema.safeParse({ ...base, codigo_postal: "4511" }).success).toBe(false);
         expect(UpdateShelterSchema.safeParse({ ...base, direccion: null, latitud: null, longitud: null }).success).toBe(true);
     });
 
@@ -115,6 +125,9 @@ describe("guardado de la ubicación", () => {
 
         const cleared = mapShelterToRow({ direccion: null, latitud: null, longitud: null });
         expect(cleared).toMatchObject({ direccion: null, latitud: null, longitud: null });
+
+        const parts = mapShelterToRow({ calle: " Av. Patria ", numero: "", colonia: null, codigo_postal: "45110" });
+        expect(parts).toMatchObject({ calle: "Av. Patria", numero: null, colonia: null, codigo_postal: "45110" });
 
         const half = mapShelterToRow({ latitud: 20.7 });
         expect("latitud" in half).toBe(false);

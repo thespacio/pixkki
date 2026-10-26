@@ -39,9 +39,18 @@ export const AddressSchema = z.string().trim().max(300, 'La dirección no puede 
 export const LatitudeSchema = z.number().min(-90, 'Latitud inválida').max(90, 'Latitud inválida').nullish();
 export const LongitudeSchema = z.number().min(-180, 'Longitud inválida').max(180, 'Longitud inválida').nullish();
 
+export const StreetSchema = z.string().trim().max(150, 'La calle no puede exceder los 150 caracteres').nullish();
+export const StreetNumberSchema = z.string().trim().max(20, 'El número no puede exceder los 20 caracteres').nullish();
+export const NeighborhoodSchema = z.string().trim().max(100, 'La colonia no puede exceder los 100 caracteres').nullish();
+export const PostalCodeSchema = z.string().trim().regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos').nullish();
+
 // ===== ESQUEMAS DE DOMINIO =====
 // Shelter completo (para respuestas de API)
 export const ShelterFieldsSchema = z.object({
+    calle: StreetSchema,
+    numero: StreetNumberSchema,
+    colonia: NeighborhoodSchema,
+    codigo_postal: PostalCodeSchema,
     direccion: AddressSchema,
     latitud: LatitudeSchema,
     longitud: LongitudeSchema,

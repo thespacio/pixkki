@@ -20,6 +20,10 @@ export function mapShelterRowToDomain(row: ShelterRow): Shelter {
         correo_contacto: row.correo_contacto,
         telefono: row.telefono,
         // Las columnas de ubicación pueden no existir aún si falta la migración.
+        calle: row.calle ?? null,
+        numero: row.numero ?? null,
+        colonia: row.colonia ?? null,
+        codigo_postal: row.codigo_postal ?? null,
         direccion: row.direccion ?? null,
         latitud: row.latitud ?? null,
         longitud: row.longitud ?? null,
@@ -88,6 +92,12 @@ export function mapShelterToRow(
 
     if ('direccion' in data && data.direccion !== undefined) {
         row.direccion = data.direccion?.trim() || null;
+    }
+
+    // Desglose de la dirección (columnas que ya existían en `refugio`): vacío = null.
+    for (const key of ['calle', 'numero', 'colonia', 'codigo_postal'] as const) {
+        const value = key in data ? (data as Record<string, string | null | undefined>)[key] : undefined;
+        if (value !== undefined) row[key] = value?.trim() || null;
     }
 
     return row;

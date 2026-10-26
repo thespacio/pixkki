@@ -34,9 +34,11 @@ export default function NewShelterPage() {
                     message: "Error al crear el refugio",
                 });
             }
-        } catch {
+        } catch (error) {
             form.setError("root", {
-                message: "Error inesperado al crear el refugio",
+                message: error instanceof Error && error.message
+                    ? `No se pudo crear el albergue: ${error.message}`
+                    : "Error inesperado al crear el refugio",
             });
         } finally {
             setIsLoading(false);

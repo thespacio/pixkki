@@ -125,6 +125,11 @@ export type PickedLocation = {
     longitud: number;
     ciudad: string | null;
     estado: string | null;
+    /** Desglose de la dirección, para llenar los campos que ya existen en el albergue. */
+    calle: string | null;
+    numero: string | null;
+    colonia: string | null;
+    codigoPostal: string | null;
 };
 
 export function toPickedLocation(result: GeocoderResult): PickedLocation {
@@ -136,8 +141,12 @@ export function toPickedLocation(result: GeocoderResult): PickedLocation {
         latitud: roundCoordinate(result.geometry.location.lat()),
         longitud: roundCoordinate(result.geometry.location.lng()),
         // Mismo orden de preferencia que usa Google: localidad > municipio > subdivisión.
-        ciudad: find("locality", "administrative_area_level_2", "sublocality") ?? null,
+        ciudad: find("locality", "administrative_area_level_2") ?? null,
         estado: matchMexicanState(find("administrative_area_level_1")),
+        calle: find("route") ?? null,
+        numero: find("street_number") ?? null,
+        colonia: find("sublocality_level_1", "sublocality", "neighborhood") ?? null,
+        codigoPostal: find("postal_code") ?? null,
     };
 }
 
