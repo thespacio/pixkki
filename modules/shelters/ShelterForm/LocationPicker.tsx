@@ -53,6 +53,7 @@ export function LocationPicker({ value, onChange, disabled = false }: Props) {
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(API_KEY ? 'loading' : 'error');
     const [message, setMessage] = useState<string | null>(API_KEY ? null : MAPS_KEY_MISSING_MESSAGE);
     const [busy, setBusy] = useState(false);
+    const lastResolved = useRef(value.direccion ?? '');
 
     const placeMarker = useCallback((position: LatLng, zoom?: number) => {
         const api = apiRef.current;
@@ -91,6 +92,7 @@ export function LocationPicker({ value, onChange, disabled = false }: Props) {
                 const picked = toPickedLocation(results[0]);
                 placeMarker({ lat: picked.latitud, lng: picked.longitud }, typeof request === 'string' ? 16 : undefined);
                 setQuery(picked.direccion);
+                lastResolved.current = picked.direccion;
                 onChangeRef.current(picked);
             } catch (error) {
                 setMessage(geocodeErrorMessage(error));
@@ -169,6 +171,11 @@ export function LocationPicker({ value, onChange, disabled = false }: Props) {
                 <Input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onBlur={() => {
+                        // Si escribió una dirección y salió del campo sin pulsar Buscar, se busca sola.
+                        const text = query.trim();
+                        if (mapReady && !busy && text.length >= 3 && text !== lastResolved.current) search();
+                    }}
                     onKeyDown={(e) => {
                         // Enter busca la dirección; no debe enviar el formulario completo.
                         if (e.key === 'Enter') {
