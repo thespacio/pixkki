@@ -2,14 +2,17 @@
 
 export class AuthError extends Error {
     readonly statusCode: number;
+    readonly code?: string;
 
     constructor(
         message: string,
-        statusCode = 400
+        statusCode = 400,
+        code?: string
     ) {
         super(message);
         this.name = new.target.name;
         this.statusCode = statusCode;
+        this.code = code;
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -108,23 +111,20 @@ export class InvalidCredentialsError extends AuthError {
     }
 }
 
-export class InvalidTotpCodeError extends Error {
+export class InvalidTotpCodeError extends AuthError {
     constructor() {
-        super("El código de autenticación no es válido.");
-        this.name = "InvalidTotpCodeError";
+        super("El código de autenticación no es válido.", 400);
     }
 }
 
-export class MfaChallengeExpiredError extends Error {
+export class MfaChallengeExpiredError extends AuthError {
     constructor() {
-        super("El código ha expirado. Intenta nuevamente.");
-        this.name = "MfaChallengeExpiredError";
+        super("El código ha expirado. Intenta nuevamente.", 400);
     }
 }
 
-export class MfaEnrollmentError extends Error {
-    constructor(message = "No fue posible configurar la autenticación en dos pasos.") {
-        super(message);
-        this.name = "MfaEnrollmentError";
+export class MfaEnrollmentError extends AuthError {
+    constructor(message = "No fue posible configurar la autenticación en dos pasos.", statusCode = 500) {
+        super(message, statusCode);
     }
 }

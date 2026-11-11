@@ -50,6 +50,16 @@ export type UserCreationResult = {
 };
 
 /**
+ * DTO de solo lectura para la vista global de usuarios (F-USERS-03):
+ * un usuario del dominio + el nombre del refugio al que pertenece.
+ * No hay schema Zod: es un modelo de lectura derivado de `User`, no una
+ * entrada validable.
+ */
+export type GlobalUserItem = User & {
+    shelterNombre: string | null;
+};
+
+/**
  * Mapa rol lógico -> id numérico en tabla `rol`.
  * Debe coincidir con los IDs reales de tu base de datos.
  */

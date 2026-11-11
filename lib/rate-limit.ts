@@ -46,3 +46,22 @@ export function rateLimit(
 export function resetRateLimits(): void {
     buckets.clear();
 }
+
+/**
+ * Error lanzado cuando un límite de uso se agota.
+ * Lo traducen los Route Handlers a HTTP 429 con header Retry-After.
+ */
+export class RateLimitError extends Error {
+    readonly statusCode: number = 429;
+    readonly code: string = "RATE_LIMITED";
+    readonly retryAfterSeconds: number;
+
+    constructor(
+        retryAfterSeconds: number,
+        message: string = "Demasiados intentos. Por favor, espera antes de volver a intentarlo."
+    ) {
+        super(message);
+        this.name = "RateLimitError";
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
+}

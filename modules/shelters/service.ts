@@ -263,6 +263,25 @@ export class ShelterService {
         };
     }
 
+    /**
+     * Cambia el estado operativo (activo/inactivo) de un refugio
+     * (F-SHELTER-03 / RF0.2): solo el superadmin.
+     *
+     * Usa `repository.updateStatus` directamente: `update` hace early-return
+     * "sin cambios" cuando el único cambio es `activo`.
+     */
+    async updateStatus(
+        id: number,
+        activo: boolean,
+        authContext: AuthenticatedUser
+    ): Promise<Shelter> {
+        // 1. Autorización: solo el superadmin cambia el estado operativo
+        ShelterAuthorization.ensureCanChangeStatus(authContext);
+
+        // 2. Acceso a datos: actualizar el estado
+        return this.repository.updateStatus(id, activo);
+    }
+
     // ===== Métodos privados de validación de negocio =====
 
     /**

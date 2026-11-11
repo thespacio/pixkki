@@ -62,8 +62,6 @@ export async function createShelterAction(
  * Ruta: /shelters/[id]/edit
  */
 export async function updateShelterAction(id: number, updates: UpdateShelterInput) {
-    console.log("hola");
-
     const authContext = await getCurrentUser();
     const service = await createShelterService();
 
@@ -80,6 +78,41 @@ export async function updateShelterAction(id: number, updates: UpdateShelterInpu
         changes: result.changes,
         message: `Refugio actualizado exitosamente`
     };
+}
+
+/**
+ * Activa o desactiva un refugio (F-SHELTER-03 / RF0.2)
+ * Ruta: /shelters/manage (Switch de estado)
+ * Solo el superadmin puede operarlo (la autorización se valida en el service).
+ */
+export async function toggleShelterStatusAction(id: number, activo: boolean) {
+    try {
+        const authContext = await getCurrentUser();
+        const service = await createShelterService();
+
+        const shelter = await service.updateStatus(id, activo, authContext);
+
+        // Revalidar las rutas afectadas
+        revalidatePath(`/shelters/${id}`);
+        revalidatePath('/shelters');
+        revalidatePath('/shelters/manage');
+
+        return {
+            success: true,
+            message: `Refugio ${activo ? 'activado' : 'desactivado'} exitosamente`,
+            data: shelter
+        };
+    } catch (error) {
+        // El consumidor (ShelterStatusSwitch) espera un resultado tipado,
+        // no una excepción: se traduce el error a mensaje para la UI.
+        return {
+            success: false,
+            message: error instanceof Error
+                ? error.message
+                : 'Error al actualizar el estado del refugio',
+            data: null
+        };
+    }
 }
 
 // ===== ACCIONES ADICIONALES (MANTENIMIENTO) =====

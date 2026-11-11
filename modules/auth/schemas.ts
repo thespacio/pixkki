@@ -23,3 +23,19 @@ export const ResetPasswordSchema = z.object({
 export type ResetPasswordDTO = z.infer<typeof ResetPasswordSchema>;
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const verifyMfaSchema = z.object({
+    factorId: z
+        .string("El factor de autenticación es obligatorio.")
+        .min(1, "El factor de autenticación es obligatorio."),
+
+    challengeId: z
+        .string("El desafío de autenticación es obligatorio.")
+        .min(1, "El desafío de autenticación es obligatorio."),
+
+    code: z
+        .string("El código de verificación es obligatorio.")
+        .regex(/^\d{6}$/, "El código de verificación debe tener 6 dígitos."),
+});
+
+export type VerifyMfaInput = z.infer<typeof verifyMfaSchema>;

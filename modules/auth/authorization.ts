@@ -106,8 +106,12 @@ export function ensureAnyRole(
  * ("Superadmin"), aunque el tipo `UserRole` lo declare en minúsculas. Se normaliza
  * para no depender de mayúsculas ni de guiones (superadmin / Superadmin / super_admin).
  */
+export function isSuperadminRole(role: string): boolean {
+    return String(role).toLowerCase().replace(/[^a-z]/g, "") === "superadmin";
+}
+
 export function isSuperadmin(user: Pick<AuthenticatedUser, "role">): boolean {
-    return String(user.role).toLowerCase().replace(/[^a-z]/g, "") === "superadmin";
+    return isSuperadminRole(user.role);
 }
 
 export function ensureSuperAdmin(

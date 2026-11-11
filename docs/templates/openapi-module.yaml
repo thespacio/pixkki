@@ -1,0 +1,127 @@
+# ---------------------------------------------------------------------------
+# Plantilla OpenAPI por módulo — Pixkki API v1.
+#
+# Cada módulo copia esta plantilla en `modules/<modulo>/contracts/openapi.yaml`
+# y la completa. El contrato es la fuente de verdad del módulo hacia el
+# exterior: los route handlers de `app/api/v1/<modulo>/` lo implementan y los
+# cuerpos se validan con Zod (requerimiento-00, "Contrato de API").
+#
+# Reglas del contrato v1:
+# - Envelope uniforme:
+#     éxito -> { success: true,  data: ... }
+#     error -> { success: false, error: { code, message, statusCode } }
+# - Códigos de error en UPPER_SNAKE_CASE, estables entre módulos.
+# - Mensajes de error en español, pensados para el usuario final.
+# - Autenticación por cookie de sesión de Supabase (flujo SSR).
+# - Validación de entrada con Zod antes de cualquier efecto (400
+#   VALIDATION_ERROR ante cuerpo inválido).
+# ---------------------------------------------------------------------------
+
+openapi: 3.0.3
+info:
+  title: Pixkki <Módulo> API
+  version: 1.0.0
+  description: >
+    Contrato de la API del módulo `<modulo>`.
+    Copiar este archivo y completar `paths` con los endpoints del módulo.
+
+servers:
+  - url: /api/v1
+    description: API versionada
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: <modulo>
+    description: Operaciones del módulo <modulo>.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-<project-ref>-auth-token
+      description: >
+        Cookie de sesión emitida por Supabase Auth (flujo SSR). Los endpoints
+        públicos la omiten con `security: []`.
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          description: Carga útil específica del endpoint.
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code:
+              type: string
+              description: Código estable del error (UPPER_SNAKE_CASE).
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              description: Mensaje en español para el usuario final.
+              example: Datos inválidos.
+            statusCode:
+              type: integer
+              example: 400
+
+  responses:
+    ValidationError:
+      description: 400 — VALIDATION_ERROR (cuerpo inválido).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: 401 — UNAUTHORIZED (sin sesión).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: 403 — regla de negocio o permisos denegados.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: 404 — recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    RateLimited:
+      description: 429 — RATE_LIMITED (límite de peticiones excedido).
+      headers:
+        Retry-After:
+          description: Segundos hasta poder reintentar.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    InternalError:
+      description: 500 — INTERNAL_ERROR (error interno, sin detalles).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+# Completar con los endpoints del módulo:
+paths: {}

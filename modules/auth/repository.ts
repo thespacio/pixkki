@@ -1,10 +1,18 @@
 // modules/auth/repository.ts
 
-import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { Database } from "@/types/database";
-import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
 import {UserRole} from "@/modules/auth/types";
-import {SupabaseClient} from "@supabase/supabase-js";
+import {SupabaseClient, type Factor} from "@supabase/supabase-js";
+import {AuthApiError} from "@supabase/auth-js";
+import {
+    AuthError,
+    InvalidCredentialsError,
+    InvalidTotpCodeError,
+    MfaChallengeExpiredError,
+    MfaEnrollmentError,
+    UnauthorizedError,
+    UserNotFoundError,
+} from "@/modules/auth/errors";
 
 export type UsuarioRow = Database["public"]["Tables"]["usuario"]["Row"];
 export type UsuarioInsert = Database["public"]["Tables"]["usuario"]["Insert"];
@@ -66,7 +74,7 @@ export class AuthRepository {
         const { data, error } = await this.supabase.auth.getUser();
 
         if (error || !data.user) {
-            throw new Error('Usuario no autenticado');
+            throw new UnauthorizedError();
         }
 
         return {
@@ -75,6 +83,118 @@ export class AuthRepository {
             emailConfirmed: !!data.user.email_confirmed_at,
             createdAt: data.user.created_at!,
         };
+    }
+
+    /**
+     * Inicia sesión con correo y contraseña (Supabase Auth).
+     * Traduce los errores de la API a errores tipados del dominio.
+     */
+    async signInWithPassword(email: string, password: string): Promise<void> {
+        const { error } = await this.supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            switch (error.status) {
+                case 400:
+                    throw new InvalidCredentialsError();
+                case 422:
+                    throw new AuthError(
+                        "El correo electrónico no es válido",
+                        422,
+                        "INVALID_EMAIL"
+                    );
+                default:
+                    throw new AuthError(
+                        "Ocurrió un error al iniciar sesión",
+                        error.status ?? 500
+                    );
+            }
+        }
+    }
+
+    /**
+     * Nivel de aseguramiento actual (aal1 = contraseña, aal2 = MFA verificada)
+     */
+    async getAuthenticatorAssuranceLevel() {
+        const { data, error } = await this.supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible verificar el estado de la autenticación.",
+                500
+            );
+        }
+
+        return data;
+    }
+
+    /**
+     * Lista los factores MFA de tipo TOTP del usuario autenticado
+     */
+    async listMfaFactors(): Promise<Factor[]> {
+        const { data, error } = await this.supabase.auth.mfa.listFactors();
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible obtener los factores de autenticación.",
+                500
+            );
+        }
+
+        return data.totp;
+    }
+
+    /**
+     * Crea un desafío MFA para el factor indicado y devuelve su ID
+     */
+    async createMfaChallenge(factorId: string): Promise<string> {
+        const { data, error } = await this.supabase.auth.mfa.challenge({
+            factorId,
+        });
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible iniciar la verificación en dos pasos.",
+                500
+            );
+        }
+
+        return data.id;
+    }
+
+    /**
+     * Verifica un desafío MFA con el código TOTP recibido.
+     * Traduce los errores de la API a errores tipados del dominio.
+     */
+    async verifyMfaChallenge(
+        factorId: string,
+        challengeId: string,
+        code: string
+    ): Promise<void> {
+        const { error } = await this.supabase.auth.mfa.verify({
+            factorId,
+            challengeId,
+            code,
+        });
+
+        if (!error) {
+            return;
+        }
+
+        if (error instanceof AuthApiError) {
+            switch (error.message) {
+                case "Invalid TOTP code entered":
+                    throw new InvalidTotpCodeError();
+                case "MFA challenge has expired":
+                    throw new MfaChallengeExpiredError();
+                default:
+                    throw new MfaEnrollmentError(error.message);
+            }
+        }
+
+        throw error;
     }
 
     /**
@@ -97,7 +217,7 @@ export class AuthRepository {
             .single();
 
         if (error || !data) {
-            throw new Error('Usuario no encontrado');
+            throw new UserNotFoundError();
         }
 
         return {
@@ -129,7 +249,7 @@ export class AuthRepository {
             .single();
 
         if (error || !data) {
-            throw new Error('Usuario no encontrado');
+            throw new UserNotFoundError();
         }
 
         return {
@@ -274,5 +394,36 @@ export class AuthRepository {
             ultimoLogin: user.ultimo_login,
             authUserId: user.auth_user_id,
         }));
+    }
+
+    /**
+     * F-SHELTER-03: el refugio del usuario debe estar activo para permitir el
+     * acceso de su personal. El superadmin opera a nivel global y no está
+     * sujeto a este bloqueo.
+     */
+    async isShelterActive(idRefugio: number): Promise<boolean> {
+        const { data, error } = await this.supabase
+            .from("refugio")
+            .select("activo")
+            .eq("id_refugio", idRefugio)
+            .single();
+
+        // No encontrado (PGRST116): el refugio no existe → no está activo.
+        if (error?.code === "PGRST116") {
+            return false;
+        }
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible verificar el estado del refugio.",
+                500
+            );
+        }
+
+        if (!data) {
+            return false;
+        }
+
+        return data.activo;
     }
 }

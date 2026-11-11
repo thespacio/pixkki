@@ -11,5 +11,5 @@ export async function forgotPasswordAction(formData: FormData) {
 
     const service = await createAuthService();
 
-    await service.sendPasswordReset(dto);
+    await service.sendPasswordReset(dto.email);
 }

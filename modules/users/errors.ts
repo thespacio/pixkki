@@ -5,6 +5,20 @@ export class EmailAlreadyInUseError extends Error {
     }
 }
 
+export class UserNotFoundError extends Error {
+    constructor(id: number) {
+        super(`Usuario con ID ${id} no encontrado`);
+        this.name = "UserNotFoundError";
+    }
+}
+
+export class UserAuthorizationError extends Error {
+    constructor(message = "No tienes permisos para realizar esta acción.") {
+        super(message);
+        this.name = "UserAuthorizationError";
+    }
+}
+
 export class StaffCreationFailedError extends Error {
     constructor(reason: string) {
         super(`No se pudo crear el miembro del personal: ${reason}`);

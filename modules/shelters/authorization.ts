@@ -2,6 +2,7 @@
 
 import { ShelterAuthorizationError } from './errors';
 import {AuthenticatedUser} from "@/modules/auth/types";
+import {isSuperadminRole} from "@/modules/auth/authorization";
 
 /**
  * Contexto de autorización para operaciones de shelters
@@ -55,6 +56,32 @@ export class ShelterAuthorization {
         if (context.role.trim().toLowerCase() !== 'superadmin') {
             throw new ShelterAuthorizationError(
                 `Usuario con rol "${context.role}" no tiene permisos para crear refugios`,
+                {
+                    userId: context.id,
+                    userRole: context.role,
+                    requiredRoles: ['superadmin']
+                }
+            );
+        }
+    }
+
+    /**
+     * Verifica si un usuario puede cambiar el estado operativo de un refugio
+     * (F-SHELTER-03 / RF0.2): solo el superadmin.
+     */
+    static ensureCanChangeStatus(context: AuthenticatedUser): void {
+        if (!context.id) {
+            throw new ShelterAuthorizationError(
+                'Usuario no autenticado para cambiar el estado del refugio',
+                { userId: context.id }
+            );
+        }
+
+        // Comparación tolerante: el valor real proviene de `rol.nombre_rol`
+        // en BD y no está estandarizado (superadmin / Superadmin / super_admin).
+        if (!isSuperadminRole(context.role)) {
+            throw new ShelterAuthorizationError(
+                'Solo el superadmin puede cambiar el estado operativo de un refugio',
                 {
                     userId: context.id,
                     userRole: context.role,

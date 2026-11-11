@@ -48,6 +48,11 @@ export async function middleware(request: NextRequest) {
         "/forgot-password",
         "/reset-password",
         "/auth/callback",
+        // API v1: endpoints públicos de auth (RF0.5)
+        "/api/v1/auth/login",
+        "/api/v1/auth/recover-password",
+        "/api/v1/auth/reset-password",
+        "/api/v1/auth/mfa/verify",
     ];
 
     const authPages = [
@@ -60,6 +65,22 @@ export async function middleware(request: NextRequest) {
     );
 
     if (!user && !isPublicRoute) {
+        // Las rutas de API no redirigen a HTML: responden 401 con el
+        // envelope uniforme del contrato v1 (requerimiento-00).
+        if (pathname.startsWith("/api/")) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: "UNAUTHORIZED",
+                        message: "No estás autenticado.",
+                        statusCode: 401,
+                    },
+                },
+                { status: 401 }
+            );
+        }
+
         return NextResponse.redirect(new URL("/login", request.url));
     }
 

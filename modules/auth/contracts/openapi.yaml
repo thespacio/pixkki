@@ -1,0 +1,451 @@
+# ---------------------------------------------------------------------------
+# Contrato OpenAPI del módulo auth — Pixkki API v1.
+#
+# Implementado por los route handlers de `app/api/v1/auth/`. Los cuerpos se
+# validan con Zod (`modules/auth/schemas.ts`) y la lógica de login vive en
+# LoginService (`modules/auth/services/login.service.ts`).
+#
+# Notas de diseño:
+# - El login puede requerir MFA: la respuesta usa el discriminador `step`
+#   ("mfa" | "success") en lugar de devolver directamente el usuario.
+# - `requiresOnboarding` se omite hasta que exista la feature US30
+#   (onboarding); no se expone un campo que aún no se puede calcular.
+# - Rate limit del login: por IP (10) y por correo (5) cada 15 minutos.
+# ---------------------------------------------------------------------------
+
+openapi: 3.0.3
+info:
+  title: Pixkki Auth API
+  version: 1.0.0
+  description: >
+    Autenticación, sesión, verificación MFA y recuperación de contraseña.
+
+servers:
+  - url: /api/v1
+    description: API versionada
+
+tags:
+  - name: auth
+    description: Autenticación y sesión.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-<project-ref>-auth-token
+      description: Cookie de sesión emitida por Supabase Auth (flujo SSR).
+
+  schemas:
+    AuthUser:
+      type: object
+      required: [id, email, role, permissions, shelterId, emailVerified]
+      properties:
+        id:
+          type: integer
+          description: ID del usuario en la tabla `usuario`.
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [superadmin, admin, veterinario, operador, coordinador, evaluador]
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Permisos del rol del usuario.
+        shelterId:
+          type: integer
+          nullable: true
+          description: Refugio del usuario; null para el superadmin.
+        emailVerified:
+          type: boolean
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+
+    MfaVerifyRequest:
+      type: object
+      required: [factorId, challengeId, code]
+      properties:
+        factorId:
+          type: string
+          description: Factor TOTP devuelto por el login.
+        challengeId:
+          type: string
+          description: Desafío devuelto por el login.
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          description: Código TOTP de 6 dígitos.
+
+    RecoverPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          minLength: 8
+          description: Debe incluir mayúscula, minúscula y número.
+
+    LoginMfaData:
+      type: object
+      required: [step, factorId, challengeId]
+      properties:
+        step:
+          type: string
+          enum: [mfa]
+        factorId:
+          type: string
+        challengeId:
+          type: string
+
+    LoginSuccessData:
+      type: object
+      required: [step, user]
+      properties:
+        step:
+          type: string
+          enum: [success]
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    LoginResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/LoginMfaData"
+            - $ref: "#/components/schemas/LoginSuccessData"
+
+    MessageData:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data: {}
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code:
+              type: string
+              description: Código estable del error (UPPER_SNAKE_CASE).
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              description: Mensaje en español para el usuario final.
+              example: Datos inválidos.
+            statusCode:
+              type: integer
+              example: 400
+
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Autenticar usuario e iniciar sesión
+      description: >
+        Valida credenciales y crea la cookie de sesión. Aplica rate limit
+        por IP y por correo. Si el usuario tiene un factor TOTP verificado,
+        responde con un desafío que debe completarse con /auth/mfa/verify.
+        Bloquea correos no verificados, usuarios inactivos y refugios
+        desactivados (el superadmin está exento del bloqueo de refugio).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: >
+            Sesión iniciada (step success con el usuario) o desafío MFA
+            emitido (step mfa).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: VALIDATION_ERROR — cuerpo inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: INVALID_CREDENTIALS — correo o contraseña incorrectos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: >
+            EMAIL_NOT_VERIFIED, INACTIVE_USER, INACTIVE_SHELTER o
+            MFA_FACTOR_NOT_FOUND.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: USER_NOT_FOUND — el usuario no existe en el contexto multitenant.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
+          description: RATE_LIMITED — demasiados intentos (header Retry-After).
+          headers:
+            Retry-After:
+              description: Segundos hasta poder reintentar.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/mfa/verify:
+    post:
+      tags: [auth]
+      summary: Completar el login verificando el desafío MFA
+      description: >
+        Verifica el código TOTP del desafío emitido por /auth/login.
+        Requiere la sesión creada en el paso de credenciales.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MfaVerifyRequest"
+      responses:
+        "200":
+          description: MFA verificada; devuelve el usuario autenticado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginSuccessData"
+        "400":
+          description: >
+            VALIDATION_ERROR, INVALID_TOTP_CODE o MFA_CHALLENGE_EXPIRED.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: UNAUTHORIZED — no hay sesión del paso de credenciales.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Cerrar sesión
+      description: Invalida la sesión y limpia las cookies.
+      responses:
+        "200":
+          description: Sesión cerrada.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageData"
+        "401":
+          description: UNAUTHORIZED — no hay sesión activa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Usuario autenticado actual
+      responses:
+        "200":
+          description: Usuario autenticado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: UNAUTHORIZED — no hay sesión activa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: EMAIL_NOT_VERIFIED o INACTIVE_USER.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: USER_NOT_FOUND.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/recover-password:
+    post:
+      tags: [auth]
+      summary: Solicitar recuperación de contraseña
+      description: >
+        Envía el correo de recuperación. La respuesta es siempre genérica
+        (anti-enumeración): no revela si el correo está registrado.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoverPasswordRequest"
+      responses:
+        "200":
+          description: Confirmación genérica de envío.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageData"
+        "400":
+          description: VALIDATION_ERROR — cuerpo inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      summary: Restablecer la contraseña
+      description: >
+        Actualiza la contraseña del usuario autenticado. Requiere la sesión
+        creada por el enlace de recuperación (enlace → /auth/callback).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "200":
+          description: Contraseña actualizada.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageData"
+        "400":
+          description: VALIDATION_ERROR — la contraseña no cumple la política.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: UNAUTHORIZED — no hay sesión del enlace de recuperación.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: INTERNAL_ERROR.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"

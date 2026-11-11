@@ -1,17 +1,11 @@
-import { UserRepository } from './repository';
-import { AuthAdminRepository } from '@/modules/auth/admin-repository';
-import {
-    User,
-    UserNotFoundError,
-    EmailAlreadyInUseError,
-} from './types';
-import {
-    CreateStaffFormSchema,
-    CreateStaffFormInput,
-    CreateUserInput,
-    mapCreateStaffFormToUserInput,
-} from './schemas';
-import { AuthenticatedUser } from '@/modules/auth/types';
+// modules/users/user.service.ts
+
+import {UserRepository} from './repository';
+import {AuthAdminRepository} from '@/modules/auth/admin-repository';
+import {User, UserQueryParams, GlobalUserItem, ROLE_NAME_TO_ID} from './types';
+import {UserNotFoundError, EmailAlreadyInUseError} from './errors';
+import {CreateStaffSchema, StaffRole} from './schemas';
+import {CreateStaffDTO} from './dtos';
 
 export class UserServiceError extends Error {
     constructor(
@@ -31,22 +25,20 @@ export class UserService {
     ) {}
 
     /**
-     * Crea un miembro del personal (staff) en el refugio actual.
-     * No recibe idRefugio del cliente: se inyecta desde el contexto autenticado.
+     * Crea un miembro del personal (staff) en el refugio actual (F-USERS-01).
+     * El `shelterId` llega en el DTO: lo inyecta la Action desde el contexto
+     * autenticado, nunca desde el cliente.
+     * La contraseña temporal se genera en el servidor (RF0.4 regla 6) y se
+     * devuelve una única vez para que el administrador la comparta.
      */
     async createStaff(
-        input: CreateStaffFormInput,
-        shelterId: number,
+        input: CreateStaffDTO,
     ): Promise<{ user: User; tempPassword: string; message: string }> {
         try {
-            // 0. Mapear la entrada del formulario a la entrada de dominio.
-            const domainInput: CreateUserInput = mapCreateStaffFormToUserInput(
-                parsed,
-                shelterId,
-            );
-
-            // 1. Validar la entrada con el esquema de formulario.
-            const parsed = CreateStaffFormSchema.parse(input);
+            // 1. Validar la entrada con el esquema del formulario (Zod como
+            //    fuente única de verdad; el shelterId del DTO no se valida aquí
+            //    porque proviene del contexto servidor).
+            const parsed = CreateStaffSchema.parse(input);
 
             // 2. Verificar unicidad global del correo (F-USERS-04).
             const existing = await this.userRepository.findGlobalByEmail(
@@ -56,31 +48,36 @@ export class UserService {
                 throw new EmailAlreadyInUseError(parsed.email);
             }
 
-            // 3. Crear usuario en Supabase Auth con contraseña temporal.
+            // 3. Mapear rol lógico a ID numérico.
+            const roleId = this.resolveRoleId(parsed.role);
+
+            // 4. Crear usuario en Supabase Auth con contraseña temporal.
+            const tempPassword = this.generateTempPassword();
             const authUser = await this.authAdminRepository.createAuthUser(
                 parsed.email,
-                this.generateTempPassword(),
+                tempPassword,
             );
 
-            // 4. Asignar el authUserId al input de dominio.
-            domainInput.authUserId = authUser.id;
-
-            // 3. Mapear rol lógico a ID numérico
-             const roleId = this.resolveRoleId(parsed.role);
-
-            // 3. Crear registro en tabla usuario
+            // 5. Crear registro en tabla usuario (multitenant por idRefugio).
             const user = await this.userRepository.create({
-                ...domainInput,
+                authUserId: authUser.id,
+                nombreCompleto: parsed.fullName,
+                correo: parsed.email,
                 rol: roleId,
+                idRefugio: input.shelterId,
+                activo: true,
             });
 
             return {
                 user,
-                tempPassword: this.generateTempPassword(),
+                tempPassword,
                 message: `Miembro "${parsed.fullName}" creado exitosamente`,
             };
         } catch (error) {
-            if (error instanceof UserServiceError) {
+            if (
+                error instanceof UserServiceError ||
+                error instanceof EmailAlreadyInUseError
+            ) {
                 throw error;
             }
             throw new UserServiceError(
@@ -108,6 +105,7 @@ export class UserService {
                 error,
             );
         }
+    }
 
     /**
      * Obtiene todos los usuarios de la plataforma (superadmin, F-USERS-03)
@@ -130,8 +128,6 @@ export class UserService {
     }
 
     /**
-
-    /**
      * Obtiene un usuario por ID (filtrado por refugio).
      */
     async getStaffById(id: number, shelterId: number): Promise<User> {
@@ -142,7 +138,7 @@ export class UserService {
             }
             return user;
         } catch (error) {
-            if (error instanceof UserServiceError) {
+            if (error instanceof UserServiceError || error instanceof UserNotFoundError) {
                 throw error;
             }
             throw new UserServiceError(
@@ -166,7 +162,7 @@ export class UserService {
             }
             return await this.userRepository.updateStatus(id, activo);
         } catch (error) {
-            if (error instanceof UserServiceError) {
+            if (error instanceof UserServiceError || error instanceof UserNotFoundError) {
                 throw error;
             }
             throw new UserServiceError(
@@ -190,7 +186,7 @@ export class UserService {
             }
             await this.userRepository.delete(id);
         } catch (error) {
-            if (error instanceof UserServiceError) {
+            if (error instanceof UserServiceError || error instanceof UserNotFoundError) {
                 throw error;
             }
             throw new UserServiceError(
@@ -206,14 +202,8 @@ export class UserService {
     /**
      * Resuelve el rol lógico a su ID numérico en la tabla `rol`.
      */
-    private resolveRoleId(role: string): number {
-        const roleMap: Record<string, number> = {
-            veterinarian: 1,
-            operator: 2,
-            coordinator: 3,
-            evaluator: 4,
-        };
-        const id = roleMap[role];
+    private resolveRoleId(role: StaffRole): number {
+        const id = ROLE_NAME_TO_ID[role];
         if (id === undefined) {
             throw new UserServiceError(
                 `Rol desconocido: ${role}`,
@@ -223,5 +213,15 @@ export class UserService {
         return id;
     }
 
-    /**\n     * Genera una contraseña temporal segura de 12 caracteres.\n     * Se devuelve una única vez al usuario para que pueda iniciar sesión\n     * y debe cambiarla inmediatamente (F-AUTH-03 / F-USERS-01).\n     */\n    private generateTempPassword(): string {\n        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';\n        const array = new Uint32Array(12);\n        crypto.getRandomValues(array);\n        return Array.from(array, (n) => chars[n % chars.length]).join('');\n    }
+    /**
+     * Genera una contraseña temporal segura de 12 caracteres.
+     * Se devuelve una única vez al usuario para que pueda iniciar sesión
+     * y debe cambiarla inmediatamente (F-AUTH-03 / F-USERS-01).
+     */
+    private generateTempPassword(): string {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        const array = new Uint32Array(12);
+        crypto.getRandomValues(array);
+        return Array.from(array, (n) => chars[n % chars.length]).join('');
+    }
 }
