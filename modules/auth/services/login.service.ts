@@ -86,6 +86,11 @@ export class LoginService {
         const roleName = await this.repository.findRoleNameById(context.rol);
 
         if (!isSuperadminRole(roleName)) {
+            if (context.idRefugio === null) {
+                await this.safelySignOut();
+                throw new UserNotFoundError();
+            }
+
             const shelterActive =
                 await this.repository.isShelterActive(context.idRefugio);
 

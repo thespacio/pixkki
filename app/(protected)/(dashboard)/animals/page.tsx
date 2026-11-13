@@ -46,7 +46,7 @@ export default async function AnimalsPage() {
     // de todos; el resto solo los de su propio albergue.
     access.allShelters
       ? spaceService.getSpaces()
-      : spaceService.getSpacesByShelter(user.shelterId),
+      : spaceService.getSpacesByShelter(access.shelterId),
     // Solo el superadmin puede asociar animales a cualquier albergue activo.
     access.allShelters
       ? shelterService

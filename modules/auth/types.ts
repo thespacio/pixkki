@@ -21,7 +21,7 @@ export type UserRole =
 
 export interface AuthenticatedUser {
     id: number;
-    shelterId: number;
+    shelterId: number | null;
     fullName: string;
     email: string;
     role: UserRole;
@@ -29,6 +29,9 @@ export interface AuthenticatedUser {
     active: boolean;
     emailVerified: boolean;
     lastLogin: string | null;
+    requiresPasswordChange: boolean;
+    requiresOnboarding: boolean;
+    termsAccepted: boolean;
 }
 
 interface AccountStatus {

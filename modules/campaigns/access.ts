@@ -16,7 +16,9 @@ export type CampaignAccess = {
 export function getCampaignAccess(
     user: Pick<AuthenticatedUser, "id" | "role" | "shelterId">,
 ): CampaignAccess {
-    return { shelterId: user.shelterId, allShelters: isSuperadmin(user), userId: user.id };
+    // El superadmin no tiene albergue propio (`id_refugio` nullable) y opera a
+    // nivel global, por lo que nunca usa `shelterId`.
+    return { shelterId: user.shelterId ?? 0, allShelters: isSuperadmin(user), userId: user.id };
 }
 
 /** Permisos del módulo (nombres tal como están en `permiso` / `rol_permiso`). */

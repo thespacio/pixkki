@@ -17,7 +17,10 @@ export type AnimalAccess = {
 export function getAnimalAccess(
     user: Pick<AuthenticatedUser, "role" | "shelterId">,
 ): AnimalAccess {
-    return { shelterId: user.shelterId, allShelters: isSuperadmin(user) };
+    // El superadmin no tiene albergue propio (`id_refugio` nullable) y opera a
+    // nivel global, por lo que nunca usa `shelterId`. Para el resto siempre
+    // existe un albergue asignado.
+    return { shelterId: user.shelterId ?? 0, allShelters: isSuperadmin(user) };
 }
 
 /** Permisos del módulo de animales (nombres tal como están en `rol_permiso`). */

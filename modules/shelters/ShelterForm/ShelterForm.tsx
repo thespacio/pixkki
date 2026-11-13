@@ -19,8 +19,7 @@ import { CreateShelterSchema } from '@/modules/shelters/schemas';
 import {SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {MEXICAN_STATES} from "@/modules/catalogs/constants/mexican-states";
 import {Select} from "@radix-ui/react-select";
-import {ShelterFormProps} from "@/modules/shelters/types";
-import router from "next/router";
+import {ShelterFormProps, ShelterFormValues} from "@/modules/shelters/types";
 import {useRouter} from "next/navigation";
 import {LocationPicker} from "@/modules/shelters/ShelterForm/LocationPicker";
 import type {PickedLocation} from "@/modules/shelters/google-maps";
@@ -30,6 +29,7 @@ const FIELD_LABELS: Record<string, string> = {
     ciudad: 'Ciudad',
     estado: 'Estado',
     nombre_admin: 'Nombre del administrador',
+    correo_admin: 'Correo del administrador',
     correo_contacto: 'Correo',
     telefono: 'Teléfono (10 dígitos)',
     direccion: 'Dirección',
@@ -187,13 +187,39 @@ export function ShelterForm({
                                 </FormItem>
                             )}
                         />
-                        {/* Correo de contacto */}
+                        {/* Correo del administrador */}
+                        <FormField
+                            control={form.control}
+                            name="correo_admin"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Correo del administrador</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="email"
+                                            placeholder="Ej: admin@refugio.com"
+                                            {...field}
+                                            value={field.value || ''}
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        A este correo se le mandará el acceso al sistema.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                    )}
+
+                        {/* Correo de contacto del albergue */}
                         <FormField
                             control={form.control}
                             name="correo_contacto"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Correo del administrador</FormLabel>
+                                    <FormLabel>Correo de contacto del albergue</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="email"
@@ -204,14 +230,12 @@ export function ShelterForm({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        A este correo se le mandará el acceso.
+                                        Correo público del albergue.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                    </>
-                    )}
 
                         {/* Teléfono */}
                         <FormField

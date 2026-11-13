@@ -12,6 +12,7 @@ import {
     ShelterAuthorizationError
 } from './errors';
 import {AuthenticatedUser} from "@/modules/auth/types";
+import {isAdminRole, isSuperadminRole} from "@/modules/auth/authorization";
 
 export class ShelterService {
     constructor(
@@ -32,25 +33,17 @@ export class ShelterService {
         // 2. Acceso a datos: Obtener el refugio
         const shelter = await this.repository.findById(id);
 
-        // 3. Reglas de negocio: Verificar acceso específico al shelter
-        // Si el usuario es admin, tiene acceso a todos los shelters
-        if (authContext.role !== 'superadmin') {
-            // Para otros roles, verificar acceso específico
-            const hasAccess = await this.checkUserShelterAccess(
-                Number(authContext.id),
-                id
+        // 3. Reglas de negocio: el superadmin accede a cualquier refugio; el
+        //    resto solo al suyo.
+        if (!isSuperadminRole(authContext.role) && authContext.shelterId !== id) {
+            throw new ShelterAuthorizationError(
+                'No tienes acceso a este refugio',
+                {
+                    userId: authContext.id,
+                    role: authContext.role,
+                    shelterId: id
+                }
             );
-
-            if (!hasAccess) {
-                throw new ShelterAuthorizationError(
-                    'No tienes acceso a este refugio',
-                    {
-                        userId: authContext.id,
-                        role: authContext.role,
-                        shelterId: id
-                    }
-                );
-            }
         }
 
         // 4. Reglas de negocio: Los usuarios 'user' solo ven información básica
@@ -80,43 +73,22 @@ export class ShelterService {
         // 1. Autorización: Verificar que el usuario puede ver refugios
         ShelterAuthorization.ensureCanView(authContext);
 
-        // 2. Acceso a datos: Obtener todos los refugios con filtros
-        const result = await this.repository.findAll(filters);
+        // 2. Reglas de negocio: el superadmin ve todos; el resto solo el suyo.
+        const scopedFilters: ShelterQueryParams = isSuperadminRole(authContext.role)
+            ? filters
+            : { ...filters, id: authContext.shelterId ?? -1 };
 
-        // 3. Reglas de negocio: Si no es admin, filtrar por acceso
-        if (authContext.role !== 'superadmin') {
-            /*// Obtener IDs de shelters a los que tiene acceso
-            const accessibleShelterIds = await this.getUserShelterIds(
-                Number(authContext.id)
-            );
+        // 3. Acceso a datos: Obtener refugios con filtros y alcance de tenant
+        const result = await this.repository.findAll(scopedFilters);
 
-            // Filtrar resultados
-            const filteredData = result.data.filter(shelter =>
-                accessibleShelterIds.includes(shelter.id)
-            );*/
-
-            // Retornar con la estructura correcta
-            return {
-                data: result.data,
-                pagination: {
-                    total: result.total,
-                    limit: filters.limit || 10,
-                    offset: filters.offset || 0,
-                    hasMore:
-                        (filters.offset ?? 0) + result.data.length < result.total
-                }
-
-            };
-        }
-
-        // 4. Retornar resultado original con la estructura correcta
         return {
             data: result.data,
             pagination: {
                 total: result.total,
                 limit: filters.limit || 10,
                 offset: filters.offset || 0,
-                hasMore: result.data.length === (filters.limit || 10)
+                hasMore:
+                    (filters.offset ?? 0) + result.data.length < result.total
             }
         };
     }
@@ -167,36 +139,26 @@ export class ShelterService {
         updates: UpdateShelterInput,
         authContext: AuthenticatedUser
     ) {
-        // 1. Autorización: Verificar que el usuario puede editar refugios
-        const authContextWithShelter = {
-            ...authContext,
-            shelterId: id
-        };
-        //ShelterAuthorization.ensureCanEdit(authContextWithShelter);
+        // 1. Autorización: el superadmin edita cualquier refugio; el
+        //    administrador solo el suyo.
+        if (
+            !isSuperadminRole(authContext.role) &&
+            !(isAdminRole(authContext.role) && authContext.shelterId === id)
+        ) {
+            throw new ShelterAuthorizationError(
+                'No tienes permisos para editar este refugio',
+                {
+                    userId: authContext.id,
+                    role: authContext.role,
+                    shelterId: id
+                }
+            );
+        }
 
         // 2. Obtener el refugio actual (verifica que existe)
         const currentShelter = await this.repository.findById(id);
 
-        // 3. Reglas de negocio: Verificar acceso específico al shelter
-        if (authContext.role !== 'admin') {
-            const hasAccess = await this.checkUserShelterAccess(
-                Number(authContext.id),
-                id
-            );
-
-            if (!hasAccess) {
-                throw new ShelterAuthorizationError(
-                    'No tienes permisos para editar este refugio',
-                    {
-                        userId: authContext.id,
-                        role: authContext.role,
-                        shelterId: id
-                    }
-                );
-            }
-        }
-
-        // 4. Reglas de negocio: Validar campos de actualización
+        // 3. Reglas de negocio: Validar campos de actualización
         const changes: string[] = [];
 
         // Validar nombre (si se está actualizando)
@@ -365,27 +327,5 @@ export class ShelterService {
                 { phone }
             );
         }
-    }
-
-    /**
-     * Verifica si un usuario tiene acceso a un shelter específico
-     * Este método se delega a una función de verificación que podría usar un repository de relaciones
-     */
-    private async checkUserShelterAccess(
-        userId: number,
-        shelterId: number
-    ): Promise<boolean> {
-        // Aquí se implementaría la verificación de acceso:
-        // - Verificar si el usuario es shelter_manager de este refugio
-        // - Verificar si el usuario es volunteer en este refugio
-        // - Para este ejemplo, asumimos que el shelter_manager tiene acceso
-        // En una implementación real, esto consultaría un repository de relaciones usuario-shelter
-
-        // Ejemplo de implementación:
-        // const userShelterRepo = new UserShelterRepository(this.supabase);
-        // return await userShelterRepo.userHasAccess(userId, shelterId);
-
-        // Por ahora, retornamos true como placeholder
-        return true;
     }
 }

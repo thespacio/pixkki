@@ -5,14 +5,14 @@ import {
     ShelterSchema,
     CreateShelterSchema,
     UpdateShelterSchema,
-    ShelterFiltersSchema, ShelterFieldsSchema
+    ShelterFiltersSchema, ShelterFormSchema
 } from './schemas';
 import {DefaultValues, FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
 
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
 export type Shelter = z.infer<typeof ShelterSchema>;
-export type ShelterFormValues = z.input<typeof ShelterFieldsSchema>;
+export type ShelterFormValues = z.input<typeof ShelterFormSchema>;
 export type CreateShelterInput = z.infer<typeof CreateShelterSchema>;
 export type UpdateShelterInput = z.infer<typeof UpdateShelterSchema>;
 export type ShelterFilters = z.infer<typeof ShelterFiltersSchema>;
@@ -35,6 +35,7 @@ export interface CreateShelterWithAdminOutput {
 
 // Tipos para filtros en repository
 export type ShelterQueryParams = {
+    id?: number;
     ciudad?: string;
     estado?: string;
     activo?: boolean;
@@ -65,7 +66,7 @@ export type ShelterListItem = Pick<
     mode?: 'create' | 'edit';
 }*/
 
-interface ShelterFormProps {
+export interface ShelterFormProps {
     form: UseFormReturn<ShelterFormValues>;
     onSubmit: (data: ShelterFormValues) => Promise<void>;
     mode: "create" | "edit";

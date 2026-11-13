@@ -2,6 +2,7 @@
 
 
 import {createCreateShelterWithAdminUseCase, createShelterService} from "@/modules/shelters/factories";
+import {ShelterAuthorization} from "@/modules/shelters/authorization";
 import {revalidatePath} from "next/cache";
 import {getCurrentUser} from "@/modules/auth";
 import {CreateShelterWithAdminInput, ShelterQueryParams, UpdateShelterInput} from "@/modules/shelters/types";
@@ -52,6 +53,10 @@ export async function getSheltersAction(filters: ShelterQueryParams) {
 export async function createShelterAction(
     input: CreateShelterWithAdminInput
 ) {
+    // Solo el superadmin puede dar de alta refugios y a su administrador.
+    const authContext = await getCurrentUser();
+    ShelterAuthorization.ensureCanCreate(authContext);
+
     const useCase = await createCreateShelterWithAdminUseCase();
 
     return await useCase.execute(input);

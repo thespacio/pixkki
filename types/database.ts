@@ -10,10 +10,49 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
+      aceptacion_terminos: {
+        Row: {
+          aceptado_en: string
+          id_aceptacion: number
+          id_refugio: number | null
+          id_usuario: number
+          terminos_version: string
+        }
+        Insert: {
+          aceptado_en?: string
+          id_aceptacion?: number
+          id_refugio?: number | null
+          id_usuario: number
+          terminos_version: string
+        }
+        Update: {
+          aceptado_en?: string
+          id_aceptacion?: number
+          id_refugio?: number | null
+          id_usuario?: number
+          terminos_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aceptacion_terminos_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+          {
+            foreignKeyName: "aceptacion_terminos_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
       adoptante: {
         Row: {
           acepta_politica_privacidad: boolean
@@ -342,6 +381,106 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuario"
             referencedColumns: ["id_usuario"]
+          },
+        ]
+      }
+      campana: {
+        Row: {
+          contenido: string
+          estado: string
+          fecha_actualizacion: string
+          fecha_creacion: string
+          fecha_publicacion: string | null
+          generada_por_ia: boolean
+          hashtags: string[]
+          id_campana: number
+          id_refugio: number
+          id_usuario_creador: number | null
+          llamado_accion: string | null
+          modelo_ia: string | null
+          titulo: string
+        }
+        Insert: {
+          contenido: string
+          estado?: string
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          fecha_publicacion?: string | null
+          generada_por_ia?: boolean
+          hashtags?: string[]
+          id_campana?: never
+          id_refugio: number
+          id_usuario_creador?: number | null
+          llamado_accion?: string | null
+          modelo_ia?: string | null
+          titulo: string
+        }
+        Update: {
+          contenido?: string
+          estado?: string
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          fecha_publicacion?: string | null
+          generada_por_ia?: boolean
+          hashtags?: string[]
+          id_campana?: never
+          id_refugio?: number
+          id_usuario_creador?: number | null
+          llamado_accion?: string | null
+          modelo_ia?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campana_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "campana_id_usuario_creador_fkey"
+            columns: ["id_usuario_creador"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
+      }
+      campana_animal: {
+        Row: {
+          id_animal: number
+          id_campana: number
+        }
+        Insert: {
+          id_animal: number
+          id_campana: number
+        }
+        Update: {
+          id_animal?: number
+          id_campana?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campana_animal_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "campana_animal_id_campana_fkey"
+            columns: ["id_campana"]
+            isOneToOne: false
+            referencedRelation: "campana"
+            referencedColumns: ["id_campana"]
+          },
+          {
+            foreignKeyName: "campana_animal_id_campana_fkey"
+            columns: ["id_campana"]
+            isOneToOne: false
+            referencedRelation: "campana_publica"
+            referencedColumns: ["id_campana"]
           },
         ]
       }
@@ -836,9 +975,12 @@ export type Database = {
           codigo_postal: string | null
           colonia: string | null
           correo_contacto: string
+          direccion: string | null
           estado: string
           fecha_registro: string
           id_refugio: number
+          latitud: number | null
+          longitud: number | null
           nombre: string
           numero: string | null
           telefono: string | null
@@ -850,9 +992,12 @@ export type Database = {
           codigo_postal?: string | null
           colonia?: string | null
           correo_contacto: string
+          direccion?: string | null
           estado: string
           fecha_registro?: string
           id_refugio?: number
+          latitud?: number | null
+          longitud?: number | null
           nombre: string
           numero?: string | null
           telefono?: string | null
@@ -864,9 +1009,12 @@ export type Database = {
           codigo_postal?: string | null
           colonia?: string | null
           correo_contacto?: string
+          direccion?: string | null
           estado?: string
           fecha_registro?: string
           id_refugio?: number
+          latitud?: number | null
+          longitud?: number | null
           nombre?: string
           numero?: string | null
           telefono?: string | null
@@ -1092,10 +1240,12 @@ export type Database = {
           activo: boolean
           auth_user_id: string | null
           correo: string
+          debe_cambiar_password: boolean
           fecha_creacion: string
-          id_refugio: number
+          id_refugio: number | null
           id_usuario: number
           nombre_completo: string
+          primer_inicio_sesion: boolean
           rol: number
           ultimo_login: string | null
         }
@@ -1103,10 +1253,12 @@ export type Database = {
           activo?: boolean
           auth_user_id?: string | null
           correo: string
+          debe_cambiar_password?: boolean
           fecha_creacion?: string
-          id_refugio: number
+          id_refugio?: number | null
           id_usuario?: number
           nombre_completo: string
+          primer_inicio_sesion?: boolean
           rol?: number
           ultimo_login?: string | null
         }
@@ -1114,10 +1266,12 @@ export type Database = {
           activo?: boolean
           auth_user_id?: string | null
           correo?: string
+          debe_cambiar_password?: boolean
           fecha_creacion?: string
-          id_refugio?: number
+          id_refugio?: number | null
           id_usuario?: number
           nombre_completo?: string
+          primer_inicio_sesion?: boolean
           rol?: number
           ultimo_login?: string | null
         }
@@ -1224,10 +1378,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      campana_publica: {
+        Row: {
+          animales: Json | null
+          contenido: string | null
+          fecha_publicacion: string | null
+          hashtags: string[] | null
+          id_campana: number | null
+          llamado_accion: string | null
+          refugio_ciudad: string | null
+          refugio_estado: string | null
+          refugio_nombre: string | null
+          titulo: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      campanas_es_superadmin: { Args: never; Returns: boolean }
+      campanas_refugio_usuario: { Args: never; Returns: number }
     }
     Enums: {
       bloque_tipo:

@@ -8,9 +8,10 @@ import {InfrastructureSection} from "@/modules/spaces/components/InfrastructureS
 interface Props {
     shelterId?: number;
     spaces: Space[];
+    canManage?: boolean;
 }
 
-export default function SpaceClient({ shelterId, spaces }: Props) {
+export default function SpaceClient({ shelterId, spaces, canManage = false }: Props) {
     if (!shelterId) {
         return (
             <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -32,11 +33,12 @@ export default function SpaceClient({ shelterId, spaces }: Props) {
             </div>
 
             <div className="mt-8">
-                <CreateSpaceModal shelterId={shelterId} />
+                {canManage && <CreateSpaceModal shelterId={shelterId} />}
 
                 <InfrastructureSection
                     shelterId={shelterId}
                     spaces={spaces}
+                    canManage={canManage}
                 />
             </div>
         </div>

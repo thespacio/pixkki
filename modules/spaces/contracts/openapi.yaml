@@ -1,0 +1,363 @@
+# ---------------------------------------------------------------------------
+# Contrato OpenAPI — módulo espacios (API v1, requerimiento-00).
+#
+# Envelope uniforme:
+#   éxito -> { success: true,  data: ... }
+#   error -> { success: false, error: { code, message, statusCode } }
+#
+# Autenticación por cookie de sesión de Supabase (flujo SSR).
+# ---------------------------------------------------------------------------
+
+openapi: 3.0.3
+info:
+  title: Pixkki Espacios API
+  version: 1.0.0
+  description: >
+    Gestión de espacios físicos del refugio (F-SHELTER-04). Las consultas se
+    acotan al refugio del usuario; el superadmin puede operar sobre cualquier
+    refugio. Las mutaciones están reservadas a Admin y Superadmin.
+
+servers:
+  - url: /api/v1
+    description: API versionada
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: espacios
+    description: Operaciones sobre espacios del refugio.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-<project-ref>-auth-token
+      description: Cookie de sesión emitida por Supabase Auth (flujo SSR).
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          description: Carga útil específica del endpoint.
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Datos inválidos.
+            statusCode:
+              type: integer
+              example: 400
+
+    Espacio:
+      type: object
+      required: [id, shelterId, name, capacity, type, available]
+      properties:
+        id:
+          type: integer
+          example: 10
+        shelterId:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Canil A
+        description:
+          type: string
+          nullable: true
+          example: Canil para perros pequeños
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9999
+          example: 20
+        type:
+          type: string
+          example: Canil
+        available:
+          type: boolean
+          example: true
+
+    CreateEspacio:
+      type: object
+      required: [name, capacity, type]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9999
+        type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        available:
+          type: boolean
+          default: true
+        shelterId:
+          type: integer
+          description: >
+            Requerido solo para el superadmin. Para el resto de roles se ignora
+            y se usa el refugio del usuario en sesión.
+
+    UpdateEspacio:
+      type: object
+      description: Todos los campos son opcionales (PATCH parcial).
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9999
+        type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        available:
+          type: boolean
+
+  responses:
+    ValidationError:
+      description: 400 — VALIDATION_ERROR (cuerpo o parámetros inválidos).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: 401 — UNAUTHORIZED (sin sesión).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: 403 — permisos insuficientes.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: 404 — espacio no encontrado o de otro tenant.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Conflict:
+      description: 409 — regla de negocio (capacidad, animales asociados, duplicado).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    InternalError:
+      description: 500 — INTERNAL_ERROR (sin detalles).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+paths:
+  /espacios:
+    get:
+      tags: [espacios]
+      summary: Listar espacios visibles para el usuario
+      parameters:
+        - name: shelterId
+          in: query
+          description: Solo aplica al superadmin.
+          schema:
+            type: integer
+        - name: available
+          in: query
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Búsqueda por nombre.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Listado de espacios.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [espacios, total]
+                        properties:
+                          espacios:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Espacio"
+                          total:
+                            type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [espacios]
+      summary: Alta de espacio (Admin/Superadmin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEspacio"
+      responses:
+        "201":
+          description: Espacio creado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Espacio"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /espacios/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    get:
+      tags: [espacios]
+      summary: Detalle de un espacio
+      responses:
+        "200":
+          description: Espacio encontrado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Espacio"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [espacios]
+      summary: Edición parcial de un espacio (Admin/Superadmin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEspacio"
+      responses:
+        "200":
+          description: Espacio actualizado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Espacio"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [espacios]
+      summary: Baja de un espacio vacío (Admin/Superadmin)
+      responses:
+        "200":
+          description: Espacio eliminado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"

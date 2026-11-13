@@ -77,6 +77,15 @@ export const ShelterSchema = ShelterFieldsSchema.extend({
 });*/
 export const CreateShelterSchema = ShelterFieldsSchema.extend({
     nombre_admin: ShelterNameSchema,
+    correo_admin: ContactEmailSchema,
+});
+
+// Esquema compartido por el formulario de alta y edición. `nombre_admin` y
+// `correo_admin` solo se muestran (y se exigen) en el alta; el servidor los
+// valida con `CreateShelterSchema` al crear el refugio.
+export const ShelterFormSchema = ShelterFieldsSchema.extend({
+    nombre_admin: ShelterNameSchema.optional(),
+    correo_admin: ContactEmailSchema.optional(),
 });
 /*
 export const CreateShelterSchema = ShelterSchema.extend({
@@ -94,6 +103,12 @@ export const CreateShelterSchema = ShelterSchema.extend({
     message: 'Debe proporcionar al menos un campo para actualizar'
 });*/
 export const UpdateShelterSchema = ShelterFieldsSchema;
+
+/**
+ * Variante para la API v1: todos los campos opcionales para permitir PATCH
+ * parcial. Se deriva del esquema de edición, sin duplicar campos.
+ */
+export const UpdateShelterApiSchema = UpdateShelterSchema.partial();
 
 // ===== ESQUEMAS DE FILTROS =====
 // Para búsqueda y filtrado

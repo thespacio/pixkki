@@ -1,0 +1,452 @@
+# ---------------------------------------------------------------------------
+# Contrato OpenAPI — módulo refugios (API v1, requerimiento-00).
+#
+# Envelope uniforme:
+#   éxito -> { success: true,  data: ... }
+#   error -> { success: false, error: { code, message, statusCode } }
+#
+# Autenticación por cookie de sesión de Supabase (flujo SSR).
+# ---------------------------------------------------------------------------
+
+openapi: 3.0.3
+info:
+  title: Pixkki Refugios API
+  version: 1.0.0
+  description: >
+    Gestión de refugios (RF0.1/RF0.2). El listado y el detalle respetan el
+    alcance multitenant: el superadmin ve todos los refugios y el resto solo el
+    suyo. El alta con administrador es exclusiva del superadmin.
+
+servers:
+  - url: /api/v1
+    description: API versionada
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: refugios
+    description: Operaciones sobre refugios.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-<project-ref>-auth-token
+      description: Cookie de sesión emitida por Supabase Auth (flujo SSR).
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          description: Carga útil específica del endpoint.
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Datos inválidos.
+            statusCode:
+              type: integer
+              example: 400
+
+    Refugio:
+      type: object
+      required: [id, nombre_albergue, ciudad, estado, correo_contacto, fecha_registro, activo]
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre_albergue:
+          type: string
+          example: Refugio Patitas
+        ciudad:
+          type: string
+          example: Guadalajara
+        estado:
+          type: string
+          example: Jalisco
+        correo_contacto:
+          type: string
+          format: email
+          example: contacto@patitas.org
+        telefono:
+          type: string
+          nullable: true
+          example: "3312345678"
+        calle:
+          type: string
+          nullable: true
+        numero:
+          type: string
+          nullable: true
+        colonia:
+          type: string
+          nullable: true
+        codigo_postal:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        latitud:
+          type: number
+          nullable: true
+        longitud:
+          type: number
+          nullable: true
+        fecha_registro:
+          type: string
+          format: date-time
+        activo:
+          type: boolean
+
+    RefugioListItem:
+      type: object
+      required: [id, nombre_albergue, ciudad, estado, activo]
+      properties:
+        id:
+          type: integer
+        nombre_albergue:
+          type: string
+        ciudad:
+          type: string
+        estado:
+          type: string
+        activo:
+          type: boolean
+
+    RefugioList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RefugioListItem"
+        pagination:
+          type: object
+          required: [total, limit, offset, hasMore]
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            hasMore:
+              type: boolean
+
+    CreateRefugio:
+      type: object
+      required:
+        - nombre_albergue
+        - nombre_admin
+        - correo_admin
+        - ciudad
+        - estado
+        - correo_contacto
+        - telefono
+      properties:
+        nombre_albergue:
+          type: string
+          minLength: 3
+        nombre_admin:
+          type: string
+          minLength: 3
+        correo_admin:
+          type: string
+          format: email
+          description: Correo de acceso del administrador (único global).
+        ciudad:
+          type: string
+          minLength: 2
+        estado:
+          type: string
+          minLength: 2
+        correo_contacto:
+          type: string
+          format: email
+        telefono:
+          type: string
+          nullable: true
+          example: "3312345678"
+        calle:
+          type: string
+          nullable: true
+        numero:
+          type: string
+          nullable: true
+        colonia:
+          type: string
+          nullable: true
+        codigo_postal:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        latitud:
+          type: number
+          nullable: true
+        longitud:
+          type: number
+          nullable: true
+
+    UpdateRefugio:
+      type: object
+      description: Todos los campos son opcionales (PATCH parcial).
+      properties:
+        nombre_albergue:
+          type: string
+        ciudad:
+          type: string
+        estado:
+          type: string
+        correo_contacto:
+          type: string
+          format: email
+        telefono:
+          type: string
+          nullable: true
+        calle:
+          type: string
+          nullable: true
+        numero:
+          type: string
+          nullable: true
+        colonia:
+          type: string
+          nullable: true
+        codigo_postal:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        latitud:
+          type: number
+          nullable: true
+        longitud:
+          type: number
+          nullable: true
+
+  responses:
+    ValidationError:
+      description: 400 — VALIDATION_ERROR (cuerpo o parámetros inválidos).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: 401 — UNAUTHORIZED (sin sesión).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: 403 — permisos insuficientes.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: 404 — refugio no encontrado o de otro tenant.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    InternalError:
+      description: 500 — INTERNAL_ERROR (sin detalles).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+paths:
+  /refugios:
+    get:
+      tags: [refugios]
+      summary: Listar refugios visibles para el usuario
+      parameters:
+        - name: ciudad
+          in: query
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Listado paginado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RefugioList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [refugios]
+      summary: Alta de refugio con su administrador (solo superadmin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRefugio"
+      responses:
+        "201":
+          description: Refugio y administrador creados.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [shelter, admin]
+                        properties:
+                          shelter:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              nombre:
+                                type: string
+                          admin:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              email:
+                                type: string
+                              nombreCompleto:
+                                type: string
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /refugios/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    get:
+      tags: [refugios]
+      summary: Detalle de un refugio
+      responses:
+        "200":
+          description: Refugio encontrado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Refugio"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [refugios]
+      summary: Edición parcial de un refugio (superadmin o admin propio)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRefugio"
+      responses:
+        "200":
+          description: Refugio actualizado.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          shelter:
+                            $ref: "#/components/schemas/Refugio"
+                          changes:
+                            type: array
+                            items:
+                              type: string
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"

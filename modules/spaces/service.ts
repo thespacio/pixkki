@@ -4,6 +4,19 @@ import {SpaceRepository, SpaceRepositoryError} from "@/modules/spaces/repositori
 import {CreateSpaceData, CreateSpaceInput, Space, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces/types/types";
 import {CreateSpaceSchema, SpaceFiltersSchema, UpdateSpaceSchema} from "@/modules/spaces/schemas";
 
+/**
+ * Códigos de error del módulo de espacios y su equivalente HTTP. Se mantiene
+ * junto al error para que la API v1 pueda traducirlo con `handleApiError`.
+ */
+const SPACE_ERROR_STATUS: Record<string, number> = {
+    NOT_FOUND: 404,
+    VALIDATION_ERROR: 400,
+    INVALID_CAPACITY: 400,
+    CAPACITY_TOO_LOW: 409,
+    HAS_ANIMALS: 409,
+    DUPLICATE_NAME: 409,
+};
+
 export class SpaceServiceError extends Error {
     constructor(
         message: string,
@@ -12,7 +25,10 @@ export class SpaceServiceError extends Error {
     ) {
         super(message);
         this.name = 'SpaceServiceError';
+        this.statusCode = (code && SPACE_ERROR_STATUS[code]) || 500;
     }
+
+    readonly statusCode: number;
 }
 
 export class SpaceService {
@@ -65,11 +81,12 @@ export class SpaceService {
     }
 
     /**
-     * Obtiene un espacio por su ID
+     * Obtiene un espacio por su ID.
+     * `shelterId` acota la búsqueda al refugio del usuario (multitenant).
      */
-    async getSpaceById(id: number): Promise<Space> {
+    async getSpaceById(id: number, shelterId?: number): Promise<Space> {
         try {
-            const space = await this.spaceRepository.findById(id);
+            const space = await this.spaceRepository.findById(id, shelterId);
             if (!space) {
                 throw new SpaceServiceError(
                     'Espacio no encontrado',
@@ -152,13 +169,13 @@ export class SpaceService {
     /**
      * Actualiza un espacio
      */
-    async updateSpace(id: number, dto: UpdateSpaceInput): Promise<Space> {
+    async updateSpace(id: number, dto: UpdateSpaceInput, shelterId?: number): Promise<Space> {
         try {
             // Validar datos
             const validatedData = UpdateSpaceSchema.parse(dto);
 
-            // Verificar que el espacio existe
-            const existingSpace = await this.spaceRepository.findById(id);
+            // Verificar que el espacio existe (y pertenece al refugio, si se indica)
+            const existingSpace = await this.spaceRepository.findById(id, shelterId);
             if (!existingSpace) {
                 throw new SpaceServiceError(
                     'Espacio no encontrado',
@@ -178,7 +195,7 @@ export class SpaceService {
             }
 
             // Actualizar el espacio
-            return await this.spaceRepository.update(id, validatedData);
+            return await this.spaceRepository.update(id, validatedData, shelterId);
         } catch (error) {
             if (error instanceof ZodError) {
                 throw new SpaceServiceError(
@@ -207,10 +224,10 @@ export class SpaceService {
     /**
      * Elimina un espacio (solo si está vacío)
      */
-    async deleteSpace(id: number): Promise<void> {
+    async deleteSpace(id: number, shelterId?: number): Promise<void> {
         try {
-            // Verificar que el espacio existe
-            const existingSpace = await this.spaceRepository.findById(id);
+            // Verificar que el espacio existe (y pertenece al refugio, si se indica)
+            const existingSpace = await this.spaceRepository.findById(id, shelterId);
             if (!existingSpace) {
                 throw new SpaceServiceError(
                     'Espacio no encontrado',
@@ -227,7 +244,7 @@ export class SpaceService {
                 );
             }
 
-            await this.spaceRepository.delete(id);
+            await this.spaceRepository.delete(id, shelterId);
         } catch (error) {
             if (error instanceof SpaceServiceError) {
                 throw error;
@@ -249,9 +266,9 @@ export class SpaceService {
     /**
      * Verifica si un espacio está disponible para albergar un animal
      */
-    async checkSpaceAvailability(spaceId: number): Promise<{ available: boolean; currentCount: number; capacity: number }> {
+    async checkSpaceAvailability(spaceId: number, shelterId?: number): Promise<{ available: boolean; currentCount: number; capacity: number }> {
         try {
-            const space = await this.spaceRepository.findById(spaceId);
+            const space = await this.spaceRepository.findById(spaceId, shelterId);
             if (!space) {
                 throw new SpaceServiceError(
                     'Espacio no encontrado',

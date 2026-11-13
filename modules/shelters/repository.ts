@@ -102,6 +102,10 @@ export class ShelterRepository {
                 .select('*', { count: 'exact' });
 
             // Aplicar filtros
+            if (params.id !== undefined) {
+                query = query.eq('id_refugio', params.id);
+            }
+
             if (params.ciudad) {
                 query = query.ilike('ciudad', `%${params.ciudad}%`);
             }

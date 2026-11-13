@@ -33,13 +33,15 @@ export interface AuthUser {
 
 export interface UserContext {
     idUsuario: number;
-    idRefugio: number;
+    idRefugio: number | null;
     nombreCompleto: string;
     correo: string;
     rol: number;
     activo: boolean;
     ultimoLogin: string | null;
     authUserId: string | null;
+    primerInicioSesion: boolean;
+    debeCambiarPassword: boolean;
 }
 
 // Usuario de Auth ya consultado, por cliente de Supabase (clave débil: se libera
@@ -211,7 +213,9 @@ export class AuthRepository {
                 activo,
                 ultimo_login,
                 rol,
-                auth_user_id
+                auth_user_id,
+                primer_inicio_sesion,
+                debe_cambiar_password
             `)
             .eq("auth_user_id", authUserId)
             .single();
@@ -229,6 +233,8 @@ export class AuthRepository {
             activo: data.activo,
             ultimoLogin: data.ultimo_login,
             authUserId: data.auth_user_id,
+            primerInicioSesion: data.primer_inicio_sesion,
+            debeCambiarPassword: data.debe_cambiar_password,
         };
     }
 
@@ -243,7 +249,9 @@ export class AuthRepository {
             activo,
             ultimo_login,
             rol,
-            auth_user_id
+            auth_user_id,
+            primer_inicio_sesion,
+            debe_cambiar_password
         `)
             .eq("id_usuario", userId)
             .single();
@@ -261,6 +269,8 @@ export class AuthRepository {
             activo: data.activo,
             ultimoLogin: data.ultimo_login,
             authUserId: data.auth_user_id,
+            primerInicioSesion: data.primer_inicio_sesion,
+            debeCambiarPassword: data.debe_cambiar_password,
         };
     }
 
@@ -279,6 +289,23 @@ export class AuthRepository {
         }
 
         return data.nombre_rol as UserRole;
+    }
+
+    /**
+     * Busca el ID de un rol por su nombre exacto (p. ej. "Administrador").
+     */
+    async findRoleIdByName(roleName: string): Promise<number> {
+        const { data, error } = await this.supabase
+            .from("rol")
+            .select("id_rol")
+            .eq("nombre_rol", roleName)
+            .single();
+
+        if (error || !data) {
+            throw new Error(`No existe el rol "${roleName}"`);
+        }
+
+        return data.id_rol;
     }
 
     /**
@@ -362,6 +389,92 @@ export class AuthRepository {
     }
 
     /**
+     * Registra la aceptación de los Términos y Condiciones (F-AUTH-05 / US27).
+     * Se guarda la versión vigente y el timestamp de aceptación.
+     */
+    async saveTermsAcceptance(
+        userId: number,
+        shelterId: number | null,
+        version: string,
+    ): Promise<void> {
+        const { error } = await this.supabase
+            .from("aceptacion_terminos")
+            .upsert(
+                {
+                    id_usuario: userId,
+                    id_refugio: shelterId,
+                    terminos_version: version,
+                },
+                {
+                    onConflict: "id_usuario,terminos_version",
+                    ignoreDuplicates: true,
+                },
+            );
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible registrar la aceptación de los términos.",
+                500,
+            );
+        }
+    }
+
+    /**
+     * ¿El usuario ya aceptó la versión vigente de los términos?
+     */
+    async hasAcceptedTerms(userId: number, version: string): Promise<boolean> {
+        const { data, error } = await this.supabase
+            .from("aceptacion_terminos")
+            .select("id_aceptacion")
+            .eq("id_usuario", userId)
+            .eq("terminos_version", version)
+            .limit(1);
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible verificar la aceptación de los términos.",
+                500,
+            );
+        }
+
+        return (data ?? []).length > 0;
+    }
+
+    /**
+     * Marca que el usuario ya cambió su contraseña temporal (US02/US32).
+     */
+    async markPasswordChanged(userId: number): Promise<void> {
+        const { error } = await this.supabase
+            .from("usuario")
+            .update({ debe_cambiar_password: false })
+            .eq("id_usuario", userId);
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible actualizar el estado de la contraseña.",
+                500,
+            );
+        }
+    }
+
+    /**
+     * Marca el onboarding como completado (US30).
+     */
+    async completeOnboarding(userId: number): Promise<void> {
+        const { error } = await this.supabase
+            .from("usuario")
+            .update({ primer_inicio_sesion: false })
+            .eq("id_usuario", userId);
+
+        if (error) {
+            throw new AuthError(
+                "No fue posible actualizar el estado del onboarding.",
+                500,
+            );
+        }
+    }
+
+    /**
      * Buscar usuarios por ID de refugio con rol = 1
      */
     async findUsersByShelterId(shelterId: number): Promise<UserContext[]> {
@@ -375,7 +488,9 @@ export class AuthRepository {
             activo,
             ultimo_login,
             rol,
-            auth_user_id
+            auth_user_id,
+            primer_inicio_sesion,
+            debe_cambiar_password
         `)
             .eq("id_refugio", shelterId)
             .eq("rol", 1);
@@ -393,6 +508,8 @@ export class AuthRepository {
             activo: user.activo,
             ultimoLogin: user.ultimo_login,
             authUserId: user.auth_user_id,
+            primerInicioSesion: user.primer_inicio_sesion,
+            debeCambiarPassword: user.debe_cambiar_password,
         }));
     }
 

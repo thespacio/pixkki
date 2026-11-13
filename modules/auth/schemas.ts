@@ -12,15 +12,37 @@ export const loginSchema = z.object({
         .min(1, "La contraseña es obligatoria."),
 });
 
+const passwordSchema = z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(/[A-Z]/, 'Debe tener al menos una mayúscula')
+    .regex(/[a-z]/, 'Debe tener al menos una minúscula')
+    .regex(/[0-9]/, 'Debe tener al menos un número');
+
 export const ResetPasswordSchema = z.object({
-    password: z.string()
-        .min(8, 'La contraseña debe tener al menos 8 caracteres')
-        .regex(/[A-Z]/, 'Debe tener al menos una mayúscula')
-        .regex(/[a-z]/, 'Debe tener al menos una minúscula')
-        .regex(/[0-9]/, 'Debe tener al menos un número'),
+    password: passwordSchema,
 });
 
 export type ResetPasswordDTO = z.infer<typeof ResetPasswordSchema>;
+
+export const acceptTermsSchema = z.object({
+    accepted: z.boolean().refine((value) => value === true, {
+        message: "Debes aceptar los Términos y Condiciones.",
+    }),
+});
+
+export type AcceptTermsInput = z.infer<typeof acceptTermsSchema>;
+
+export const changePasswordSchema = z
+    .object({
+        password: passwordSchema,
+        confirmPassword: z.string("La confirmación de la contraseña es obligatoria."),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Las contraseñas no coinciden.",
+        path: ["confirmPassword"],
+    });
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export type LoginInput = z.infer<typeof loginSchema>;
 

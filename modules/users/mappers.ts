@@ -7,6 +7,10 @@ import { UserRow, UserInsert, UserUpdate } from './repository';
  * Mapea una fila de Supabase a una entidad de dominio
  */
 export function mapUserRowToDomain(row: UserRow): User {
+    if (row.id_refugio === null) {
+        throw new Error("El usuario no está asociado a un refugio.");
+    }
+
     return {
         id: row.id_usuario,
         authUserId: row.auth_user_id!,
@@ -32,6 +36,8 @@ export function mapUserDomainToRow(user: User): UserRow {
         rol: user.rol,
         id_refugio: user.idRefugio,
         activo: user.activo,
+        debe_cambiar_password: false,
+        primer_inicio_sesion: false,
         fecha_creacion: user.fechaCreacion.toISOString(),
         ultimo_login: user.ultimoLogin ? user.ultimoLogin.toISOString() : null,
     };

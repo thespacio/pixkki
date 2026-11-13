@@ -19,7 +19,7 @@ export class AuthError extends Error {
 
 export class UnauthorizedError extends AuthError {
     constructor(
-        message = "No estás autenticado."
+        message = "Usuario no autenticado"
     ) {
         super(message, 401);
     }

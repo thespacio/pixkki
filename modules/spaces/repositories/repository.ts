@@ -94,13 +94,18 @@ export class SpaceRepository {
     /**
      * Obtiene un espacio por su ID
      */
-    async findById(id: number): Promise<Space | null> {
+    async findById(id: number, shelterId?: number): Promise<Space | null> {
         try {
-            const { data, error } = await this.supabase
+            let query = this.supabase
                 .from('espacio')
                 .select()
-                .eq('id_espacio', id)
-                .single();
+                .eq('id_espacio', id);
+
+            if (shelterId !== undefined) {
+                query = query.eq('id_refugio', shelterId);
+            }
+
+            const { data, error } = await query.single();
 
             if (error) {
                 if (error.code === 'PGRST116') {
@@ -178,7 +183,7 @@ export class SpaceRepository {
     /**
      * Actualiza un espacio
      */
-    async update(id: number, dto: UpdateSpaceInput): Promise<Space> {
+    async update(id: number, dto: UpdateSpaceInput, shelterId?: number): Promise<Space> {
         try {
             const updateData: SpaceUpdate = {};
 
@@ -188,12 +193,16 @@ export class SpaceRepository {
             if (dto.type !== undefined) updateData.tipo = dto.type;
             if (dto.available !== undefined) updateData.disponible = dto.available;
 
-            const { data, error } = await this.supabase
+            let query = this.supabase
                 .from('espacio')
                 .update(updateData)
-                .eq('id_espacio', id)
-                .select()
-                .single();
+                .eq('id_espacio', id);
+
+            if (shelterId !== undefined) {
+                query = query.eq('id_refugio', shelterId);
+            }
+
+            const { data, error } = await query.select().single();
 
             if (error) {
                 if (error.code === 'PGRST116') {
@@ -223,7 +232,7 @@ export class SpaceRepository {
     /**
      * Elimina un espacio (solo si no tiene animales asociados)
      */
-    async delete(id: number): Promise<void> {
+    async delete(id: number, shelterId?: number): Promise<void> {
         try {
             // Primero verificamos que no tenga animales asociados
             const { count, error: countError } = await this.supabase
@@ -245,10 +254,16 @@ export class SpaceRepository {
                 );
             }
 
-            const { error } = await this.supabase
+            let deleteQuery = this.supabase
                 .from('espacio')
                 .delete()
                 .eq('id_espacio', id);
+
+            if (shelterId !== undefined) {
+                deleteQuery = deleteQuery.eq('id_refugio', shelterId);
+            }
+
+            const { error } = await deleteQuery;
 
             if (error) {
                 if (error.code === 'PGRST116') {

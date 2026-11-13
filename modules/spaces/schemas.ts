@@ -33,6 +33,19 @@ export const CreateSpaceSchema = SpaceFieldsSchema;
 
 export const UpdateSpaceSchema = SpaceFieldsSchema;
 
+/**
+ * Variantes para la API v1. Se derivan de los esquemas anteriores (sin
+ * duplicar campos):
+ * - `CreateSpaceApiSchema` admite `shelterId` para que el superadmin cree
+ *   espacios en cualquier refugio.
+ * - `UpdateSpaceApiSchema` permite actualizaciones parciales (PATCH).
+ */
+export const CreateSpaceApiSchema = CreateSpaceSchema.extend({
+    shelterId: z.number().int().positive().optional(),
+});
+
+export const UpdateSpaceApiSchema = UpdateSpaceSchema.partial();
+
 export const SpaceFiltersSchema = z.object({
     shelterId: z.number().optional(),
     available: z.boolean().optional(),

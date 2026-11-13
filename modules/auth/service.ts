@@ -3,6 +3,7 @@ import {AuthenticatedUser, UserRole} from './types';
 import {EmailNotVerifiedError, InactiveUserError} from './errors';
 import {AuthAdminRepository} from "@/modules/auth/admin-repository";
 import {ResetPasswordDTO} from "@/modules/auth/schemas";
+import {TERMINOS_VERSION} from "@/modules/auth/constants";
 
 export class AuthService {
     constructor(
@@ -40,9 +41,10 @@ export class AuthService {
         // 4. Obtener rol y permisos del usuario. Son consultas independientes entre
         //    sí (las dos solo necesitan context.rol): en paralelo cuesta un viaje a
         //    la base de datos en vez de dos.
-        const [roleName, permissions] = await Promise.all([
+        const [roleName, permissions, termsAccepted] = await Promise.all([
             this.repository.findRoleNameById(context.rol) as Promise<UserRole>,
             this.repository.findPermissionsByRole(context.rol),
+            this.repository.hasAcceptedTerms(context.idUsuario, TERMINOS_VERSION),
         ]);
 
         // 6. Construir objeto de usuario autenticado
@@ -56,6 +58,9 @@ export class AuthService {
             active: context.activo,
             emailVerified: authUser.emailConfirmed,
             lastLogin: context.ultimoLogin ? context.ultimoLogin : null,
+            requiresPasswordChange: context.debeCambiarPassword,
+            requiresOnboarding: context.primerInicioSesion,
+            termsAccepted,
         };
     }
     /**
@@ -78,6 +83,12 @@ export class AuthService {
         return user.permissions;
     }
     /**
+     * Resuelve el ID numérico de un rol por su nombre (tabla `rol`).
+     */
+    async getRoleIdByName(roleName: string): Promise<number> {
+        return this.repository.findRoleIdByName(roleName);
+    }
+    /**
      * Cierra sesión del usuario
      */
     async logout(): Promise<void> {
@@ -95,6 +106,40 @@ export class AuthService {
     async resetPassword(dto: ResetPasswordDTO) {
         await this.repository.updatePassword(dto.password);
     }
+
+    /**
+     * Cambio de contraseña del usuario autenticado (F-AUTH-03). Si la cuenta
+     * venía con contraseña temporal, se marca como cambiada para no volver a
+     * forzar el formulario en el siguiente inicio de sesión.
+     */
+    async changePassword(dto: ResetPasswordDTO): Promise<void> {
+        await this.repository.updatePassword(dto.password);
+
+        const authUser = await this.repository.getAuthUser();
+        const context = await this.repository.findUserContext(authUser.id);
+
+        if (context.debeCambiarPassword) {
+            await this.repository.markPasswordChanged(context.idUsuario);
+        }
+    }
+
+    /**
+     * Registra la aceptación de los Términos y Condiciones (US27).
+     */
+    async acceptTerms(
+        userId: number,
+        shelterId: number | null,
+        version = TERMINOS_VERSION,
+    ): Promise<void> {
+        await this.repository.saveTermsAcceptance(userId, shelterId, version);
+    }
+
+    /**
+     * Marca el onboarding como completado (US30).
+     */
+    async completeOnboarding(userId: number): Promise<void> {
+        await this.repository.completeOnboarding(userId);
+    }
     /**
     * Obtener usuario por ID de refugio
      **/
@@ -108,10 +153,11 @@ export class AuthService {
 
         return Promise.all(
             users.map(async (user) => {
-                // Nombre del rol y permisos del rol (independientes: en paralelo)
-                const [roleName, permissions] = await Promise.all([
+                // Nombre del rol, permisos y aceptación de términos (en paralelo)
+                const [roleName, permissions, termsAccepted] = await Promise.all([
                     this.repository.findRoleNameById(user.rol) as Promise<UserRole>,
                     this.repository.findPermissionsByRole(user.rol),
+                    this.repository.hasAcceptedTerms(user.idUsuario, TERMINOS_VERSION),
                 ]);
 
                 return {
@@ -125,6 +171,9 @@ export class AuthService {
                     // No tenemos acceso al Auth de Supabase aquí
                     emailVerified: true, // o false, o eliminar este campo si no aplica
                     lastLogin: user.ultimoLogin ?? null,
+                    requiresPasswordChange: user.debeCambiarPassword,
+                    requiresOnboarding: user.primerInicioSesion,
+                    termsAccepted,
                 };
             })
         );

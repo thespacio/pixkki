@@ -110,6 +110,18 @@ export function isSuperadminRole(role: string): boolean {
     return String(role).toLowerCase().replace(/[^a-z]/g, "") === "superadmin";
 }
 
+/**
+ * ¿Es administrador de refugio? El rol llega de la base como "Administrador"
+ * (id 1), aunque `UserRole` lo declare en minúsculas.
+ */
+export function isAdminRole(role: string): boolean {
+    return String(role).toLowerCase().replace(/[^a-z]/g, "") === "administrador";
+}
+
+export function isAdmin(user: Pick<AuthenticatedUser, "role">): boolean {
+    return isAdminRole(user.role);
+}
+
 export function isSuperadmin(user: Pick<AuthenticatedUser, "role">): boolean {
     return isSuperadminRole(user.role);
 }

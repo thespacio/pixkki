@@ -6,12 +6,18 @@ import { AuthenticatedUser } from "@/modules/auth/types";
  * DTO de usuario autenticado para las respuestas de la API v1
  * (requerimiento-00, RF0.5).
  *
- * `requiresOnboarding` se omite hasta que exista la feature de onboarding
- * (US30): no se expone un campo que aún no se puede calcular.
+ * `shelterId` es `null` para el superadmin, que opera a nivel global.
+ * `requiresOnboarding` refleja `usuario.primer_inicio_sesion` (US30).
  */
 export type AuthUserResponse = Pick<
     AuthenticatedUser,
-    "id" | "email" | "role" | "permissions" | "shelterId" | "emailVerified"
+    | "id"
+    | "email"
+    | "role"
+    | "permissions"
+    | "shelterId"
+    | "emailVerified"
+    | "requiresOnboarding"
 >;
 
 /**
@@ -27,5 +33,6 @@ export function toAuthUserResponse(
         permissions: user.permissions,
         shelterId: user.shelterId,
         emailVerified: user.emailVerified,
+        requiresOnboarding: user.requiresOnboarding,
     };
 }

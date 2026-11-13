@@ -187,6 +187,10 @@ export class UserRepository {
                 .from('usuario')
                 .select('*, refugio!fk_usuario_refugio(nombre)', { count: 'exact', head: false });
 
+            // El superadmin tiene `id_refugio` NULL y no forma parte del
+            // personal de ningún refugio: no se lista en la vista global.
+            query = query.not('id_refugio', 'is', null);
+
             if (params.refugioId) {
                 query = query.eq('id_refugio', params.refugioId);
             }
@@ -274,6 +278,30 @@ export class UserRepository {
         }
 
         return mapUserRowToDomain(result);
+    }
+
+    /**
+     * Ajusta los flags de acceso inicial de un usuario recién creado
+     * (US02/US30): contraseña temporal y onboarding pendiente.
+     */
+    async setInitialAccessState(
+        id: number,
+        state: { requiresPasswordChange: boolean; requiresOnboarding: boolean },
+    ): Promise<void> {
+        const { error } = await this.supabase
+            .from('usuario')
+            .update({
+                debe_cambiar_password: state.requiresPasswordChange,
+                primer_inicio_sesion: state.requiresOnboarding,
+            })
+            .eq('id_usuario', id);
+
+        if (error) {
+            throw new UserRepositoryError(
+                `Error al actualizar el estado inicial del usuario: ${error.message}`,
+                error.code,
+            );
+        }
     }
 
     /**

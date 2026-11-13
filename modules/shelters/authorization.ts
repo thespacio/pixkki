@@ -51,9 +51,9 @@ export class ShelterAuthorization {
             );
         }
 
-        // Comparación case-insensitive: el valor real proviene de
-        // `rol.nombre_rol` en BD y no está estandarizado.
-        if (context.role.trim().toLowerCase() !== 'superadmin') {
+        // El rol llega crudo de BD ("Superadmin"); se usa el normalizador
+        // isSuperadminRole para no depender de mayúsculas ni de guiones.
+        if (!isSuperadminRole(context.role)) {
             throw new ShelterAuthorizationError(
                 `Usuario con rol "${context.role}" no tiene permisos para crear refugios`,
                 {

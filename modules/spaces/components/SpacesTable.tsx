@@ -10,9 +10,10 @@ import EditSpaceModal from "@/modules/spaces/components/EditSpaceModal";
 interface Props {
     shelterId: number;
     spaces: Space[];
+    canManage?: boolean;
 }
 
-export default function SpacesTable({ shelterId, spaces }: Props) {
+export default function SpacesTable({ shelterId, spaces, canManage = false }: Props) {
     const [isPending, startTransition] = useTransition();
     const [editingSpace, setEditingSpace] = useState<Space | null>(null);
 
@@ -41,14 +42,16 @@ export default function SpacesTable({ shelterId, spaces }: Props) {
                         <th className="px-5 py-4 text-sm font-semibold">Capacidad</th>
                         <th className="px-5 py-4 text-sm font-semibold">Ocupación</th>
                         <th className="px-5 py-4 text-sm font-semibold">Disponibles</th>
-                        <th className="px-5 py-4 text-sm font-semibold text-center">Acciones</th>
+                        {canManage && (
+                            <th className="px-5 py-4 text-sm font-semibold text-center">Acciones</th>
+                        )}
                     </tr>
                     </thead>
 
                     <tbody>
                     {(spaces == undefined || spaces.length === 0)? (
                         <tr>
-                            <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                            <td colSpan={canManage ? 6 : 5} className="py-8 text-center text-muted-foreground">
                                 No hay espacios registrados.
                             </td>
                         </tr>
@@ -62,24 +65,26 @@ export default function SpacesTable({ shelterId, spaces }: Props) {
                                 <td className="px-5 py-4 font-medium">
                                     {space.capacity - space.capacity}
                                 </td>
-                                <td className="px-5 py-4">
-                                    <div className="flex justify-center gap-3">
-                                        <button
-                                            onClick={() => handleEdit(space)}
-                                            className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                                            disabled={isPending}
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(space.id)}
-                                            className="text-red-600 hover:text-red-800 cursor-pointer"
-                                            disabled={isPending}
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
+                                {canManage && (
+                                    <td className="px-5 py-4">
+                                        <div className="flex justify-center gap-3">
+                                            <button
+                                                onClick={() => handleEdit(space)}
+                                                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                                                disabled={isPending}
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(space.id)}
+                                                className="text-red-600 hover:text-red-800 cursor-pointer"
+                                                disabled={isPending}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         ))
                     )}

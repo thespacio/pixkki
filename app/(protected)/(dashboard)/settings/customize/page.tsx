@@ -86,6 +86,11 @@ export default function MiAlberguePage() {
       return
     }
 
+    if (usuarioData.id_refugio === null) {
+      setErrorMsg('Tu usuario no está asociado a un albergue.')
+      return
+    }
+
     const { data: perfilData, error: pErr } = await supabase
       .from('albergue_perfil')
       .select('id_perfil, visible_publico')

@@ -5,9 +5,26 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {CreateSpaceInput, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces/types/types";
 import {createSpaceService} from "@/modules/spaces/factories/factories";
-import {getAuthUser, getCurrentUser} from "@/modules/auth";
-import {getShelterDetailsByIdAction} from "@/modules/shelters/actions";
+import {getCurrentUser} from "@/modules/auth";
+import {isAdmin, isSuperadmin} from "@/modules/auth/authorization";
+import type {AuthenticatedUser} from "@/modules/auth/types";
 
+const NO_SHELTER_ERROR = 'El usuario no tiene un albergue asignado';
+const FORBIDDEN_ERROR = 'No tienes permisos para gestionar espacios';
+
+/**
+ * Alcance multitenant de las consultas:
+ * - superadmin → `undefined` (sin filtro, ve todos los refugios)
+ * - resto      → su propio `shelterId` (o -1 si no tiene, que nunca coincide)
+ */
+function shelterScope(user: AuthenticatedUser): number | undefined {
+    return isSuperadmin(user) ? undefined : user.shelterId ?? -1;
+}
+
+/** Las mutaciones de espacios están reservadas a Admin y Superadmin. */
+function canManageSpaces(user: AuthenticatedUser): boolean {
+    return isAdmin(user) || isSuperadmin(user);
+}
 
 /**
  * Crea un nuevo espacio
@@ -15,6 +32,15 @@ import {getShelterDetailsByIdAction} from "@/modules/shelters/actions";
 export async function createSpaceAction(dto: CreateSpaceInput) {
     try {
         const user = await getCurrentUser();
+
+        if (!canManageSpaces(user)) {
+            return { success: false, error: FORBIDDEN_ERROR };
+        }
+
+        if (user.shelterId === null) {
+            return { success: false, error: NO_SHELTER_ERROR };
+        }
+
         const shelterId = user.shelterId;
         const service = await createSpaceService();
 
@@ -46,8 +72,9 @@ export async function createSpaceAction(dto: CreateSpaceInput) {
  */
 export async function getSpaceAction(id: number) {
     try {
+        const user = await getCurrentUser();
         const service = await createSpaceService();
-        const result = await service.getSpaceById(id);
+        const result = await service.getSpaceById(id, shelterScope(user));
         return { success: true, data: result };
     } catch (error) {
         return {
@@ -62,8 +89,16 @@ export async function getSpaceAction(id: number) {
  */
 export async function getSpacesAction(filters?: SpaceFilters) {
     try {
+        const user = await getCurrentUser();
+
+        // El superadmin puede filtrar por cualquier refugio; el resto solo por
+        // el suyo, aunque envíe otro `shelterId`.
+        const scopedFilters: SpaceFilters | undefined = isSuperadmin(user)
+            ? filters
+            : { ...filters, shelterId: user.shelterId ?? -1 };
+
         const service = await createSpaceService();
-        const result = await service.getSpaces(filters);
+        const result = await service.getSpaces(scopedFilters);
         return { success: true, data: result };
     } catch (error) {
         return {
@@ -78,6 +113,12 @@ export async function getSpacesAction(filters?: SpaceFilters) {
  */
 export async function getSpacesByShelterAction(shelterId: number) {
     try {
+        const user = await getCurrentUser();
+
+        if (!isSuperadmin(user) && shelterId !== user.shelterId) {
+            return { success: false, error: FORBIDDEN_ERROR };
+        }
+
         const service = await createSpaceService();
         const result = await service.getSpacesByShelter(shelterId);
         return { success: true, data: result };
@@ -94,12 +135,19 @@ export async function getSpacesByShelterAction(shelterId: number) {
  */
 export async function updateSpaceAction(id: number, dto: UpdateSpaceInput) {
     try {
+        const user = await getCurrentUser();
+
+        if (!canManageSpaces(user)) {
+            return { success: false, error: FORBIDDEN_ERROR };
+        }
+
+        const scope = shelterScope(user);
         const service = await createSpaceService();
 
         // Obtener el shelterId antes de actualizar para revalidar las rutas correctas
-        const currentSpace = await service.getSpaceById(id);
+        const currentSpace = await service.getSpaceById(id, scope);
 
-        const result = await service.updateSpace(id, dto);
+        const result = await service.updateSpace(id, dto, scope);
 
         // Revalidar rutas relacionadas
         revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
@@ -120,12 +168,19 @@ export async function updateSpaceAction(id: number, dto: UpdateSpaceInput) {
  */
 export async function deleteSpaceAction(id: number) {
     try {
+        const user = await getCurrentUser();
+
+        if (!canManageSpaces(user)) {
+            return { success: false, error: FORBIDDEN_ERROR };
+        }
+
+        const scope = shelterScope(user);
         const service = await createSpaceService();
 
         // Obtener el shelterId antes de eliminar para revalidar las rutas correctas
-        const currentSpace = await service.getSpaceById(id);
+        const currentSpace = await service.getSpaceById(id, scope);
 
-        await service.deleteSpace(id);
+        await service.deleteSpace(id, scope);
 
         // Revalidar rutas relacionadas
         revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
@@ -145,8 +200,9 @@ export async function deleteSpaceAction(id: number) {
  */
 export async function checkSpaceAvailabilityAction(spaceId: number) {
     try {
+        const user = await getCurrentUser();
         const service = await createSpaceService();
-        const result = await service.checkSpaceAvailability(spaceId);
+        const result = await service.checkSpaceAvailability(spaceId, shelterScope(user));
         return { success: true, data: result };
     } catch (error) {
         return {
@@ -161,6 +217,12 @@ export async function checkSpaceAvailabilityAction(spaceId: number) {
  */
 export async function getAvailableSpacesAction(shelterId: number) {
     try {
+        const user = await getCurrentUser();
+
+        if (!isSuperadmin(user) && shelterId !== user.shelterId) {
+            return { success: false, error: FORBIDDEN_ERROR };
+        }
+
         const service = await createSpaceService();
         const result = await service.getAvailableSpaces(shelterId);
         return { success: true, data: result };
