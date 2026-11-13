@@ -390,14 +390,15 @@ export function AnimalForm({
                         Esterilizado
                     </label>
                     <label className={CHECK_CLS}>
-                        <input type="checkbox" {...register("enCuarentena")} className="w-4 h-4 rounded accent-primary" />
-                        En cuarentena
-                    </label>
-                    <label className={CHECK_CLS}>
                         <input type="checkbox" {...register("disponibleAdopcion")} className="w-4 h-4 rounded accent-primary" />
                         Disponible para adopción
                     </label>
                 </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                    Todo paciente ingresa en cuarentena por defecto. La salida de
+                    cuarentena se gestiona en el control clínico.
+                </p>
             </Section>
 
             {/* ---------------- Observaciones ---------------- */}

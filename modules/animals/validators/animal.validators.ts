@@ -155,7 +155,6 @@ export function createAnimalFormSchema({ requireShelter = false } = {}) {
             idEstado: z.string().min(1, "Selecciona un estado"),
             idEspacio: z.string().min(1, "Selecciona un espacio"),
             idRefugio: z.string(),
-            enCuarentena: z.boolean(),
             esterilizado: z.boolean(),
             disponibleAdopcion: z.boolean(),
             activo: z.boolean(),
@@ -223,7 +222,8 @@ export function toCreateAnimalInput(
         idEstado: Number(values.idEstado),
         idEspacio: Number(values.idEspacio),
         idRefugio: values.idRefugio === "" ? undefined : Number(values.idRefugio),
-        enCuarentena: values.enCuarentena,
+        // RF1.1: toda alta entra en cuarentena; el formulario no lo permite editar.
+        enCuarentena: true,
         esterilizado: values.esterilizado,
         disponibleAdopcion: values.disponibleAdopcion,
         activo: values.activo,
@@ -339,7 +339,6 @@ export function toFormValues(
             input?.idEspacio !== undefined ? String(input.idEspacio) : "",
         idRefugio:
             input?.idRefugio !== undefined ? String(input.idRefugio) : "",
-        enCuarentena: input?.enCuarentena ?? false,
         esterilizado: input?.esterilizado ?? false,
         disponibleAdopcion: input?.disponibleAdopcion ?? false,
         activo: input?.activo ?? true,

@@ -10,12 +10,23 @@ import type {
 
 type Props = {
     idAnimal: number;
+    /** Cambia cuando se registra un diagnóstico para recargar alertas y línea de tiempo. */
+    refreshKey?: number;
 };
 
 const ALERTA_LABEL: Record<string, string> = {
     cuarentena: "En cuarentena",
     estado_critico: "Estado crítico",
 };
+
+function bannerTitle(alertas: string[]): string {
+    const cuarentena = alertas.includes("cuarentena");
+    const critico = alertas.includes("estado_critico");
+
+    if (cuarentena && critico) return "Paciente en cuarentena y en estado crítico";
+    if (cuarentena) return "Paciente en cuarentena";
+    return "Paciente en estado crítico";
+}
 
 function formatFecha(value: string): string {
     const date = new Date(value);
@@ -59,7 +70,7 @@ function describeEvent(event: ClinicalTimelineEvent): {
  * Ficha clínica consolidada (RF1.4, US08).
  * Muestra alertas y la línea de tiempo clínica del expediente.
  */
-export function AnimalClinicalRecord({ idAnimal }: Props) {
+export function AnimalClinicalRecord({ idAnimal, refreshKey = 0 }: Props) {
     const [ficha, setFicha] = useState<ClinicalRecord | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -83,7 +94,7 @@ export function AnimalClinicalRecord({ idAnimal }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [idAnimal]);
+    }, [idAnimal, refreshKey]);
 
     return (
         <section className="mt-6">
@@ -103,16 +114,25 @@ export function AnimalClinicalRecord({ idAnimal }: Props) {
             ) : ficha ? (
                 <>
                     {ficha.alertas.length > 0 && (
-                        <div className="mb-4 flex flex-wrap gap-2">
-                            {ficha.alertas.map((alerta) => (
-                                <span
-                                    key={alerta}
-                                    className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700"
-                                >
-                                    <AlertTriangle size={11} aria-hidden="true" />
-                                    {ALERTA_LABEL[alerta] ?? alerta}
-                                </span>
-                            ))}
+                        <div
+                            role="status"
+                            className="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-red-800"
+                        >
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                                <AlertTriangle size={16} aria-hidden="true" />
+                                {bannerTitle(ficha.alertas)}
+                            </p>
+                            <p className="mt-1 text-xs">Requiere atención prioritaria.</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                                {ficha.alertas.map((alerta) => (
+                                    <span
+                                        key={alerta}
+                                        className="rounded-md bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700"
+                                    >
+                                        {ALERTA_LABEL[alerta] ?? alerta}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -147,6 +167,22 @@ export function AnimalClinicalRecord({ idAnimal }: Props) {
                             </dt>
                             <dd className="text-foreground">
                                 {ficha.animal.espacioNombre ?? "—"}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Último diagnóstico
+                            </dt>
+                            <dd className="text-foreground">
+                                {ficha.diagnosticos[0]?.estadoGeneral ?? "—"}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Esterilizado
+                            </dt>
+                            <dd className="text-foreground">
+                                {ficha.animal.esterilizado ? "Sí" : "No"}
                             </dd>
                         </div>
                     </dl>

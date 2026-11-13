@@ -62,6 +62,8 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
     const [feedback, setFeedback] = useState<
         { type: "ok" | "error"; msg: string } | null
     >(null);
+    // Fuerza recargar la ficha clínica cuando se registra un diagnóstico.
+    const [clinicalRecordVersion, setClinicalRecordVersion] = useState(0);
     const closeRef = useRef<HTMLButtonElement>(null);
     // `onClose` llega como función nueva en cada render del padre: se guarda en un
     // ref para que los efectos de abajo corran una sola vez (si no, el foco volvería
@@ -261,8 +263,12 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
                 <AnimalDiagnosisPanel
                     idAnimal={animal.idAnimal}
                     canDiagnose={canDiagnose}
+                    onSaved={() => setClinicalRecordVersion((version) => version + 1)}
                 />
-                <AnimalClinicalRecord idAnimal={animal.idAnimal} />
+                <AnimalClinicalRecord
+                    idAnimal={animal.idAnimal}
+                    refreshKey={clinicalRecordVersion}
+                />
             </div>
         </div>
     );

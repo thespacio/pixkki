@@ -12,6 +12,8 @@ import type { AnimalDiagnosis } from "../repositories/animal-diagnosis.repositor
 type Props = {
     idAnimal: number;
     canDiagnose: boolean;
+    /** Avisa al expediente para recargar la ficha clínica (alertas y línea de tiempo). */
+    onSaved?: () => void;
 };
 
 type ApiEnvelope<T> =
@@ -60,7 +62,7 @@ async function fetchDiagnoses(idAnimal: number): Promise<AnimalDiagnosis[]> {
  * - Solo veterinario/admin ven el formulario; el servidor vuelve a validar el rol.
  * - Crítico o Delicado exigen observaciones (regla del schema Zod).
  */
-export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
+export function AnimalDiagnosisPanel({ idAnimal, canDiagnose, onSaved }: Props) {
     const [diagnosticos, setDiagnosticos] = useState<AnimalDiagnosis[]>([]);
     const [loading, setLoading] = useState(true);
     const [estadoGeneral, setEstadoGeneral] = useState<EstadoGeneralSalud>("Estable");
@@ -69,6 +71,9 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [ok, setOk] = useState<string | null>(null);
+
+    const observacionesObligatorias =
+        estadoGeneral === "Crítico" || estadoGeneral === "Delicado";
 
     const load = useCallback(async () => {
         try {
@@ -120,6 +125,7 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
         setRequiereCuarentena(false);
         setEstadoGeneral("Estable");
         await load();
+        onSaved?.();
     }
 
     return (
@@ -200,7 +206,7 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
 
                     <div>
                         <label htmlFor={`obs-${idAnimal}`} className={LABEL_CLS}>
-                            Observaciones médicas
+                            Observaciones médicas {observacionesObligatorias && "*"}
                         </label>
                         <textarea
                             id={`obs-${idAnimal}`}
@@ -208,6 +214,7 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
                             onChange={(event) => setObservaciones(event.target.value)}
                             rows={3}
                             maxLength={2000}
+                            aria-required={observacionesObligatorias}
                             placeholder="Hallazgos, tratamiento inicial, lesiones…"
                             className={`${INPUT_CLS} resize-none`}
                         />
@@ -223,7 +230,7 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose }: Props) {
                             onChange={(event) => setRequiereCuarentena(event.target.checked)}
                             className="size-4 rounded border-input"
                         />
-                        Requiere cuarentena
+                        Requiere cuarentena obligatoria
                     </label>
 
                     {error && (
