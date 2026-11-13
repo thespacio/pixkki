@@ -1,0 +1,816 @@
+# ---------------------------------------------------------------------------
+# Contrato OpenAPI del módulo animals — Pixkki API v1.
+# (Requerimiento 01 — Épica 1: Ingresos y Expedientes)
+#
+# Implementado por los route handlers de `app/api/v1/animales/`.
+# Los cuerpos se validan con Zod (`modules/animals/validators/animal.validators.ts`).
+# ---------------------------------------------------------------------------
+
+openapi: 3.0.3
+info:
+  title: Pixkki Animals API
+  version: 1.1.0
+  description: >
+    Contrato de la API del módulo animals (ingresos y expedientes clínicos).
+    Extiende el módulo animals existente con multimedia y diagnóstico de ingreso.
+
+servers:
+  - url: /api/v1
+    description: API versionada
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: animals
+    description: Operaciones de alta, listado, multimedia y diagnóstico de animales.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-${project-ref}-auth-token
+      description: Cookie de sesión emitida por Supabase Auth (flujo SSR).
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          description: Carga útil específica del endpoint.
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code:
+              type: string
+              description: Código estable del error (UPPER_SNAKE_CASE).
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              description: Mensaje en español para el usuario final.
+              example: Datos inválidos.
+            statusCode:
+              type: integer
+              example: 400
+
+    # -----------------------------------------------------------------------
+    # Requests (derivados de los schemas Zod)
+    # -----------------------------------------------------------------------
+    CreateAnimalRequest:
+      type: object
+      required: [especie, procedencia, rasgosFisicos, estadoInicial, idEstado, idEspacio]
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+        especie:
+          type: string
+          enum: [Perro, Gato]
+        raza:
+          type: string
+          maxLength: 80
+        sexo:
+          type: string
+          enum: [M, H]
+        edadEstimada:
+          type: integer
+          minimum: 0
+          maximum: 300
+          description: Edad estimada en meses.
+        peso:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+          maximum: 500
+        procedencia:
+          type: string
+          minLength: 2
+          maxLength: 200
+        rasgosFisicos:
+          type: string
+          minLength: 2
+          maxLength: 500
+        estadoInicial:
+          type: string
+          minLength: 2
+          maxLength: 100
+        idEstado:
+          type: integer
+          minimum: 1
+        idEspacio:
+          type: integer
+          minimum: 1
+        idRefugio:
+          type: integer
+          minimum: 1
+          description: Solo lo respeta el superadmin; el resto usa su propio refugio.
+        color:
+          type: string
+          maxLength: 50
+        tamano:
+          type: string
+          enum: [Pequeño, Mediano, Grande]
+        microchip:
+          type: string
+          pattern: "^[A-Za-z0-9-]{9,20}$"
+        temperamento:
+          type: string
+          enum: [Dócil, Sociable, Tímido, Miedoso, Reactivo, Agresivo]
+        lugarRescate:
+          type: string
+          minLength: 2
+          maxLength: 200
+        fechaRescate:
+          type: string
+          format: date
+        situacionRescate:
+          type: string
+          enum: [Abandonado, Extraviado, Maltratado, Nacido en la calle, Accidentado, Otro]
+        rescatistaNombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+        rescatistaContacto:
+          type: string
+          minLength: 3
+          maxLength: 100
+        observaciones:
+          type: string
+          maxLength: 1000
+        enCuarentena:
+          type: boolean
+          default: false
+          description: >
+            El servidor fuerza `true` en el alta (RF1.1): todo ingreso nace en
+            cuarentena, aunque el cliente envíe `false`.
+        esterilizado:
+          type: boolean
+          default: false
+        disponibleAdopcion:
+          type: boolean
+          default: false
+        activo:
+          type: boolean
+          default: true
+        vacunado:
+          type: boolean
+          default: false
+        desparasitado:
+          type: boolean
+          default: false
+
+    UploadImageRequest:
+      type: object
+      required: [files]
+      properties:
+        files:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+          description: >
+            Imágenes JPG, PNG o WEBP (máximo 5 MB cada una). También se acepta
+            el campo `file` para una sola imagen. El tipo real se valida por
+            magic bytes, no por la extensión.
+
+    CreateDiagnosticoRequest:
+      type: object
+      required: [estadoGeneral]
+      properties:
+        estadoGeneral:
+          type: string
+          enum: [Crítico, Delicado, Estable, Sano]
+        requiereCuarentena:
+          type: boolean
+          default: false
+        observaciones:
+          type: string
+          maxLength: 2000
+          description: Obligatorio cuando estadoGeneral es Crítico o Delicado.
+
+    # -----------------------------------------------------------------------
+    # Responses (camelCase)
+    # -----------------------------------------------------------------------
+    Animal:
+      type: object
+      properties:
+        idAnimal:
+          type: integer
+        uuid:
+          type: string
+          nullable: true
+        idRefugio:
+          type: integer
+        refugioNombre:
+          type: string
+          nullable: true
+        idEspacio:
+          type: integer
+        espacioNombre:
+          type: string
+          nullable: true
+        idEstado:
+          type: integer
+        estadoNombre:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+        especie:
+          type: string
+        raza:
+          type: string
+          nullable: true
+        sexo:
+          type: string
+          nullable: true
+        edadEstimada:
+          type: integer
+          nullable: true
+        peso:
+          type: number
+          nullable: true
+        procedencia:
+          type: string
+        rasgosFisicos:
+          type: string
+        estadoInicial:
+          type: string
+        fechaIngreso:
+          type: string
+          format: date-time
+        activo:
+          type: boolean
+        disponibleAdopcion:
+          type: boolean
+        enCuarentena:
+          type: boolean
+        esterilizado:
+          type: boolean
+        deletedAt:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        tamano:
+          type: string
+          nullable: true
+        microchip:
+          type: string
+          nullable: true
+        temperamento:
+          type: string
+          nullable: true
+        vacunado:
+          type: boolean
+        desparasitado:
+          type: boolean
+        lugarRescate:
+          type: string
+          nullable: true
+        fechaRescate:
+          type: string
+          format: date
+          nullable: true
+        situacionRescate:
+          type: string
+          nullable: true
+        rescatistaNombre:
+          type: string
+          nullable: true
+        rescatistaContacto:
+          type: string
+          nullable: true
+        observaciones:
+          type: string
+          nullable: true
+
+    AnimalImage:
+      type: object
+      properties:
+        idImagen:
+          type: integer
+        idAnimal:
+          type: integer
+        urlPublica:
+          type: string
+        urlThumbnail:
+          type: string
+          nullable: true
+        esPortada:
+          type: boolean
+        orden:
+          type: integer
+        formato:
+          type: string
+          nullable: true
+        tamanoBytes:
+          type: integer
+          nullable: true
+        nombreArchivo:
+          type: string
+        fechaSubida:
+          type: string
+          format: date-time
+
+    Diagnostico:
+      type: object
+      properties:
+        idDiagnostico:
+          type: integer
+        idAnimal:
+          type: integer
+        estadoGeneral:
+          type: string
+          enum: [Crítico, Delicado, Estable, Sano]
+        requiereCuarentena:
+          type: boolean
+        observaciones:
+          type: string
+          nullable: true
+        tratamientoInicial:
+          type: string
+          nullable: true
+        requiereCirugia:
+          type: boolean
+        idUsuarioVeterinario:
+          type: integer
+        fechaDiagnostico:
+          type: string
+          format: date-time
+
+    ClinicalRecord:
+      type: object
+      properties:
+        animal:
+          $ref: "#/components/schemas/Animal"
+        imagenes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnimalImage"
+        diagnosticos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Diagnostico"
+        alertas:
+          type: array
+          items:
+            type: string
+            enum: [cuarentena, estado_critico]
+        lineaTiempo:
+          type: array
+          description: Eventos clínicos ordenados del más reciente al más antiguo.
+          items:
+            type: object
+            required: [tipo, fecha, detalle]
+            properties:
+              tipo:
+                type: string
+                enum: [diagnostico, vacuna, prueba_temperamento, esterilizacion]
+              fecha:
+                type: string
+                format: date-time
+              detalle:
+                type: object
+                description: Evento específico según `tipo`.
+
+    AnimalResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Animal"
+
+    AnimalListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                animales:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Animal"
+                total:
+                  type: integer
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+
+    AnimalImageListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                imagenes:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AnimalImage"
+
+    AnimalImageResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                imagen:
+                  $ref: "#/components/schemas/AnimalImage"
+
+    DiagnosticoResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                diagnostico:
+                  $ref: "#/components/schemas/Diagnostico"
+
+    DiagnosticoListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                diagnosticos:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Diagnostico"
+
+    ClinicalRecordResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ClinicalRecord"
+
+  responses:
+    ValidationError:
+      description: 400 — VALIDATION_ERROR (cuerpo inválido).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: 401 — UNAUTHORIZED (sin sesión).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: 403 — regla de negocio o permisos denegados.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: 404 — recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    InternalError:
+      description: 500 — INTERNAL_ERROR (error interno, sin detalles).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+paths:
+  /animales:
+    post:
+      tags: [animals]
+      summary: Alta de paciente y generación de expediente clínico (RF1.1, US05)
+      operationId: createAnimal
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnimalRequest"
+      responses:
+        "201":
+          description: Animal creado y expediente generado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    get:
+      tags: [animals]
+      summary: Listar animales del refugio en sesión (RF1.1, US05)
+      operationId: listAnimals
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Página de resultados.
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+          description: Tamaño de página.
+      responses:
+        "200":
+          description: Lista de animales del refugio.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /animales/{id}:
+    get:
+      tags: [animals]
+      summary: Obtener un animal por ID (solo su refugio)
+      operationId: getAnimalById
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal (id_animal).
+      responses:
+        "200":
+          description: Animal encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /animales/{id}/imagenes:
+    post:
+      tags: [animals]
+      summary: Subir imágenes multimedia al expediente (RF1.2, US06)
+      operationId: uploadAnimalImages
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadImageRequest"
+      responses:
+        "201":
+          description: Imágenes subidas y registradas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalImageListResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    get:
+      tags: [animals]
+      summary: Listar imágenes del expediente de un animal (RF1.2, US06)
+      operationId: listAnimalImages
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+      responses:
+        "200":
+          description: Galería de imágenes del animal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalImageListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /animales/{id}/imagenes/{idImagen}:
+    delete:
+      tags: [animals]
+      summary: Eliminar una imagen del expediente (RF1.2, US06)
+      operationId: deleteAnimalImage
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+        - in: path
+          name: idImagen
+          required: true
+          schema:
+            type: integer
+          description: ID de la imagen.
+      responses:
+        "200":
+          description: Imagen eliminada (si era portada, se reasigna la siguiente).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    properties:
+                      eliminada:
+                        type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /animales/{id}/imagenes/{idImagen}/portada:
+    patch:
+      tags: [animals]
+      summary: Designar imagen como portada del expediente (RF1.2, US06)
+      operationId: setAnimalImagePortada
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+        - in: path
+          name: idImagen
+          required: true
+          schema:
+            type: integer
+          description: ID de la imagen.
+      responses:
+        "200":
+          description: Imagen portada actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimalImageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /animales/{id}/diagnosticos:
+    post:
+      tags: [animals]
+      summary: Registrar diagnóstico veterinario de ingreso (RF1.3, US07)
+      operationId: createDiagnostico
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDiagnosticoRequest"
+      responses:
+        "201":
+          description: Diagnóstico registrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticoResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    get:
+      tags: [animals]
+      summary: Listar diagnósticos de ingreso de un animal (RF1.3, US07)
+      operationId: listDiagnosticos
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+      responses:
+        "200":
+          description: Lista de diagnósticos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticoListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /animales/{id}/ficha-clinica:
+    get:
+      tags: [animals]
+      summary: Ficha clínica centralizada (RF1.4, US08)
+      operationId: getClinicalRecord
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del animal.
+      responses:
+        "200":
+          description: Ficha clínica completa (animal + imágenes + diagnósticos + línea de tiempo).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClinicalRecordResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"

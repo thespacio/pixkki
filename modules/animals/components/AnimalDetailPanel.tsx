@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
-import { Cat, Dog, PawPrint, Stethoscope, X } from "lucide-react";
+import { Cat, Dog, PawPrint, X } from "lucide-react";
 import {
     deleteAnimalAction,
     updateAnimalAction,
 } from "../actions/animal.actions";
 import type { Animal } from "@/modules/animals/types/animales.types";
 import { formatEdad } from "@/modules/animals/filters";
+import { AnimalGallery } from "./AnimalGallery";
+import { AnimalDiagnosisPanel } from "./AnimalDiagnosisPanel";
+import { AnimalClinicalRecord } from "./AnimalClinicalRecord";
 
 type Props = {
     animal: Animal;
     canEdit: boolean;
     canDelete: boolean;
+    /** Solo veterinario/admin pueden registrar diagnósticos (el servidor lo revalida). */
+    canDiagnose: boolean;
     onClose: () => void;
 };
 
@@ -52,7 +57,7 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
-export function AnimalDetailPanel({ animal, canEdit, canDelete, onClose }: Props) {
+export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onClose }: Props) {
     const [pending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<
         { type: "ok" | "error"; msg: string } | null
@@ -62,7 +67,9 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, onClose }: Props
     // ref para que los efectos de abajo corran una sola vez (si no, el foco volvería
     // al botón "Cerrar" cada vez que cambia el estado del panel).
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     // Accesibilidad: foco inicial en "Cerrar" y cierre con Escape.
     useEffect(() => {
@@ -250,11 +257,12 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, onClose }: Props
                     </div>
                 )}
 
-                <div className="mt-6 pt-6 border-t border-border">
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        <Stethoscope size={12} aria-hidden="true" /> Expediente veterinario — próximamente
-                    </p>
-                </div>
+                <AnimalGallery idAnimal={animal.idAnimal} canEdit={canEdit} />
+                <AnimalDiagnosisPanel
+                    idAnimal={animal.idAnimal}
+                    canDiagnose={canDiagnose}
+                />
+                <AnimalClinicalRecord idAnimal={animal.idAnimal} />
             </div>
         </div>
     );

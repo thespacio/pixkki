@@ -1,5 +1,8 @@
 import { z } from "zod";
 import {
+    ESTADOS_GENERALES_SALUD,
+    MAX_IMAGEN_BYTES,
+    MIME_TYPES_PERMITIDOS,
     SITUACIONES_RESCATE,
     TAMANOS,
     TEMPERAMENTOS,
@@ -245,6 +248,70 @@ export function toCreateAnimalInput(
         observaciones: textOrUndefined(values.observaciones),
     };
 }
+
+// ---------------------------------------------------------------------------
+// Schemas de entrada — Requerimiento 01 (Épica 1: Ingresos y Expedientes)
+// ---------------------------------------------------------------------------
+
+/** Metadatos validados de una imagen antes de subirla (RF1.2, US06). */
+export const UploadImageSchema = z.object({
+    idAnimal: z.number().int().positive("ID de animal inválido"),
+    nombreArchivo: z.string().trim().min(1, "Nombre de archivo requerido"),
+    mimeType: z.enum(MIME_TYPES_PERMITIDOS, {
+        error: "Solo se permiten imágenes JPG, PNG o WEBP",
+    }),
+    tamanoBytes: z
+        .number()
+        .int()
+        .positive("La imagen está vacía")
+        .max(MAX_IMAGEN_BYTES, "La imagen supera el máximo de 5 MB"),
+    esPortada: z.boolean().default(false),
+    orden: z.number().int().min(0).default(0),
+});
+
+export type CreateImagenInput = z.infer<typeof UploadImageSchema>;
+
+/** Campos que captura el veterinario en el diagnóstico de ingreso. */
+const DiagnosticoFieldsSchema = z
+    .object({
+        estadoGeneral: z.enum(ESTADOS_GENERALES_SALUD, {
+            error: "Estado general de salud requerido",
+        }),
+        requiereCuarentena: z.boolean().default(false),
+        observaciones: z.string().trim().max(2000).optional(),
+    })
+    .refine(
+        (data) => {
+            if (["Crítico", "Delicado"].includes(data.estadoGeneral)) {
+                return !!data.observaciones && data.observaciones.trim().length > 0;
+            }
+            return true;
+        },
+        {
+            message:
+                "Las observaciones médicas son obligatorias cuando el estado general es Crítico o Delicado.",
+            path: ["observaciones"],
+        },
+    );
+
+/** Cuerpo HTTP del diagnóstico: el animal y el usuario salen del path y la sesión. */
+export const CreateDiagnosticoBodySchema = DiagnosticoFieldsSchema;
+export type CreateDiagnosticoBody = z.infer<typeof CreateDiagnosticoBodySchema>;
+
+/** DTO interno del servicio: incluye el animal resuelto por el servidor. */
+export const CreateDiagnosticoSchema = DiagnosticoFieldsSchema.extend({
+    idAnimal: z.number().int().positive("ID de animal inválido"),
+});
+
+export type CreateDiagnosticoInput = z.infer<typeof CreateDiagnosticoSchema>;
+
+/** Designar una imagen como portada del expediente (RF1.2, US06). */
+export const SetPortadaSchema = z.object({
+    idImagen: z.number().int().positive("ID de imagen inválido"),
+    idAnimal: z.number().int().positive("ID de animal inválido"),
+});
+
+export type SetPortadaInput = z.infer<typeof SetPortadaSchema>;
 
 // ---------------------------------------------------------------------------
 // Transformación DTO → Form (para edición)

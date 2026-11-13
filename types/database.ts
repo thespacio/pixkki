@@ -152,7 +152,9 @@ export type Database = {
       animal: {
         Row: {
           activo: boolean
+          color: string | null
           deleted_at: string | null
+          desparasitado: boolean
           disponible_adopcion: boolean
           edad_estimada: number | null
           en_cuarentena: boolean
@@ -160,21 +162,33 @@ export type Database = {
           estado_inicial: string
           esterilizado: boolean
           fecha_ingreso: string
+          fecha_rescate: string | null
           id_animal: number
           id_espacio: number
           id_estado: number
           id_refugio: number
+          lugar_rescate: string | null
+          microchip: string | null
           nombre: string | null
+          observaciones: string | null
           peso: number | null
           procedencia: string
           rasgos_fisicos: string
           raza: string | null
+          rescatista_contacto: string | null
+          rescatista_nombre: string | null
           sexo: string | null
+          situacion_rescate: string | null
+          tamano: string | null
+          temperamento: string | null
           uuid: string | null
+          vacunado: boolean
         }
         Insert: {
           activo?: boolean
+          color?: string | null
           deleted_at?: string | null
+          desparasitado?: boolean
           disponible_adopcion?: boolean
           edad_estimada?: number | null
           en_cuarentena?: boolean
@@ -182,21 +196,33 @@ export type Database = {
           estado_inicial: string
           esterilizado?: boolean
           fecha_ingreso?: string
+          fecha_rescate?: string | null
           id_animal?: number
           id_espacio: number
           id_estado: number
           id_refugio: number
+          lugar_rescate?: string | null
+          microchip?: string | null
           nombre?: string | null
+          observaciones?: string | null
           peso?: number | null
           procedencia: string
           rasgos_fisicos: string
           raza?: string | null
+          rescatista_contacto?: string | null
+          rescatista_nombre?: string | null
           sexo?: string | null
+          situacion_rescate?: string | null
+          tamano?: string | null
+          temperamento?: string | null
           uuid?: string | null
+          vacunado?: boolean
         }
         Update: {
           activo?: boolean
+          color?: string | null
           deleted_at?: string | null
+          desparasitado?: boolean
           disponible_adopcion?: boolean
           edad_estimada?: number | null
           en_cuarentena?: boolean
@@ -204,17 +230,27 @@ export type Database = {
           estado_inicial?: string
           esterilizado?: boolean
           fecha_ingreso?: string
+          fecha_rescate?: string | null
           id_animal?: number
           id_espacio?: number
           id_estado?: number
           id_refugio?: number
+          lugar_rescate?: string | null
+          microchip?: string | null
           nombre?: string | null
+          observaciones?: string | null
           peso?: number | null
           procedencia?: string
           rasgos_fisicos?: string
           raza?: string | null
+          rescatista_contacto?: string | null
+          rescatista_nombre?: string | null
           sexo?: string | null
+          situacion_rescate?: string | null
+          tamano?: string | null
+          temperamento?: string | null
           uuid?: string | null
+          vacunado?: boolean
         }
         Relationships: [
           {
@@ -631,8 +667,11 @@ export type Database = {
           id_animal: number
           id_fotografia: number
           nombre_archivo: string
+          orden: number
+          public_id: string | null
           tamano_mb: number | null
           url_archivo: string
+          url_thumbnail: string | null
         }
         Insert: {
           es_principal?: boolean
@@ -641,8 +680,11 @@ export type Database = {
           id_animal: number
           id_fotografia?: number
           nombre_archivo: string
+          orden?: number
+          public_id?: string | null
           tamano_mb?: number | null
           url_archivo: string
+          url_thumbnail?: string | null
         }
         Update: {
           es_principal?: boolean
@@ -651,8 +693,11 @@ export type Database = {
           id_animal?: number
           id_fotografia?: number
           nombre_archivo?: string
+          orden?: number
+          public_id?: string | null
           tamano_mb?: number | null
           url_archivo?: string
+          url_thumbnail?: string | null
         }
         Relationships: [
           {

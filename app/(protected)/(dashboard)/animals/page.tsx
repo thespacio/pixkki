@@ -6,6 +6,7 @@ import { AnimalsTable } from "@/modules/animals/components/AnimalsTable";
 import { createAnimalService } from "@/modules/animals/factories/create-animal-service";
 import { createAnimalStateService } from "@/modules/animals/factories/create-animal-state-service";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
+import { puedeRegistrarDiagnostico } from "@/modules/animals/types/animales.types";
 import type { ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
 import { createSpaceService } from "@/modules/spaces/factories/factories";
 import { createShelterService } from "@/modules/shelters";
@@ -78,6 +79,7 @@ export default async function AnimalsPage() {
           refugios={refugios}
           canEdit={canEdit}
           canDelete={canDelete}
+          canDiagnose={puedeRegistrarDiagnostico(user.role)}
         />
       </div>
   );

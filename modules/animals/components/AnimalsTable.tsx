@@ -20,13 +20,50 @@ type Props = {
     refugios: ShelterOption[];
     canEdit: boolean;
     canDelete: boolean;
+    /** Solo veterinario/admin pueden registrar diagnósticos. */
+    canDiagnose?: boolean;
 };
 
-function getAnimalIcon(especie: string) {
+function AnimalIcon({
+    especie,
+    size,
+    strokeWidth,
+    className,
+}: {
+    especie: string;
+    size: number;
+    strokeWidth: number;
+    className?: string;
+}) {
     const e = especie?.toLowerCase() ?? "";
-    if (e.includes("perro")) return Dog;
-    if (e.includes("gato")) return Cat;
-    return PawPrint;
+    if (e.includes("perro")) {
+        return (
+            <Dog
+                size={size}
+                strokeWidth={strokeWidth}
+                className={className}
+                aria-hidden="true"
+            />
+        );
+    }
+    if (e.includes("gato")) {
+        return (
+            <Cat
+                size={size}
+                strokeWidth={strokeWidth}
+                className={className}
+                aria-hidden="true"
+            />
+        );
+    }
+    return (
+        <PawPrint
+            size={size}
+            strokeWidth={strokeWidth}
+            className={className}
+            aria-hidden="true"
+        />
+    );
 }
 
 function getAnimalColor(especie: string) {
@@ -36,7 +73,7 @@ function getAnimalColor(especie: string) {
     return "from-slate-100 to-gray-100 text-slate-600";
 }
 
-export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete }: Props) {
+export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete, canDiagnose = false }: Props) {
     const [filters, setFilters] = useState<AnimalFilters>(EMPTY_FILTERS);
     // Se guarda el id (no el objeto) para que el panel refleje los datos nuevos
     // cuando la página se vuelve a cargar tras editar, y se cierre si el animal se da de baja.
@@ -98,6 +135,7 @@ export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete }
                     animal={seleccionado}
                     canEdit={canEdit}
                     canDelete={canDelete}
+                    canDiagnose={canDiagnose}
                     onClose={() => setSelectedId(null)}
                 />
             )}
@@ -114,7 +152,6 @@ function AnimalCard({
     showShelter: boolean;
     onClick: () => void;
 }) {
-    const Icon = getAnimalIcon(animal.especie);
     const colorClasses = getAnimalColor(animal.especie);
     const nombre = animal.nombre ?? `${animal.especie} sin nombre`;
 
@@ -134,11 +171,11 @@ function AnimalCard({
             <div
                 className={`relative h-36 bg-gradient-to-br ${colorClasses} flex items-center justify-center overflow-hidden`}
             >
-                <Icon
+                <AnimalIcon
+                    especie={animal.especie}
                     size={72}
                     strokeWidth={1.2}
                     className="transition-transform duration-500 group-hover:scale-110 opacity-90"
-                    aria-hidden="true"
                 />
 
                 {animal.estadoNombre && (

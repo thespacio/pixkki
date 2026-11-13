@@ -63,7 +63,9 @@ export class AnimalService {
             throw new AnimalMicrochipDuplicateError();
         }
 
-        return this.repository.create(dto, idRefugio);
+        // Regla de negocio (RF1.1): todo ingreso nace en cuarentena. El cliente
+        // no puede saltarse esta regla enviando enCuarentena = false.
+        return this.repository.create({ ...dto, enCuarentena: true }, idRefugio);
     }
 
     async update(dto: UpdateAnimalDTO, access: AnimalAccess): Promise<Animal> {
