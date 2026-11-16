@@ -1168,6 +1168,149 @@ export type Database = {
           },
         ]
       }
+      inventario_insumo: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id_insumo: number
+          id_refugio: number
+          nombre: string
+          tipo_insumo: string
+          unidad_medida: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id_insumo?: number
+          id_refugio: number
+          nombre: string
+          tipo_insumo: string
+          unidad_medida?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id_insumo?: number
+          id_refugio?: number
+          nombre?: string
+          tipo_insumo?: string
+          unidad_medida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_insumo_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
+      inventario_lote: {
+        Row: {
+          activo: boolean
+          created_at: string
+          fecha_caducidad: string | null
+          id_insumo: number
+          id_lote_inventario: number
+          id_refugio: number
+          lote: string | null
+          marca: string | null
+          stock_actual: number
+          stock_minimo: number
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          fecha_caducidad?: string | null
+          id_insumo: number
+          id_lote_inventario?: number
+          id_refugio: number
+          lote?: string | null
+          marca?: string | null
+          stock_actual?: number
+          stock_minimo?: number
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          fecha_caducidad?: string | null
+          id_insumo?: number
+          id_lote_inventario?: number
+          id_refugio?: number
+          lote?: string | null
+          marca?: string | null
+          stock_actual?: number
+          stock_minimo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_lote_id_insumo_fkey"
+            columns: ["id_insumo"]
+            isOneToOne: false
+            referencedRelation: "inventario_insumo"
+            referencedColumns: ["id_insumo"]
+          },
+          {
+            foreignKeyName: "inventario_lote_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
+      inventario_movimiento: {
+        Row: {
+          cantidad: number
+          fecha: string
+          id_lote_inventario: number
+          id_movimiento: number
+          id_referencia: string | null
+          id_refugio: number
+          id_usuario: number | null
+          motivo: string
+          tipo_movimiento: string
+        }
+        Insert: {
+          cantidad: number
+          fecha?: string
+          id_lote_inventario: number
+          id_movimiento?: number
+          id_referencia?: string | null
+          id_refugio: number
+          id_usuario?: number | null
+          motivo: string
+          tipo_movimiento: string
+        }
+        Update: {
+          cantidad?: number
+          fecha?: string
+          id_lote_inventario?: number
+          id_movimiento?: number
+          id_referencia?: string | null
+          id_refugio?: number
+          id_usuario?: number | null
+          motivo?: string
+          tipo_movimiento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_movimiento_id_lote_inventario_fkey"
+            columns: ["id_lote_inventario"]
+            isOneToOne: false
+            referencedRelation: "inventario_lote"
+            referencedColumns: ["id_lote_inventario"]
+          },
+          {
+            foreignKeyName: "inventario_movimiento_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
       permiso: {
         Row: {
           descripcion: string | null
@@ -1586,6 +1729,30 @@ export type Database = {
     Functions: {
       campanas_es_superadmin: { Args: never; Returns: boolean }
       campanas_refugio_usuario: { Args: never; Returns: number }
+      registrar_alta_cuarentena: {
+        Args: {
+          p_fecha_alta: string
+          p_id_animal: number
+          p_id_usuario: number
+          p_observaciones: string
+        }
+        Returns: Json
+      }
+      registrar_evento_sanitario: {
+        Args: {
+          p_esquema_completo: boolean
+          p_fecha_aplicacion: string
+          p_fecha_refuerzo: string | null
+          p_id_animal: number
+          p_id_lote_inventario: number
+          p_id_usuario: number
+          p_marca_lote: string | null
+          p_observaciones: string | null
+          p_tipo_biologico: string
+          p_tipo_evento: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       bloque_tipo:

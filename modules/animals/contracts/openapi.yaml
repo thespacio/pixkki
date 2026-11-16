@@ -265,6 +265,40 @@ components:
       properties:
         observaciones: { type: string }
         fecha_alta: { type: string, format: date-time }
+    EventoSanitario:
+      type: object
+      properties:
+        idEvento: { type: integer }
+        idAnimal: { type: integer }
+        idRefugio: { type: integer }
+        tipoEvento: { type: string, enum: [vacunacion, desparasitacion] }
+        tipoBiologico: { type: string }
+        marcaLote: { type: string, nullable: true }
+        fechaAplicacion: { type: string, format: date }
+        fechaRefuerzo: { type: string, format: date, nullable: true }
+        esquemaCompleto: { type: boolean }
+        idLoteInventario: { type: integer, nullable: true }
+        cantidadDescontada: { type: integer }
+        stockRestante: { type: integer, nullable: true }
+        observaciones: { type: string, nullable: true }
+        idUsuario: { type: integer }
+        fechaRegistro: { type: string, format: date-time }
+    CreateEventoSanitarioRequest:
+      type: object
+      required: [tipo_evento, tipo_biologico, fecha_aplicacion, esquema_completo, id_lote_inventario]
+      properties:
+        tipo_evento: { type: string, enum: [vacunacion, desparasitacion] }
+        tipo_biologico: { type: string, minLength: 1, maxLength: 120 }
+        fecha_aplicacion: { type: string, format: date }
+        marca_lote: { type: string, maxLength: 120, nullable: true }
+        fecha_refuerzo: { type: string, format: date, nullable: true }
+        esquema_completo: { type: boolean }
+        id_lote_inventario: { type: integer, minimum: 1 }
+        observaciones: { type: string, maxLength: 2000, nullable: true }
+      description: >-
+        `fecha_refuerzo` es obligatoria si `esquema_completo = true` y siempre
+        posterior a `fecha_aplicacion`. La cantidad descontada la fija el
+        servidor en 1 unidad.
     EstadoCuarentena:
       type: object
       properties:
@@ -450,6 +484,60 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /animales/{id}/eventos-sanitarios:
+    get:
+      tags: [animals]
+      summary: Listar eventos sanitarios del paciente (US10).
+      operationId: listAnimalSanitaryEvents
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Eventos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, enum: [true] }
+                  data:
+                    type: object
+                    properties:
+                      eventos:
+                        type: array
+                        items: { $ref: "#/components/schemas/EventoSanitario" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [animals]
+      summary: Registrar vacunación o desparasitación y descontar 1 unidad del lote (US10).
+      operationId: createAnimalSanitaryEvent
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateEventoSanitarioRequest" }
+      responses:
+        "201":
+          description: Evento creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, enum: [true] }
+                  data:
+                    type: object
+                    properties:
+                      evento: { $ref: "#/components/schemas/EventoSanitario" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Conflicto de stock o lote inválido, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "500": { description: Fallo transaccional, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
   /animales/{id}/cuarentena:
     get:
       tags: [animals]

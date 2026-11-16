@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Pixkki Inventory API (contrato mínimo)
+  version: 1.0.0
+  description: >-
+    Superficie pública de inventario que consume el control clínico (US10).
+    El descuento de stock es interno y se ejecuta dentro de la RPC transaccional
+    `registrar_evento_sanitario`, propiedad del requerimiento 02.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+tags:
+  - name: inventory
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-${project-ref}-auth-token
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean, enum: [true] }
+        data: {}
+    LoteDisponible:
+      type: object
+      properties:
+        idLoteInventario: { type: integer }
+        nombreInsumo: { type: string }
+        tipoInsumo: { type: string, enum: [vacuna, desparasitante, otro] }
+        marca: { type: string, nullable: true }
+        lote: { type: string, nullable: true }
+        stockActual: { type: integer, minimum: 1 }
+        unidadMedida: { type: string }
+        fechaCaducidad: { type: string, format: date, nullable: true }
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, enum: [false] }
+        error:
+          type: object
+          required: [code, message, statusCode]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            statusCode: { type: integer }
+paths:
+  /inventario/lotes:
+    get:
+      tags: [inventory]
+      summary: Listar lotes con stock disponible del refugio en sesión.
+      operationId: listAvailableInventoryLots
+      parameters:
+        - { in: query, name: tipo_insumo, required: false, schema: { type: string, enum: [vacuna, desparasitante] } }
+        - { in: query, name: disponibles, required: false, schema: { type: string, enum: ["true"] } }
+      responses:
+        "200":
+          description: Lotes disponibles
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          lotes:
+                            type: array
+                            items: { $ref: "#/components/schemas/LoteDisponible" }
+        "400": { description: Parámetros inválidos, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "401": { description: No autenticado, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "403": { description: Rol sin permiso, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }

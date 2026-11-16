@@ -1,7 +1,6 @@
 ﻿import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
-import { AnimalNotFoundError } from "../errors";
-import { QuarantineAlreadyReleasedError } from "../errors";
+import type { Database, Json } from "@/types/database";
+import { AnimalNotFoundError, QuarantineAlreadyReleasedError } from "../errors";
 import type { AnimalAccess } from "../access";
 import type { CreateAltaCuarentenaInput } from "../validators/animal.validators";
 
@@ -31,6 +30,29 @@ type AltaRow = {
     id_usuario_veterinario: number;
     fecha_alta: string;
 };
+
+type AltaRpcEnvelope = {
+    ok: boolean;
+    code?: string;
+    data?: Record<string, unknown>;
+};
+
+function parseAltaEnvelope(value: Json | null): AltaRpcEnvelope {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        throw new Error("Respuesta inválida de la RPC de alta de cuarentena.");
+    }
+    const envelope = value as Record<string, unknown>;
+    return {
+        ok: envelope.ok === true,
+        code: typeof envelope.code === "string" ? envelope.code : undefined,
+        data:
+            typeof envelope.data === "object" &&
+            envelope.data !== null &&
+            !Array.isArray(envelope.data)
+                ? (envelope.data as Record<string, unknown>)
+                : undefined,
+    };
+}
 
 function toRelease(row: AltaRow): QuarantineRelease {
     return {
@@ -109,52 +131,36 @@ export class AnimalQuarantineRepository {
             throw new QuarantineAlreadyReleasedError();
         }
 
-        const payload = {
-            id_animal: idAnimal,
-            id_refugio: animal.id_refugio,
-            observaciones: input.observaciones.trim(),
-            id_usuario_veterinario: idUsuarioVeterinario,
-            ...(input.fecha_alta ? { fecha_alta: input.fecha_alta.toISOString() } : {}),
-        };
+        // RF2.4 (regla 15): UPDATE condicional e INSERT del alta en una única
+        // transacción. La RPC devuelve `ok: false` si otro proceso liberó al
+        // paciente primero, sin dejar registros huérfanos ni compensaciones.
+        const { data, error } = await this.supabase.rpc("registrar_alta_cuarentena", {
+            p_id_animal: idAnimal,
+            p_observaciones: input.observaciones.trim(),
+            p_fecha_alta: input.fecha_alta
+                ? input.fecha_alta.toISOString()
+                : new Date().toISOString(),
+            p_id_usuario: idUsuarioVeterinario,
+        });
+        if (error) throw error;
 
-        // El UPDATE condicional es el "lock" lógico del alta: solo un proceso
-        // puede pasar de en_cuarentena=true a false. Se ejecuta ANTES del
-        // insert para que el perdedor de una carrera no deje un alta huérfana
-        // (el alta es append-only y no debe borrarse).
-        let update = this.supabase
-            .from("animal")
-            .update({ en_cuarentena: false })
-            .eq("id_animal", idAnimal)
-            .eq("en_cuarentena", true);
-        if (idRefugioScope !== null) update = update.eq("id_refugio", idRefugioScope);
-        const { error: updateError, data: updatedRows } = await update.select("id_animal");
-        if (updateError) throw updateError;
-        if (!updatedRows || updatedRows.length === 0) {
-            // Carrera: otro proceso liberó primero.
+        const envelope = parseAltaEnvelope(data);
+        if (!envelope.ok || envelope.code === "CUARENTENA_YA_LIBERADA") {
             throw new QuarantineAlreadyReleasedError();
         }
-
-        const { data: created, error: insertError } = await this.supabase
-            .from("altas_cuarentena")
-            .insert(payload)
-            .select("*")
-            .single();
-
-        if (insertError) {
-            // Compensación: si no se pudo registrar el alta, el paciente debe
-            // volver a cuarentena para no quedar liberado sin trazabilidad.
-            // La atomicidad real requiere una función/RPC transaccional
-            // (migración pendiente de aprobación).
-            const { error: revertError } = await this.supabase
-                .from("animal")
-                .update({ en_cuarentena: true })
-                .eq("id_animal", idAnimal);
-            if (revertError) {
-                console.error("[animal-quarantine] No se pudo revertir la cuarentena:", revertError);
-            }
-            throw insertError;
+        if (!envelope.data) {
+            throw new Error("Respuesta inválida de la RPC de alta de cuarentena.");
         }
 
-        return { ...toRelease(created as AltaRow), enCuarentena: false };
+        const alta = envelope.data;
+        return {
+            idAlta: Number(alta.id_alta),
+            idAnimal: Number(alta.id_animal),
+            idRefugio: Number(alta.id_refugio),
+            observaciones: String(alta.observaciones),
+            idUsuarioVeterinario: Number(alta.id_usuario_veterinario),
+            fechaAlta: String(alta.fecha_alta),
+            enCuarentena: false,
+        };
     }
 }

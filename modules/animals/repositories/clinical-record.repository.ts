@@ -197,6 +197,13 @@ export class ClinicalRecordRepository {
             .order("fecha_alta", { ascending: false });
         if (idRefugio !== null) altasQuery = altasQuery.eq("id_refugio", idRefugio);
 
+        let eventosQuery = client
+            .from("evento_sanitario")
+            .select("id_evento, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones, tipo_evento")
+            .eq("id_animal", idAnimal)
+            .order("fecha_aplicacion", { ascending: false });
+        if (idRefugio !== null) eventosQuery = eventosQuery.eq("id_refugio", idRefugio);
+
         const [
             { data: imagenes, error: imagenesError },
             { data: diagnosticos, error: diagnosticosError },
@@ -221,11 +228,7 @@ export class ClinicalRecordRepository {
                 )
                 .eq("id_animal", idAnimal)
                 .order("fecha_diagnostico", { ascending: false }),
-            client
-                .from("evento_sanitario")
-                .select("id_evento, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones, tipo_evento")
-                .eq("id_animal", idAnimal)
-                .order("fecha_aplicacion", { ascending: false }),
+            eventosQuery,
             this.supabase
                 .from("evaluacion_temperamento")
                 .select(

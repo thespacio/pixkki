@@ -30,7 +30,7 @@ const UN_DIA_MS = 24 * 60 * 60 * 1000;
  * Se admite un día de margen porque el servidor y el navegador pueden estar en
  * zonas horarias distintas (la fecha "de hoy" no coincide cerca de medianoche).
  */
-const isoDateNotFuture = z
+export const isoDateNotFuture = z
     .string()
     .regex(ISO_DATE_REGEX, "Fecha inválida")
     .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), "Fecha inválida")

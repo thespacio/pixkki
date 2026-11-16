@@ -92,7 +92,7 @@ No incluye:
 | Identificadores | El esquema actual usa enteros autoincrementales (`id_*`), no UUID. | El contrato usa `{id}` genérico y tipos `integer`; no se introduce UUID en esta épica. |
 | Módulo `inventory` | No existe. | Debe crearse o adelantarse su contrato mínimo antes de implementar US10. |
 
-> **Decisión pendiente de aprobación:** US10 es Must Have y RF2.3 exige stock real. Si la Épica 6 no está disponible, no se debe simular inventario ni descontar stock ficticio. Se debe aprobar una de estas alternativas: (a) adelantar el contrato mínimo del módulo `inventory`, o (b) reordenar el sprint para implementar primero la base de inventario de US20. Esta decisión no se toma unilateralmente.
+> **Decisión aprobada (16/11/2026):** se adopta la alternativa (a): adelantar el contrato mínimo del módulo `inventory` para cumplir US10 sin simular stock. El descuento real se ejecuta en la RPC transaccional `registrar_evento_sanitario` definida en `supabase/migrations/20261116130000_requerimiento_02_inventario_evento_sanitario.sql`. Esa migración se entrega como archivo y requiere `supabase db push` aprobado por el equipo antes de estar disponible en el entorno remoto.
 
 ## Historias de usuario
 
@@ -521,6 +521,6 @@ Las siguientes tablas de Supabase están involucradas en el Requerimiento 2:
 
 ---
 
-**Versión**: 1.0  
-**Estado**: Pendiente de implementación  
-**Última actualización**: 12/11/2026
+**Versión**: 1.1  
+**Estado**: Implementado (RF2.1, RF2.2, RF2.3 y RF2.4). Pendiente de aplicar la migración de inventario en el entorno remoto.  
+**Última actualización**: 16/11/2026

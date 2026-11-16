@@ -19,7 +19,20 @@ import {
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError,
 } from "@/modules/animals/types/animales.types";
-import { AnimalClinicalForbiddenError, AnimalEnCuarentenaError, QuarantineAlreadyReleasedError } from "@/modules/animals/errors";
+import {
+    AnimalClinicalForbiddenError,
+    AnimalEnCuarentenaError,
+    ConflictoConcurrenciaError,
+    FechaRefuerzoInvalidaError,
+    FalloTransaccionInventarioError,
+    LoteInactivoError,
+    LoteNoEncontradoError,
+    LoteVencidoError,
+    QuarantineAlreadyReleasedError,
+    RefuerzoRequeridoError,
+    StockInsuficienteError,
+    TipoEventoInvalidoError,
+} from "@/modules/animals/errors";
 
 /**
  * Las acciones devuelven un resultado en vez de lanzar: en producción Next.js
@@ -47,6 +60,15 @@ const USER_FACING_ERRORS = [
     AnimalClinicalForbiddenError,
     AnimalEnCuarentenaError,
     QuarantineAlreadyReleasedError,
+    ConflictoConcurrenciaError,
+    FechaRefuerzoInvalidaError,
+    FalloTransaccionInventarioError,
+    LoteInactivoError,
+    LoteNoEncontradoError,
+    LoteVencidoError,
+    RefuerzoRequeridoError,
+    StockInsuficienteError,
+    TipoEventoInvalidoError,
 ];
 
 export function toErrorMessage(error: unknown): string {

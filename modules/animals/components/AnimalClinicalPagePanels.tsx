@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { AnimalCheckupPanel } from "./AnimalCheckupPanel";
 import { AnimalClinicalRecord } from "./AnimalClinicalRecord";
 import { AnimalQuarantinePanel } from "./AnimalQuarantinePanel";
+import { AnimalSanitaryEventPanel } from "./AnimalSanitaryEventPanel";
 import type { ClinicalRecord } from "../services/clinical-record.service";
 
 type Props = {
@@ -37,6 +38,11 @@ export function AnimalClinicalPagePanels({
                 onChanged={refresh}
             />
             <AnimalCheckupPanel
+                idAnimal={idAnimal}
+                canRegister={canOperate}
+                onSaved={refresh}
+            />
+            <AnimalSanitaryEventPanel
                 idAnimal={idAnimal}
                 canRegister={canOperate}
                 onSaved={refresh}
