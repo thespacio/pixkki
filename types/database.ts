@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       aceptacion_terminos: {
@@ -24,32 +49,32 @@ export type Database = {
         }
         Insert: {
           aceptado_en?: string
-          id_aceptacion?: number
+          id_aceptacion?: never
           id_refugio?: number | null
           id_usuario: number
           terminos_version: string
         }
         Update: {
           aceptado_en?: string
-          id_aceptacion?: number
+          id_aceptacion?: never
           id_refugio?: number | null
           id_usuario?: number
           terminos_version?: string
         }
         Relationships: [
           {
-            foreignKeyName: "aceptacion_terminos_id_usuario_fkey"
-            columns: ["id_usuario"]
-            isOneToOne: false
-            referencedRelation: "usuario"
-            referencedColumns: ["id_usuario"]
-          },
-          {
             foreignKeyName: "aceptacion_terminos_id_refugio_fkey"
             columns: ["id_refugio"]
             isOneToOne: false
             referencedRelation: "refugio"
             referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "aceptacion_terminos_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
           },
         ]
       }
@@ -185,6 +210,58 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "refugio"
             referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
+      altas_cuarentena: {
+        Row: {
+          created_at: string
+          fecha_alta: string
+          id_alta: number
+          id_animal: number
+          id_refugio: number
+          id_usuario_veterinario: number
+          observaciones: string
+        }
+        Insert: {
+          created_at?: string
+          fecha_alta?: string
+          id_alta?: number
+          id_animal: number
+          id_refugio: number
+          id_usuario_veterinario: number
+          observaciones: string
+        }
+        Update: {
+          created_at?: string
+          fecha_alta?: string
+          id_alta?: number
+          id_animal?: number
+          id_refugio?: number
+          id_usuario_veterinario?: number
+          observaciones?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "altas_cuarentena_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "altas_cuarentena_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "altas_cuarentena_id_usuario_veterinario_fkey"
+            columns: ["id_usuario_veterinario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
           },
         ]
       }
@@ -481,6 +558,96 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "campana_publica"
             referencedColumns: ["id_campana"]
+          },
+        ]
+      }
+      chequeo_sintomas: {
+        Row: {
+          id_chequeo: number
+          sintoma: string
+        }
+        Insert: {
+          id_chequeo: number
+          sintoma: string
+        }
+        Update: {
+          id_chequeo?: number
+          sintoma?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chequeo_sintomas_id_chequeo_fkey"
+            columns: ["id_chequeo"]
+            isOneToOne: false
+            referencedRelation: "chequeos_medicos"
+            referencedColumns: ["id_chequeo"]
+          },
+        ]
+      }
+      chequeos_medicos: {
+        Row: {
+          created_at: string
+          fecha_chequeo: string
+          frecuencia_cardiaca: number
+          frecuencia_respiratoria: number
+          id_animal: number
+          id_chequeo: number
+          id_refugio: number
+          id_usuario: number
+          observaciones: string | null
+          peso_kg: number
+          sintoma_otro_detalle: string | null
+          temperatura_c: number
+        }
+        Insert: {
+          created_at?: string
+          fecha_chequeo?: string
+          frecuencia_cardiaca: number
+          frecuencia_respiratoria: number
+          id_animal: number
+          id_chequeo?: number
+          id_refugio: number
+          id_usuario: number
+          observaciones?: string | null
+          peso_kg: number
+          sintoma_otro_detalle?: string | null
+          temperatura_c: number
+        }
+        Update: {
+          created_at?: string
+          fecha_chequeo?: string
+          frecuencia_cardiaca?: number
+          frecuencia_respiratoria?: number
+          id_animal?: number
+          id_chequeo?: number
+          id_refugio?: number
+          id_usuario?: number
+          observaciones?: string | null
+          peso_kg?: number
+          sintoma_otro_detalle?: string | null
+          temperatura_c?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chequeos_medicos_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "chequeos_medicos_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "chequeos_medicos_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
           },
         ]
       }
@@ -791,6 +958,79 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_temp_usuario"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
+      }
+      evento_sanitario: {
+        Row: {
+          cantidad: number
+          esquema_completo: boolean
+          fecha_aplicacion: string
+          fecha_refuerzo: string | null
+          fecha_registro: string
+          id_animal: number
+          id_evento: number
+          id_lote_inventario: number | null
+          id_refugio: number | null
+          id_usuario: number
+          marca_lote: string | null
+          observaciones: string | null
+          tipo_biologico: string
+          tipo_evento: string
+        }
+        Insert: {
+          cantidad?: number
+          esquema_completo?: boolean
+          fecha_aplicacion?: string
+          fecha_refuerzo?: string | null
+          fecha_registro?: string
+          id_animal: number
+          id_evento?: number
+          id_lote_inventario?: number | null
+          id_refugio?: number | null
+          id_usuario: number
+          marca_lote?: string | null
+          observaciones?: string | null
+          tipo_biologico: string
+          tipo_evento?: string
+        }
+        Update: {
+          cantidad?: number
+          esquema_completo?: boolean
+          fecha_aplicacion?: string
+          fecha_refuerzo?: string | null
+          fecha_registro?: string
+          id_animal?: number
+          id_evento?: number
+          id_lote_inventario?: number | null
+          id_refugio?: number | null
+          id_usuario?: number
+          marca_lote?: string | null
+          observaciones?: string | null
+          tipo_biologico?: string
+          tipo_evento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_sanitario_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "fk_vacuna_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_vacuna_usuario"
             columns: ["id_usuario"]
             isOneToOne: false
             referencedRelation: "usuario"
@@ -1325,57 +1565,6 @@ export type Database = {
           },
         ]
       }
-      vacunacion: {
-        Row: {
-          esquema_completo: boolean
-          fecha_aplicacion: string
-          fecha_refuerzo: string | null
-          id_animal: number
-          id_usuario: number
-          id_vacunacion: number
-          marca_lote: string | null
-          observaciones: string | null
-          tipo_biologico: string
-        }
-        Insert: {
-          esquema_completo?: boolean
-          fecha_aplicacion?: string
-          fecha_refuerzo?: string | null
-          id_animal: number
-          id_usuario: number
-          id_vacunacion?: number
-          marca_lote?: string | null
-          observaciones?: string | null
-          tipo_biologico: string
-        }
-        Update: {
-          esquema_completo?: boolean
-          fecha_aplicacion?: string
-          fecha_refuerzo?: string | null
-          id_animal?: number
-          id_usuario?: number
-          id_vacunacion?: number
-          marca_lote?: string | null
-          observaciones?: string | null
-          tipo_biologico?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vacuna_animal"
-            columns: ["id_animal"]
-            isOneToOne: false
-            referencedRelation: "animal"
-            referencedColumns: ["id_animal"]
-          },
-          {
-            foreignKeyName: "fk_vacuna_usuario"
-            columns: ["id_usuario"]
-            isOneToOne: false
-            referencedRelation: "usuario"
-            referencedColumns: ["id_usuario"]
-          },
-        ]
-      }
     }
     Views: {
       campana_publica: {
@@ -1533,6 +1722,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       bloque_tipo: [
