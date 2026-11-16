@@ -60,22 +60,18 @@ components:
         rescatistaNombre: { type: string, minLength: 2, maxLength: 100 }
         rescatistaContacto: { type: string, minLength: 3, maxLength: 100 }
         observaciones: { type: string, maxLength: 1000 }
-        enCuarentena: { type: boolean, default: false }
+        enCuarentena:
+          type: boolean
+          default: true
+          readOnly: true
+          description: >-
+            RF2.4: todo ingreso nace en cuarentena y el flag no se puede cambiar
+            por creación ni edición. Solo el alta médica lo libera.
         esterilizado: { type: boolean, default: false }
         disponibleAdopcion: { type: boolean, default: false }
         activo: { type: boolean, default: true }
         vacunado: { type: boolean, default: false }
         desparasitado: { type: boolean, default: false }
-    CreateAnimalIntakeRequest:
-      type: object
-      required: [data, files]
-      properties:
-        data: { type: string, description: JSON string con los campos de CreateAnimalRequest. }
-        files:
-          type: array
-          minItems: 1
-          maxItems: 5
-          items: { type: string, format: binary }
     UploadImageRequest:
       type: object
       required: [files]
@@ -90,7 +86,6 @@ components:
       required: [estadoGeneral]
       properties:
         estadoGeneral: { type: string, enum: [Crítico, Delicado, Estable, Sano] }
-        requiereCuarentena: { type: boolean, default: false }
         observaciones: { type: string, maxLength: 2000 }
     Animal:
       type: object
@@ -149,7 +144,10 @@ components:
         idDiagnostico: { type: integer }
         idAnimal: { type: integer }
         estadoGeneral: { type: string, enum: [Crítico, Delicado, Estable, Sano] }
-        requiereCuarentena: { type: boolean }
+        requiereCuarentena:
+          type: boolean
+          deprecated: true
+          description: Registro histórico. No refleja ni altera `animal.enCuarentena` después de RF2.4.
         observaciones: { type: string, nullable: true }
         tratamientoInicial: { type: string, nullable: true }
         requiereCirugia: { type: boolean }
@@ -291,7 +289,7 @@ paths:
   /animales:
     post:
       tags: [animals]
-      summary: Alta de paciente (JSON). Para ingreso con imágenes obligatorias usar /animales/intake.
+      summary: Alta de paciente y expediente (JSON, sin imágenes).
       operationId: createAnimal
       requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CreateAnimalRequest" } } } }
       responses:
@@ -309,17 +307,6 @@ paths:
       responses:
         "200": { description: Lista, content: { application/json: { schema: { $ref: "#/components/schemas/AnimalListResponse" } } } }
         "401": { $ref: "#/components/responses/Unauthorized" }
-  /animales/intake:
-    post:
-      tags: [animals]
-      summary: Alta de expediente con imágenes obligatorias.
-      operationId: createAnimalIntake
-      requestBody: { required: true, content: { multipart/form-data: { schema: { $ref: "#/components/schemas/CreateAnimalIntakeRequest" } } } }
-      responses:
-        "201": { description: Animal creado con imágenes, content: { application/json: { schema: { $ref: "#/components/schemas/AnimalResponse" } } } }
-        "400": { $ref: "#/components/responses/ValidationError" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
   /animales/{id}:
     get:
       tags: [animals]

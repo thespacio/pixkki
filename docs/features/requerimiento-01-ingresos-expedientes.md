@@ -6,7 +6,7 @@ Alta de pacientes con expediente clínico único, gestión de archivos multimedi
 
 ## Descripción
 
-La Épica 1 cubre el proceso de **intake** (ingreso) de animales rescatados: el registro inicial del paciente con identidad digital única (UUID), la carga de archivos multimedia asociados al expediente con versiones optimizadas en miniatura, la captura del dictamen veterinario inicial y la consolidación de toda la información histórica, médica y operativa del paciente en una única interfaz unificada.
+La Épica 1 cubre el proceso de **intake** (ingreso) de animales rescatados: el registro inicial del paciente en la tabla `animal` con identidad autogenerada por la base de datos, la carga de archivos multimedia asociados al expediente con versiones optimizadas en miniatura, la captura del dictamen veterinario inicial y la consolidación de toda la información histórica, médica y operativa del paciente en una única interfaz unificada.
 
 Todo expediente se vincula de forma indisoluble al `id_refugio` del usuario operador que ejecuta la acción. Cada paciente entra al sistema con `en_cuarentena = true` por defecto hasta que el control clínico (Épica 2) determine lo contrario.
 
@@ -50,15 +50,15 @@ No incluye:
 
 ## Reglas de negocio
 
-1. **Alta de paciente**: Campos obligatorios: Procedencia (catálogo predefinido), Edad estimada (rango en meses: `edad_estimada_meses_min` > 0 y `edad_estimada_meses_max` ≥ min; valores iguales representan edad exacta), Rasgos físicos distintivos y Estado inicial (texto descriptivo amplio).
-2. **Identidad única**: El sistema genera automáticamente el UUID (`id_animal`) al insertar el registro. Nunca es capturado por el usuario.
-3. **Cuarentena por defecto**: Toda inserción en `animales` establece `en_cuarentena = true`. La salida de cuarentena pertenece a la Épica 2.
+1. **Alta de paciente**: Campos obligatorios: `especie` (Perro/Gato), Procedencia (texto libre, 2–200 caracteres), Rasgos físicos distintivos, Estado inicial (texto descriptivo amplio), `idEstado` e `idEspacio`. La Edad estimada es opcional y se expresa en meses (`edadEstimada`, entero entre 0 y 300).
+2. **Identidad única**: El sistema genera automáticamente el identificador entero `id_animal` al insertar el registro. Nunca es capturado por el usuario.
+3. **Cuarentena por defecto**: Toda inserción en `animal` establece `en_cuarentena = true`. La salida de cuarentena pertenece a la Épica 2.
 4. **Vínculo multitenant**: El expediente se vincula de forma indisoluble al `id_refugio` del operador en sesión. Toda consulta posterior filtra por `id_refugio`; los accesos cruzados entre refugios se rechazan como no encontrados (404).
-5. **Galería multimedia**: Entre 1 y 5 imágenes por expediente. Extensiones permitidas: JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. La validación se realiza en el servidor e incluye la verificación del tipo MIME real del contenido.
+5. **Galería multimedia**: Entre 1 y 5 imágenes por expediente. Las imágenes no son obligatorias en el alta: el expediente puede crearse sin ellas y completarse después desde la galería. Extensiones permitidas: JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. La validación se realiza en el servidor e incluye la verificación del tipo MIME real del contenido.
 6. **Progreso de subida**: La interfaz muestra un componente interactivo con el progreso de subida de cada archivo.
 7. **Miniaturas**: Cloudinary genera los thumbnails de 300x300 píxeles mediante transformación determinista de URL, sin proceso asíncrono.
 8. **Portada única**: Máximo una imagen con `es_portada = true` por expediente. Designar una nueva portada desmarca la anterior. Si se elimina la imagen portada, la primera imagen restante se designa automáticamente.
-9. **Diagnóstico de ingreso**: El Estado general de salud acepta exclusivamente las categorías: Crítico, Delicado, Estable o Sano. Incluye checkbox "Requiere cuarentena obligatoria" (si se marca, `en_cuarentena` se establece en `true`). Las observaciones médicas son obligatorias cuando la categoría es Crítico o Delicado.
+9. **Diagnóstico de ingreso**: El Estado general de salud acepta exclusivamente las categorías: Crítico, Delicado, Estable o Sano. Las observaciones médicas son obligatorias cuando la categoría es Crítico o Delicado. La cuarentena no se decide desde el diagnóstico: todo ingreso ya nace en cuarentena y solo el alta médica de la Épica 2 la libera.
 10. **Restricción de rol**: El diagnóstico de ingreso solo puede persistir usuarios con rol Veterinario o Administrador (`veterinarian` | `admin`). La restricción se verifica en el servidor, no únicamente en la UI.
 11. **Ficha clínica consolidada**: Organiza cronológicamente diagnósticos, variaciones de constantes vitales, vacunas aplicadas, pruebas de temperamento y estatus de esterilización. Muestra un banner rojo de alta prioridad en la parte superior si `en_cuarentena = true` o el estado de salud es Crítico. La consulta filtra estrictamente por el `id_refugio` activo en sesión.
 
@@ -109,13 +109,32 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 
 ```json
 {
-  "procedencia": "rescate_callejero | entrega_voluntaria | decomiso_autoridad | rescate_maltrato | nacimiento_refugio | otro",
-  "edad_estimada_meses_min": "integer (obligatorio, > 0)",
-  "edad_estimada_meses_max": "integer (obligatorio, ≥ min)",
-  "rasgos_fisicos": "string (obligatorio, rasgos físicos distintivos)",
-  "estado_inicial": "string (obligatorio, descriptivo amplio)"
+  "especie": "Perro | Gato",
+  "procedencia": "string (obligatorio, 2–200 caracteres)",
+  "edadEstimada": "integer (opcional, 0–300 meses)",
+  "rasgosFisicos": "string (obligatorio, 2–500 caracteres)",
+  "estadoInicial": "string (obligatorio, 2–100 caracteres)",
+  "idEstado": "integer (obligatorio)",
+  "idEspacio": "integer (obligatorio)",
+  "idRefugio": "integer (opcional; solo superadmin)",
+  "nombre": "string (opcional)",
+  "raza": "string (opcional)",
+  "sexo": "M | H (opcional)",
+  "peso": "number (opcional, > 0)",
+  "color": "string (opcional)",
+  "tamano": "Pequeño | Mediano | Grande (opcional)",
+  "microchip": "string (opcional, 9–20 alfanuméricos)",
+  "temperamento": "string (opcional)",
+  "lugarRescate": "string (opcional)",
+  "fechaRescate": "date (opcional, no futura)",
+  "situacionRescate": "string (opcional)",
+  "rescatistaNombre": "string (opcional)",
+  "rescatistaContacto": "string (opcional)",
+  "observaciones": "string (opcional)"
 }
 ```
+
+No se envían imágenes en esta petición. El alta crea el expediente y devuelve su `idAnimal` para gestionar la galería después.
 
 **Response (201):**
 
@@ -123,22 +142,21 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 {
   "success": true,
   "data": {
-    "id_animal": "uuid (generado automáticamente)",
-    "id_refugio": "uuid (del operador en sesión)",
-    "procedencia": "string",
-    "edad_estimada_meses_min": 6,
-    "edad_estimada_meses_max": 12,
-    "rasgos_fisicos": "string",
-    "estado_inicial": "string",
-    "en_cuarentena": true,
-    "fecha_ingreso": "datetime"
+    "idAnimal": 128,
+    "idRefugio": 3,
+    "procedencia": "Calle",
+    "edadEstimada": 12,
+    "rasgosFisicos": "string",
+    "estadoInicial": "string",
+    "enCuarentena": true,
+    "fechaIngreso": "datetime"
   }
 }
 ```
 
 **Errores:**
-- `400` — Datos inválidos (procedencia fuera del catálogo, rango de edad inconsistente)
-- `403` — Sin sesión activa o refugio inactivo
+- `400` — Datos inválidos (procedencia o rasgos fuera de rango, edad fuera de 0–300, referencias inválidas)
+- `403` — Sin sesión activa, refugio inactivo o rol sin permiso
 - `404` — Animal no encontrado (GET por id, incluye acceso cruzado entre refugios)
 - `500` — Error interno
 
@@ -151,7 +169,7 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 | DELETE | `/api/v1/animales/{id}/imagenes/{idImagen}` | Eliminar imagen | Personal del refugio |
 | PATCH | `/api/v1/animales/{id}/imagenes/{idImagen}/portada` | Designar imagen como portada | Personal del refugio |
 
-**Request (POST, multipart/form-data):** archivos entre 1 y 5 por petición. Extensiones JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. El total de imágenes del expediente (existentes + nuevas) no puede exceder 5.
+**Request (POST, multipart/form-data):** archivos entre 1 y 5 por petición. Extensiones JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. El total de imágenes del expediente (existentes + nuevas) no puede exceder 5. Este endpoint se usa después del alta; el expediente puede existir sin imágenes.
 
 **Response (201):**
 
@@ -161,12 +179,13 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
   "data": {
     "imagenes": [
       {
-        "id_imagen": "uuid",
-        "url_publica": "string (Cloudinary)",
-        "url_thumbnail": "string (transformación 300x300)",
-        "es_portada": false,
+        "idImagen": 501,
+        "idAnimal": 128,
+        "urlPublica": "string (Cloudinary)",
+        "urlThumbnail": "string (transformación 300x300)",
+        "esPortada": false,
         "orden": 1,
-        "tamano_bytes": 1048576
+        "tamanoBytes": 1048576
       }
     ]
   }
@@ -189,9 +208,8 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 
 ```json
 {
-  "estado_general": "critico | delicado | estable | sano",
-  "requiere_cuarentena": "boolean (checkbox: Requiere cuarentena obligatoria)",
-  "observaciones": "string (obligatorio si estado_general = critico o delicado)"
+  "estadoGeneral": "critico | delicado | estable | sano",
+  "observaciones": "string (obligatorio si estadoGeneral = critico o delicado)"
 }
 ```
 
@@ -201,16 +219,18 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 {
   "success": true,
   "data": {
-    "id_diagnostico": "uuid",
-    "id_animal": "uuid",
-    "estado_general": "estable",
-    "requiere_cuarentena": true,
+    "idDiagnostico": 42,
+    "idAnimal": 128,
+    "estadoGeneral": "Estable",
+    "requiereCuarentena": false,
     "observaciones": "string | null",
-    "id_usuario_veterinario": "uuid",
-    "fecha_diagnostico": "datetime"
+    "idUsuarioVeterinario": 7,
+    "fechaDiagnostico": "datetime"
   }
 }
 ```
+
+`requiereCuarentena` se conserva como dato histórico de solo lectura y siempre se persiste en `false`: no forma parte del request ni altera `enCuarentena`.
 
 **Errores:**
 - `400` — Estado fuera del catálogo exclusivo; observaciones faltantes cuando el estado es Crítico o Delicado (`OBSERVACIONES_REQUERIDAS`)
@@ -231,10 +251,10 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
   "success": true,
   "data": {
     "animal": {
-      "id_animal": "uuid",
+      "idAnimal": 128,
       "procedencia": "string",
-      "en_cuarentena": true,
-      "estado_inicial": "string"
+      "enCuarentena": true,
+      "estadoInicial": "string"
     },
     "alertas": ["cuarentena", "estado_critico"],
     "linea_tiempo": [
@@ -279,19 +299,19 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 | Miniaturas inconsistentes entre imágenes | Transformación determinista de Cloudinary (misma URL estándar 300x300) |
 | Acceso cruzado entre refugios | Filtro `id_refugio` en todos los repositories + RLS como segunda capa |
 
-**Dependencias:** Cloudinary SDK (nueva dependencia, requiere aprobación), tablas `animales` (extensión), `imagenes_animal`, `diagnosticos_ingreso`, módulo auth/RBAC de la Épica 0, Zod.
+**Dependencias:** Cloudinary SDK (nueva dependencia, requiere aprobación), tablas `animal` (extensión), `fotografia`, `diagnostico_veterinario`, módulo auth/RBAC de la Épica 0, Zod.
 
 ## Glosario
 
 | Término | Definición |
 |---------|------------|
 | Intake (ingreso) | Proceso inicial de registro de un animal rescatado en el refugio. |
-| Expediente clínico | Registro digital único de un paciente, identificado por `id_animal` (UUID) y vinculado a un `id_refugio`. |
+| Expediente clínico | Registro digital único de un paciente, identificado por `id_animal` (entero autogenerado) y vinculado a un `id_refugio`. |
 | Portada | Imagen designada como foto principal del expediente. Única por expediente. |
 | Thumbnail (miniatura) | Versión optimizada de una imagen con dimensiones fijas de 300x300 píxeles. |
 | Cuarentena (`en_cuarentena`) | Flag de control clínico. Se establece en `true` al alta del paciente. Su liberación pertenece a la Épica 2. |
 | Estado general de salud | Clasificación exclusiva del diagnóstico de ingreso: Crítico, Delicado, Estable o Sano. |
-| Rango de edad estimada | Intervalo en meses (`min`/`max`) de la edad estimada del paciente. Valores iguales representan edad exacta. |
+| Edad estimada | Edad aproximada del paciente en meses (`edadEstimada`, entero entre 0 y 300). Es opcional. |
 | Cloudinary | Proveedor de almacenamiento multimedia en la nube elegido para RF1.2, con transformación de imágenes nativa. |
 | Transformación determinista | URL de Cloudinary que genera la miniatura 300x300 bajo demanda, sin proceso asíncrono. |
 | DoR | Definition of Ready. Condiciones que deben cumplirse antes de iniciar una feature. |
@@ -307,8 +327,8 @@ flowchart TD
     Auth -- "No" --> Err1[Error 403: no autorizado]
     Auth -- "Sí" --> ValidForm{"¿Campos válidos?<br/>procedencia, edad, rasgos,<br/>estado inicial"}
     ValidForm -- "No" --> Err2[Error 400: datos inválidos]
-    ValidForm -- "Sí" --> GenUUID[Generar UUID id_animal]
-    GenUUID --> Insert[Insertar en animales:<br/>en_cuarentena = true<br/>id_refugio de sesión]
+    ValidForm -- "Sí" --> GenID[La base de datos genera<br/>id_animal entero]
+    GenID --> Insert[Insertar en animal:<br/>en_cuarentena = true<br/>id_refugio de sesión]
     Insert --> Resp[Responder 201 con expediente]
     Err1 --> End[Fin]
     Err2 --> End
@@ -327,7 +347,7 @@ flowchart TD
     ValidFiles -- "No" --> Err3[Error 400: archivo inválido]
     ValidFiles -- "Sí" --> Upload[Subir a Cloudinary<br/>con progreso en UI]
     Upload --> Thumb[Generar thumbnail 300x300<br/>vía transformación Cloudinary]
-    Thumb --> Insert[Registrar URLs en imagenes_animal]
+    Thumb --> Insert[Registrar URLs en fotografia]
     Insert --> Resp[Responder 201 con galería]
     Err1 --> End[Fin]
     Err2 --> End
@@ -347,7 +367,7 @@ flowchart TD
     CheckCritical -- "Sí" --> HasObs{"¿Observaciones<br/>capturadas?"}
     HasObs -- "No" --> Err3[Error 400: observaciones requeridas]
     HasObs -- "Sí" --> Insert
-    CheckCritical -- "No" --> Insert[Insertar diagnóstico.<br/>Si requiere_cuarentena:<br/>en_cuarentena = true]
+    CheckCritical -- "No" --> Insert[Insertar diagnóstico.<br/>La cuarentena no cambia]
     Insert --> Resp[Responder 201 con diagnóstico]
     Err1 --> End[Fin]
     Err2 --> End
@@ -377,9 +397,9 @@ flowchart TD
 
 | US | Criterios de aceptación |
 |----|------------------------|
-| US05 | El operador registra un paciente con Procedencia (catálogo predefinido), Edad estimada (rango en meses), Rasgos físicos distintivos y Estado inicial descriptivo. El sistema genera el UUID automáticamente, asigna `en_cuarentena = true` y vincula el expediente al `id_refugio` de sesión, impidiendo accesos cruzados. |
-| US06 | El usuario carga entre 1 y 5 imágenes por expediente (JPG/PNG/WEBP, ≤ 5 MB por archivo, validado en servidor). La UI muestra el progreso interactivo de subida por archivo. Puede eliminar imágenes y designar una como portada principal. Las miniaturas 300x300 se generan automáticamente vía Cloudinary. |
-| US07 | Solo usuarios con rol Veterinario o Administrador registran el diagnóstico de ingreso con Estado general de salud (Crítico/Delicado/Estable/Sano) y checkbox "Requiere cuarentena obligatoria". Si el estado es Crítico o Delicado, las observaciones médicas son obligatorias (error 400 si faltan). |
+| US05 | El operador registra un paciente con Especie, Procedencia (texto libre), Edad estimada opcional en meses, Rasgos físicos distintivos, Estado inicial descriptivo, estado y espacio. El sistema genera el `id_animal` entero automáticamente, asigna `en_cuarentena = true` y vincula el expediente al `id_refugio` de sesión, impidiendo accesos cruzados. |
+| US06 | El expediente puede crearse sin imágenes. El usuario carga entre 1 y 5 imágenes (JPG/PNG/WEBP, ≤ 5 MB por archivo, validado en servidor) desde la ficha del animal. La UI muestra el progreso interactivo de subida por archivo. Puede eliminar imágenes y designar una como portada principal. Las miniaturas 300x300 se generan automáticamente vía Cloudinary. |
+| US07 | Solo usuarios con rol Veterinario o Administrador registran el diagnóstico de ingreso con Estado general de salud (Crítico/Delicado/Estable/Sano). Si el estado es Crítico o Delicado, las observaciones médicas son obligatorias (error 400 si faltan). La cuarentena no se modifica desde el diagnóstico. |
 | US08 | La ficha clínica muestra cronológicamente diagnósticos, constantes vitales, vacunas, pruebas de temperamento y estatus de esterilización. Presenta banner rojo en la parte superior si `en_cuarentena = true` o el estado de salud es Crítico. La consulta filtra estrictamente por el `id_refugio` activo en sesión. |
 
 ## Esquema de base de datos implicado
@@ -388,15 +408,15 @@ Las siguientes tablas de Supabase están involucradas en el Requerimiento 1:
 
 | Tabla | Campo clave | Descripción |
 |-------|-------------|-------------|
-| `animales` | `id_animal` (UUID, PK), `id_refugio` (FK) | Paciente y su expediente. Campos: procedencia (enum), edad_estimada_meses_min, edad_estimada_meses_max, rasgos_fisicos, estado_inicial, en_cuarentena (bool, default true), fecha_ingreso. |
-| `imagenes_animal` | `id_imagen` (UUID, PK), `id_animal` (FK), `id_refugio` (FK) | Multimedia del expediente. Campos: url_publica, url_thumbnail (300x300), es_portada (bool), orden, formato, tamano_bytes, subido_por, fecha_subida. |
-| `diagnosticos_ingreso` | `id_diagnostico` (UUID, PK), `id_animal` (FK), `id_refugio` (FK) | Diagnóstico veterinario inicial. Campos: estado_general (enum), requiere_cuarentena (bool), observaciones, id_usuario_veterinario (FK), fecha_diagnostico. |
+| `animal` | `id_animal` (integer, PK), `id_refugio` (FK) | Paciente y su expediente. Campos: `procedencia` (text), `edad_estimada` (integer, meses), `rasgos_fisicos`, `estado_inicial`, `en_cuarentena` (bool, default true), `fecha_ingreso`. |
+| `fotografia` | `id_fotografia` (integer, PK), `id_animal` (FK) | Multimedia del expediente. Campos: `public_id`, `url`, `url_thumbnail` (300x300), `es_principal` (bool), `orden`, `formato`, `tamano_mb`, `fecha_subida`. |
+| `diagnostico_veterinario` | `id_diagnostico` (integer, PK), `id_animal` (FK) | Diagnóstico veterinario inicial. Campos: `estado_general`, `requiere_cuarentena` (histórico, siempre false), `descripcion` (observaciones), `id_usuario` (FK), `fecha_diagnostico`. |
 | `constantes_vitales` | — | Referenciada por la ficha clínica (solo lectura). Se crea en la Épica 2. |
 | `vacunas` | — | Referenciada por la ficha clínica (solo lectura). Se crea en la Épica 2. |
 | `pruebas_temperamento` | — | Referenciada por la ficha clínica (solo lectura). Se crea en la Épica 3. |
 | `procedimientos_quirurgicos` | — | Referenciada por la ficha clínica (solo lectura; esterilización). Se crea en la Épica 4. |
 
-**Regla multitenant:** Toda consulta a `animales`, `imagenes_animal` y `diagnosticos_ingreso` debe filtrar por `id_refugio` obtenido del JWT de sesión. La tabla `animales` existe parcialmente en la actualidad; su extensión con los campos de esta épica (procedencia, edad estimada, rasgos, estado inicial, `en_cuarentena`) requiere migración aprobada previamente. RLS como segunda capa de defensa.
+**Regla multitenant:** Toda consulta a `animal`, `fotografia` y `diagnostico_veterinario` debe filtrar por `id_refugio` obtenido del JWT de sesión. `fotografia` y `diagnostico_veterinario` no exponen `id_refugio` directamente: el acceso se valida comprobando que el animal pertenezca al refugio de la sesión. RLS como segunda capa de defensa.
 
 ## Plan de implementación backend-first (detallado por módulo)
 
@@ -407,6 +427,6 @@ Las siguientes tablas de Supabase están involucradas en el Requerimiento 1:
 
 ---
 
-**Versión**: 1.0  
-**Estado**: Pendiente de implementación  
-**Última actualización**: 11/10/2026
+**Versión**: 1.1  
+**Estado**: Implementado  
+**Última actualización**: 16/11/2026

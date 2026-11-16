@@ -27,7 +27,10 @@ type DiagnosisUser = {
  * - Solo roles veterinario/admin pueden crear.
  * - Crítico o Delicado exigen observaciones (lo valida Zod).
  * - El usuario veterinario sale de la sesión, nunca del cliente.
- * - Si se marca "requiere cuarentena", el animal queda en cuarentena.
+ * - La cuarentena NO se modifica desde el diagnóstico: todo ingreso ya nace
+ *   en cuarentena (RF2.4) y solo el alta médica la libera. El campo histórico
+ *   `requiere_cuarentena` se persiste en `false` porque ya no forma parte del
+ *   contrato de entrada.
  */
 export class AnimalDiagnosisService {
     constructor(private readonly repository: AnimalDiagnosisRepository) {}
@@ -50,22 +53,16 @@ export class AnimalDiagnosisService {
         const data = CreateDiagnosticoSchema.parse({ ...body, idAnimal });
         const idRefugio = this.refugioDe(access);
 
-        const diagnostico = await this.repository.create(
+        return this.repository.create(
             idAnimal,
             idRefugio,
             {
                 estadoGeneral: data.estadoGeneral,
-                requiereCuarentena: data.requiereCuarentena,
+                requiereCuarentena: false,
                 observaciones: data.observaciones ?? null,
             },
             user.id,
         );
-
-        if (data.requiereCuarentena) {
-            await this.repository.setCuarentena(idAnimal, idRefugio);
-        }
-
-        return diagnostico;
     }
 
     async listDiagnoses(

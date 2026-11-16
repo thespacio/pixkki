@@ -98,7 +98,14 @@ export const CreateAnimalSchema = AnimalFieldsSchema.extend({
 
 export type CreateAnimalInput = z.infer<typeof CreateAnimalSchema>;
 
-export const UpdateAnimalSchema = AnimalFieldsSchema.extend(AnimalFlagsSchema.shape)
+// RF2.4: `enCuarentena` NO forma parte de la edición del expediente. La única
+// vía para liberar la cuarentena es el alta médica (ver
+// `AnimalQuarantineService.release`). Al omitirlo del contrato, el cliente ni
+// siquiera puede expresar el cambio; si un cliente antiguo lo envía, Zod lo
+// descarta.
+export const UpdateAnimalSchema = AnimalFieldsSchema.extend(
+    AnimalFlagsSchema.omit({ enCuarentena: true }).shape,
+)
     .partial()
     .extend({
         id: z.number().int().positive(),
@@ -278,7 +285,8 @@ const DiagnosticoFieldsSchema = z
         estadoGeneral: z.enum(ESTADOS_GENERALES_SALUD, {
             error: "Estado general de salud requerido",
         }),
-        requiereCuarentena: z.boolean().default(false),
+        // RF2.4: la cuarentena no se decide desde el diagnóstico. Todo ingreso
+        // ya nace en cuarentena y solo el alta médica la libera.
         observaciones: z.string().trim().max(2000).optional(),
     })
     .refine(
@@ -383,7 +391,13 @@ const fechaChequeoSchema = z
         return date;
     })
     .refine((value) => value !== null, "Fecha inválida")
-    .refine((value) => value === undefined || value.getTime() <= Date.now(), "La fecha no puede ser futura");
+    // `value` puede ser null si el refine anterior falló: no se puede llamar
+    // getTime() sobre null (lanzaría un TypeError y un 500 en lugar de un 400).
+    .refine(
+        (value) =>
+            value === undefined || value === null || value.getTime() <= Date.now(),
+        "La fecha no puede ser futura",
+    );
 
 export const CreateChequeoSchema = z
     .object({

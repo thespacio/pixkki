@@ -29,7 +29,6 @@ export function CreateAnimalModal({ estados, espacios, refugios = [] }: Props) {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }, []);
 
-    // Escape cierra el modal (salvo mientras se guarda).
     useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
@@ -56,7 +55,7 @@ export function CreateAnimalModal({ estados, espacios, refugios = [] }: Props) {
 
             const nombre = result.data.nombre ?? `${result.data.especie} sin nombre`;
             setOpen(false);
-            setCreated(`${nombre} se registró correctamente`);
+            setCreated(`${nombre} se registró correctamente. Puedes agregar imágenes desde su ficha`);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => setCreated(null), 5000);
         } catch {

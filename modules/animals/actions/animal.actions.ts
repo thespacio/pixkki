@@ -7,7 +7,10 @@ import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import { getCurrentUser } from "@/modules/auth";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "../access";
-import { Animal, AnimalForbiddenError } from "@/modules/animals/types/animales.types";
+import {
+    Animal,
+    AnimalForbiddenError,
+} from "@/modules/animals/types/animales.types";
 import {
     toErrorMessage,
     type AnimalActionResult,

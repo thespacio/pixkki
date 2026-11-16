@@ -120,7 +120,6 @@ export function AnimalForm({
         : espacios;
 
     async function submit(values: CreateAnimalFormValues) {
-        // Frontera Form → DTO. La Action volverá a validar con CreateAnimalSchema.
         const input = toCreateAnimalInput(values);
         await onSubmit(input);
     }
@@ -413,6 +412,13 @@ export function AnimalForm({
                     />
                 </Field>
             </Section>
+
+            {/* Las imágenes se gestionan después del alta desde la galería del
+                expediente, con progreso de subida por archivo (RF1.2). */}
+            <p className="text-xs text-muted-foreground">
+                Las imágenes del expediente se agregan después del registro,
+                desde la ficha del animal.
+            </p>
 
             {/* Acciones */}
             <div className="flex gap-3 pt-1">
