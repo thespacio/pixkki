@@ -117,7 +117,8 @@ export class AnimalRepository {
             id_estado: dto.idEstado,
             id_refugio: idRefugio,
             disponible_adopcion: dto.disponibleAdopcion ?? false,
-            en_cuarentena: dto.enCuarentena ?? false,
+            // RF1.1/RF2.4: todo ingreso nace en cuarentena.
+            en_cuarentena: true,
             esterilizado: dto.esterilizado ?? false,
             activo: dto.activo ?? true,
 
@@ -159,7 +160,8 @@ export class AnimalRepository {
         if (dto.idEspacio !== undefined) update.id_espacio = dto.idEspacio;
         if (dto.idEstado !== undefined) update.id_estado = dto.idEstado;
         if (dto.disponibleAdopcion !== undefined) update.disponible_adopcion = dto.disponibleAdopcion;
-        if (dto.enCuarentena !== undefined) update.en_cuarentena = dto.enCuarentena;
+        // RF2.4: ignorar cambios directos de cuarentena; se gestiona solo por alta médica.
+        // (Se omite deliberadamente dto.enCuarentena en actualizaciones regulares.)
         if (dto.esterilizado !== undefined) update.esterilizado = dto.esterilizado;
         if (dto.activo !== undefined) update.activo = dto.activo;
 

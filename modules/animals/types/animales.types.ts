@@ -30,9 +30,9 @@ export const ESTADOS_GENERALES_SALUD = [
 ] as const;
 export type EstadoGeneralSalud = (typeof ESTADOS_GENERALES_SALUD)[number];
 
-/** Roles que pueden persistir un diagnóstico de ingreso (RF1.3, US07). */
-export const ROLES_DIAGNOSTICO = ["veterinario", "admin"] as const;
-export type RolDiagnostico = (typeof ROLES_DIAGNOSTICO)[number];
+/** Roles que pueden persistir operaciones clínicas (RF1.3/RF2.x). */
+export const ROLES_CLINICOS = ["veterinario", "veterinarian", "admin", "administrador"] as const;
+export type RolClinico = (typeof ROLES_CLINICOS)[number];
 
 /** Límites y formatos de la galería del expediente (RF1.2, US06). */
 export const MAX_IMAGENES_POR_ANIMAL = 5;
@@ -45,8 +45,8 @@ export const MIME_TYPES_PERMITIDOS = [
 export type MimeTypePermitido = (typeof MIME_TYPES_PERMITIDOS)[number];
 
 /**
- * Normaliza el rol de la base ("Veterinario", "Administrador") y comprueba si
- * puede registrar diagnósticos. Única fuente de verdad para servicio y UI.
+ * Normaliza el rol y comprueba si puede ejecutar operaciones clínicas.
+ * Acepta variantes en español/inglés usadas en el proyecto.
  */
 export function puedeRegistrarDiagnostico(role: string): boolean {
     const normalizado = role
@@ -54,8 +54,10 @@ export function puedeRegistrarDiagnostico(role: string): boolean {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
-    return (ROLES_DIAGNOSTICO as readonly string[]).includes(normalizado);
+    return (ROLES_CLINICOS as readonly string[]).includes(normalizado);
 }
+
+export const puedeEjecutarOperacionClinica = puedeRegistrarDiagnostico;
 
 export type Animal = {
     idAnimal: number;

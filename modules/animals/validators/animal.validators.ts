@@ -87,7 +87,8 @@ const AnimalFlagsSchema = z.object({
 });
 
 export const CreateAnimalSchema = AnimalFieldsSchema.extend({
-    enCuarentena: AnimalFlagsSchema.shape.enCuarentena.default(false),
+    // RF1.1/RF2.4: todo ingreso nace en cuarentena por defecto.
+    enCuarentena: AnimalFlagsSchema.shape.enCuarentena.default(true),
     esterilizado: AnimalFlagsSchema.shape.esterilizado.default(false),
     disponibleAdopcion: AnimalFlagsSchema.shape.disponibleAdopcion.default(false),
     activo: AnimalFlagsSchema.shape.activo.default(true),
@@ -357,3 +358,60 @@ export function toFormValues(
         observaciones: input?.observaciones ?? "",
     };
 }
+
+// ---------------------------------------------------------------------------
+// Requerimiento 02 — Control clínico y cuarentena (RF2.1, RF2.4)
+// ---------------------------------------------------------------------------
+
+export const SINTOMAS_CHEQUEO = [
+    "vomito",
+    "diarrea",
+    "letargia",
+    "secrecion_nasal_ocular",
+    "tos",
+    "otro",
+] as const;
+export type SintomaChequeo = (typeof SINTOMAS_CHEQUEO)[number];
+
+const fechaChequeoSchema = z
+    .union([z.string(), z.date()])
+    .optional()
+    .transform((value) => {
+        if (value === undefined) return undefined;
+        const date = value instanceof Date ? value : new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+        return date;
+    })
+    .refine((value) => value !== null, "Fecha inválida")
+    .refine((value) => value === undefined || value.getTime() <= Date.now(), "La fecha no puede ser futura");
+
+export const CreateChequeoSchema = z
+    .object({
+        peso_kg: z.number().positive().max(200),
+        temperatura_c: z.number().min(30).max(45),
+        frecuencia_cardiaca: z.number().int().min(20).max(300),
+        frecuencia_respiratoria: z.number().int().min(5).max(150),
+        sintomas: z.array(z.enum(SINTOMAS_CHEQUEO)).default([]),
+        sintoma_otro_detalle: z.string().trim().min(1).max(300).optional().nullable(),
+        observaciones: z.string().trim().max(2000).optional().nullable(),
+        fecha_chequeo: fechaChequeoSchema,
+    })
+    .superRefine((data, ctx) => {
+        const incluyeOtro = data.sintomas.includes("otro");
+        if (incluyeOtro && (!data.sintoma_otro_detalle || data.sintoma_otro_detalle.trim() === "")) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["sintoma_otro_detalle"],
+                message: "Debes detallar el síntoma cuando seleccionas 'otro'.",
+            });
+        }
+    });
+
+export type CreateChequeoInput = z.infer<typeof CreateChequeoSchema>;
+
+export const CreateAltaCuarentenaSchema = z.object({
+    observaciones: z.string().trim().min(1, "Las observaciones son obligatorias").max(2000),
+    fecha_alta: fechaChequeoSchema,
+});
+
+export type CreateAltaCuarentenaInput = z.infer<typeof CreateAltaCuarentenaSchema>;

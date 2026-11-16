@@ -7,6 +7,8 @@ import type {
     ClinicalSurgery,
     ClinicalTemperament,
     ClinicalVaccination,
+    ClinicalCheckup,
+    ClinicalQuarantineRelease,
 } from "../repositories/clinical-record.repository";
 import { AnimalNotFoundError } from "../types/animales.types";
 import type { AnimalAccess } from "../access";
@@ -15,11 +17,13 @@ export type ClinicalTimelineEvent =
     | { tipo: "diagnostico"; fecha: string; detalle: ClinicalDiagnosis }
     | { tipo: "vacuna"; fecha: string; detalle: ClinicalVaccination }
     | { tipo: "prueba_temperamento"; fecha: string; detalle: ClinicalTemperament }
-    | { tipo: "esterilizacion"; fecha: string; detalle: ClinicalSurgery };
+    | { tipo: "esterilizacion"; fecha: string; detalle: ClinicalSurgery }
+    | { tipo: "chequeo"; fecha: string; detalle: ClinicalCheckup }
+    | { tipo: "alta_cuarentena"; fecha: string; detalle: ClinicalQuarantineRelease };
 
 export type ClinicalAlert = "cuarentena" | "estado_critico";
 
-export type ClinicalRecord = Omit<ClinicalRecordData, "vacunaciones" | "evaluacionesTemperamento" | "cirugias"> & {
+export type ClinicalRecord = Omit<ClinicalRecordData, "vacunaciones" | "evaluacionesTemperamento" | "cirugias" | "chequeos" | "altasCuarentena"> & {
     alertas: ClinicalAlert[];
     lineaTiempo: ClinicalTimelineEvent[];
 };
@@ -59,6 +63,16 @@ export class ClinicalRecordService {
             ...data.cirugias.map((detalle) => ({
                 tipo: "esterilizacion" as const,
                 fecha: detalle.fechaCirugia,
+                detalle,
+            })),
+            ...data.chequeos.map((detalle) => ({
+                tipo: "chequeo" as const,
+                fecha: detalle.fechaChequeo,
+                detalle,
+            })),
+            ...data.altasCuarentena.map((detalle) => ({
+                tipo: "alta_cuarentena" as const,
+                fecha: detalle.fechaAlta,
                 detalle,
             })),
         ].sort(

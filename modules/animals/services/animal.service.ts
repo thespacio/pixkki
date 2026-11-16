@@ -98,7 +98,10 @@ export class AnimalService {
             throw new AnimalMicrochipDuplicateError();
         }
 
-        return this.repository.update(dto.id, dto);
+        // RF2.4: la cuarentena solo se libera mediante alta médica, no por edición del expediente.
+        const { enCuarentena: _ignoredCuarentena, ...safeDto } = dto;
+
+        return this.repository.update(dto.id, safeDto);
     }
 
     async delete(id: number, access: AnimalAccess): Promise<void> {

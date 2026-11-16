@@ -185,8 +185,9 @@ function AnimalCard({
                 )}
 
                 {animal.enCuarentena && (
-                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-orange-500/90 text-white shadow-sm">
-                        <AlertTriangle size={11} aria-hidden="true" /> Cuarentena
+                    <span className="absolute top-3 left-3 inline-flex max-w-[calc(100%-5.5rem)] items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">
+                        <AlertTriangle size={11} aria-hidden="true" />
+                        <span className="truncate">AISLAMIENTO / RIESGO BIOLÓGICO</span>
                     </span>
                 )}
             </div>

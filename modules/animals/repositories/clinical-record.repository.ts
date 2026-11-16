@@ -1,7 +1,7 @@
 // modules/animals/repositories/clinical-record.repository.ts
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database";
+import type { Database } from "@/types/database";
 
 type AnimalRow = Database["public"]["Tables"]["animal"]["Row"];
 
@@ -63,6 +63,27 @@ export type ClinicalVaccination = {
     fechaRefuerzo: string | null;
     esquemaCompleto: boolean;
     observaciones: string | null;
+    tipoEvento?: "vacunacion" | "desparasitacion";
+};
+
+export type ClinicalCheckup = {
+    idChequeo: number;
+    fechaChequeo: string;
+    pesoKg: number;
+    temperaturaC: number;
+    frecuenciaCardiaca: number;
+    frecuenciaRespiratoria: number;
+    sintomas: string[];
+    sintomaOtroDetalle: string | null;
+    observaciones: string | null;
+    idUsuario: number;
+};
+
+export type ClinicalQuarantineRelease = {
+    idAlta: number;
+    fechaAlta: string;
+    observaciones: string;
+    idUsuarioVeterinario: number;
 };
 
 export type ClinicalTemperament = {
@@ -90,6 +111,8 @@ export type ClinicalRecordData = {
     vacunaciones: ClinicalVaccination[];
     evaluacionesTemperamento: ClinicalTemperament[];
     cirugias: ClinicalSurgery[];
+    chequeos: ClinicalCheckup[];
+    altasCuarentena: ClinicalQuarantineRelease[];
 };
 
 function toAnimalDomain(row: AnimalRowWithRelations): ClinicalAnimal {
@@ -155,12 +178,17 @@ export class ClinicalRecordRepository {
         if (animalError) throw animalError;
         if (!animal) return null;
 
+        const client = this.supabase as unknown as SupabaseClient;
         const [
             { data: imagenes, error: imagenesError },
             { data: diagnosticos, error: diagnosticosError },
-            { data: vacunaciones, error: vacunacionesError },
+            vacunasLegacyRes,
+            eventosSanitariosRes,
             { data: evaluaciones, error: evaluacionesError },
             { data: cirugias, error: cirugiasError },
+            chequeosRes,
+            chequeoSintomasRes,
+            altasRes,
         ] = await Promise.all([
             this.supabase
                 .from("fotografia")
@@ -177,11 +205,14 @@ export class ClinicalRecordRepository {
                 )
                 .eq("id_animal", idAnimal)
                 .order("fecha_diagnostico", { ascending: false }),
-            this.supabase
+            client
                 .from("vacunacion")
-                .select(
-                    "id_vacunacion, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones",
-                )
+                .select("id_vacunacion, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones")
+                .eq("id_animal", idAnimal)
+                .order("fecha_aplicacion", { ascending: false }),
+            client
+                .from("evento_sanitario")
+                .select("id_evento, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones, tipo_evento")
                 .eq("id_animal", idAnimal)
                 .order("fecha_aplicacion", { ascending: false }),
             this.supabase
@@ -198,13 +229,41 @@ export class ClinicalRecordRepository {
                 )
                 .eq("id_animal", idAnimal)
                 .order("fecha_cirugia", { ascending: false }),
+            client
+                .from("chequeos_medicos")
+                .select("id_chequeo, fecha_chequeo, peso_kg, temperatura_c, frecuencia_cardiaca, frecuencia_respiratoria, sintoma_otro_detalle, observaciones, id_usuario")
+                .eq("id_animal", idAnimal)
+                .order("fecha_chequeo", { ascending: false }),
+            client
+                .from("chequeo_sintomas")
+                .select("id_chequeo, sintoma"),
+            client
+                .from("altas_cuarentena")
+                .select("id_alta, fecha_alta, observaciones, id_usuario_veterinario")
+                .eq("id_animal", idAnimal)
+                .order("fecha_alta", { ascending: false }),
         ]);
 
         if (imagenesError) throw imagenesError;
         if (diagnosticosError) throw diagnosticosError;
-        if (vacunacionesError) throw vacunacionesError;
         if (evaluacionesError) throw evaluacionesError;
         if (cirugiasError) throw cirugiasError;
+        // Tablas nuevas/renombradas pueden no existir aún en entornos sin migrar: tolerar ausencia.
+        const vacunacionesError = vacunasLegacyRes.error && eventosSanitariosRes.error ? (eventosSanitariosRes.error ?? vacunasLegacyRes.error) : null;
+        if (vacunacionesError && !String((vacunacionesError as { code?: string }).code ?? "").includes("42P01") && !String((vacunacionesError as { code?: string }).code ?? "").includes("PGRST")) throw vacunacionesError;
+        if (chequeosRes.error && !String((chequeosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((chequeosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw chequeosRes.error;
+        if (altasRes.error && !String((altasRes.error as { code?: string }).code ?? "").includes("42P01") && !String((altasRes.error as { code?: string }).code ?? "").includes("PGRST")) throw altasRes.error;
+
+        const eventosRows = (!eventosSanitariosRes.error ? (eventosSanitariosRes.data ?? []) : (!vacunasLegacyRes.error ? (vacunasLegacyRes.data ?? []) : [])) as Array<Record<string, unknown>>;
+        const chequeosRows = (!chequeosRes.error ? (chequeosRes.data ?? []) : []) as Array<Record<string, unknown>>;
+        const sintomasRows = (!chequeoSintomasRes?.error ? (chequeoSintomasRes?.data ?? []) : []) as Array<Record<string, unknown>>;
+        const sintomasMap = new Map<number, string[]>();
+        for (const row of sintomasRows) {
+            const idc = Number(row.id_chequeo);
+            const arr = sintomasMap.get(idc) ?? [];
+            if (typeof row.sintoma === "string") arr.push(row.sintoma);
+            sintomasMap.set(idc, arr);
+        }
 
         return {
             animal: toAnimalDomain(animal as unknown as AnimalRowWithRelations),
@@ -225,13 +284,14 @@ export class ClinicalRecordRepository {
                 idUsuarioVeterinario: row.id_usuario,
                 fechaDiagnostico: row.fecha_diagnostico,
             })),
-            vacunaciones: (vacunaciones ?? []).map((row) => ({
-                idVacunacion: row.id_vacunacion,
-                tipoBiologico: row.tipo_biologico,
-                fechaAplicacion: row.fecha_aplicacion,
-                fechaRefuerzo: row.fecha_refuerzo,
-                esquemaCompleto: row.esquema_completo,
-                observaciones: row.observaciones,
+            vacunaciones: eventosRows.map((row) => ({
+                idVacunacion: Number(row.id_evento ?? row.id_vacunacion),
+                tipoBiologico: String(row.tipo_biologico ?? ""),
+                fechaAplicacion: String(row.fecha_aplicacion ?? ""),
+                fechaRefuerzo: (row.fecha_refuerzo as string | null) ?? null,
+                esquemaCompleto: Boolean(row.esquema_completo),
+                observaciones: (row.observaciones as string | null) ?? null,
+                tipoEvento: (row.tipo_evento as "vacunacion" | "desparasitacion" | undefined) ?? "vacunacion",
             })),
             evaluacionesTemperamento: (evaluaciones ?? []).map(
                 (row) => ({
@@ -250,6 +310,27 @@ export class ClinicalRecordRepository {
                 fechaCirugia: row.fecha_cirugia,
                 exitosa: row.exitosa,
                 notasPostoperatorias: row.notas_postoperatorias,
+            })),
+            chequeos: chequeosRows.map((row) => {
+                const idChequeo = Number(row.id_chequeo);
+                return {
+                    idChequeo,
+                    fechaChequeo: String(row.fecha_chequeo ?? ""),
+                    pesoKg: Number(row.peso_kg ?? 0),
+                    temperaturaC: Number(row.temperatura_c ?? 0),
+                    frecuenciaCardiaca: Number(row.frecuencia_cardiaca ?? 0),
+                    frecuenciaRespiratoria: Number(row.frecuencia_respiratoria ?? 0),
+                    sintomas: sintomasMap.get(idChequeo) ?? [],
+                    sintomaOtroDetalle: (row.sintoma_otro_detalle as string | null) ?? null,
+                    observaciones: (row.observaciones as string | null) ?? null,
+                    idUsuario: Number(row.id_usuario ?? 0),
+                };
+            }),
+            altasCuarentena: (!altasRes.error ? (altasRes.data ?? []) : []).map((row: Record<string, unknown>) => ({
+                idAlta: Number(row.id_alta),
+                fechaAlta: String(row.fecha_alta ?? ""),
+                observaciones: String(row.observaciones ?? ""),
+                idUsuarioVeterinario: Number(row.id_usuario_veterinario ?? 0),
             })),
         };
     }

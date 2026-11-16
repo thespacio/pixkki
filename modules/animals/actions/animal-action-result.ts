@@ -19,6 +19,7 @@ import {
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError,
 } from "@/modules/animals/types/animales.types";
+import { AnimalClinicalForbiddenError, QuarantineAlreadyReleasedError } from "@/modules/animals/errors";
 
 /**
  * Las acciones devuelven un resultado en vez de lanzar: en producción Next.js
@@ -43,6 +44,8 @@ const USER_FACING_ERRORS = [
     AnimalShelterNotFoundError,
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError,
+    AnimalClinicalForbiddenError,
+    QuarantineAlreadyReleasedError,
 ];
 
 export function toErrorMessage(error: unknown): string {
