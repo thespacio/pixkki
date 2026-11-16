@@ -59,10 +59,10 @@ max_client_conn = 100
 [db.migrations]
 # If disabled, migrations will be skipped during a db push or reset.
 enabled = true
-# Specifies an ordered list of schema files that describe your database.
-# Lee tanto de supabase/migrations/ (histórico) como de database/migrations/ (Req. 00/01)
-# para evitar tener que duplicar archivos entre carpetas.
-schema_paths = ["migrations/*.sql", "../database/migrations/*.sql"]
+# Specifies an ordered list of declarative schema files that describe your
+# database (supabase/schemas/*.sql). Este proyecto usa migraciones versionadas
+# en supabase/migrations/, por lo que no se declaran esquemas aquí.
+schema_paths = []
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
