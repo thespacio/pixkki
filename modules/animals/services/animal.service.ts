@@ -2,6 +2,7 @@ import type { AnimalRepository } from "../repositories/animal.repository";
 import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import type { AnimalAccess } from "../access";
+import { AnimalEnCuarentenaError } from "../errors";
 import {
     Animal,
     AnimalMicrochipDuplicateError,
@@ -98,10 +99,17 @@ export class AnimalService {
             throw new AnimalMicrochipDuplicateError();
         }
 
-        // RF2.4: la cuarentena solo se libera mediante alta médica, no por edición del expediente.
-        const { enCuarentena: _ignoredCuarentena, ...safeDto } = dto;
+        // RF2.4: la cuarentena solo se libera mediante alta médica. El contrato
+        // de edición ya no expone `enCuarentena`, así que aquí no hay nada que
+        // ignorar: la ausencia del campo es la garantía de servidor.
+        //
+        // Tampoco se puede ofrecer en adopción a un paciente en cuarentena: la
+        // UI deshabilita el botón, pero un cliente directo debe recibir 409.
+        if (dto.disponibleAdopcion === true && animal.enCuarentena) {
+            throw new AnimalEnCuarentenaError();
+        }
 
-        return this.repository.update(dto.id, safeDto);
+        return this.repository.update(dto.id, dto);
     }
 
     async delete(id: number, access: AnimalAccess): Promise<void> {

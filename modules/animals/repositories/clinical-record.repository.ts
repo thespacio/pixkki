@@ -178,16 +178,32 @@ export class ClinicalRecordRepository {
         if (animalError) throw animalError;
         if (!animal) return null;
 
-        const client = this.supabase as unknown as SupabaseClient;
+        const client = this.supabase;
+
+        // Los chequeos y las altas filtran por refugio cuando el usuario no es
+        // superadmin. El animal ya se validó arriba, pero el filtro explícito
+        // mantiene la regla multitenant también en las tablas hijas.
+        let chequeosQuery = client
+            .from("chequeos_medicos")
+            .select("id_chequeo, fecha_chequeo, peso_kg, temperatura_c, frecuencia_cardiaca, frecuencia_respiratoria, sintoma_otro_detalle, observaciones, id_usuario")
+            .eq("id_animal", idAnimal)
+            .order("fecha_chequeo", { ascending: false });
+        if (idRefugio !== null) chequeosQuery = chequeosQuery.eq("id_refugio", idRefugio);
+
+        let altasQuery = client
+            .from("altas_cuarentena")
+            .select("id_alta, fecha_alta, observaciones, id_usuario_veterinario")
+            .eq("id_animal", idAnimal)
+            .order("fecha_alta", { ascending: false });
+        if (idRefugio !== null) altasQuery = altasQuery.eq("id_refugio", idRefugio);
+
         const [
             { data: imagenes, error: imagenesError },
             { data: diagnosticos, error: diagnosticosError },
-            vacunasLegacyRes,
             eventosSanitariosRes,
             { data: evaluaciones, error: evaluacionesError },
             { data: cirugias, error: cirugiasError },
             chequeosRes,
-            chequeoSintomasRes,
             altasRes,
         ] = await Promise.all([
             this.supabase
@@ -205,11 +221,6 @@ export class ClinicalRecordRepository {
                 )
                 .eq("id_animal", idAnimal)
                 .order("fecha_diagnostico", { ascending: false }),
-            client
-                .from("vacunacion")
-                .select("id_vacunacion, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones")
-                .eq("id_animal", idAnimal)
-                .order("fecha_aplicacion", { ascending: false }),
             client
                 .from("evento_sanitario")
                 .select("id_evento, tipo_biologico, fecha_aplicacion, fecha_refuerzo, esquema_completo, observaciones, tipo_evento")
@@ -229,34 +240,38 @@ export class ClinicalRecordRepository {
                 )
                 .eq("id_animal", idAnimal)
                 .order("fecha_cirugia", { ascending: false }),
-            client
-                .from("chequeos_medicos")
-                .select("id_chequeo, fecha_chequeo, peso_kg, temperatura_c, frecuencia_cardiaca, frecuencia_respiratoria, sintoma_otro_detalle, observaciones, id_usuario")
-                .eq("id_animal", idAnimal)
-                .order("fecha_chequeo", { ascending: false }),
-            client
-                .from("chequeo_sintomas")
-                .select("id_chequeo, sintoma"),
-            client
-                .from("altas_cuarentena")
-                .select("id_alta, fecha_alta, observaciones, id_usuario_veterinario")
-                .eq("id_animal", idAnimal)
-                .order("fecha_alta", { ascending: false }),
+            chequeosQuery,
+            altasQuery,
         ]);
 
         if (imagenesError) throw imagenesError;
         if (diagnosticosError) throw diagnosticosError;
         if (evaluacionesError) throw evaluacionesError;
         if (cirugiasError) throw cirugiasError;
-        // Tablas nuevas/renombradas pueden no existir aún en entornos sin migrar: tolerar ausencia.
-        const vacunacionesError = vacunasLegacyRes.error && eventosSanitariosRes.error ? (eventosSanitariosRes.error ?? vacunasLegacyRes.error) : null;
-        if (vacunacionesError && !String((vacunacionesError as { code?: string }).code ?? "").includes("42P01") && !String((vacunacionesError as { code?: string }).code ?? "").includes("PGRST")) throw vacunacionesError;
+        // Tablas nuevas pueden no existir aún en entornos sin migrar: tolerar ausencia.
+        if (eventosSanitariosRes.error && !String((eventosSanitariosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((eventosSanitariosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw eventosSanitariosRes.error;
         if (chequeosRes.error && !String((chequeosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((chequeosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw chequeosRes.error;
         if (altasRes.error && !String((altasRes.error as { code?: string }).code ?? "").includes("42P01") && !String((altasRes.error as { code?: string }).code ?? "").includes("PGRST")) throw altasRes.error;
 
-        const eventosRows = (!eventosSanitariosRes.error ? (eventosSanitariosRes.data ?? []) : (!vacunasLegacyRes.error ? (vacunasLegacyRes.data ?? []) : [])) as Array<Record<string, unknown>>;
+        const eventosRows = (!eventosSanitariosRes.error ? (eventosSanitariosRes.data ?? []) : []) as Array<Record<string, unknown>>;
         const chequeosRows = (!chequeosRes.error ? (chequeosRes.data ?? []) : []) as Array<Record<string, unknown>>;
-        const sintomasRows = (!chequeoSintomasRes?.error ? (chequeoSintomasRes?.data ?? []) : []) as Array<Record<string, unknown>>;
+
+        // Los síntomas se consultan SOLO para los chequeos de este animal.
+        // Antes se traían todos los de la tabla (fuga entre refugios).
+        const chequeoIds = chequeosRows.map((row) => Number(row.id_chequeo));
+        let sintomasRows: Array<Record<string, unknown>> = [];
+        if (chequeoIds.length > 0) {
+            const { data: sintomasData, error: sintomasError } = await client
+                .from("chequeo_sintomas")
+                .select("id_chequeo, sintoma")
+                .in("id_chequeo", chequeoIds);
+            if (sintomasError) {
+                const code = String((sintomasError as { code?: string }).code ?? "");
+                if (!code.includes("42P01") && !code.includes("PGRST")) throw sintomasError;
+            } else {
+                sintomasRows = (sintomasData ?? []) as Array<Record<string, unknown>>;
+            }
+        }
         const sintomasMap = new Map<number, string[]>();
         for (const row of sintomasRows) {
             const idc = Number(row.id_chequeo);
@@ -285,7 +300,7 @@ export class ClinicalRecordRepository {
                 fechaDiagnostico: row.fecha_diagnostico,
             })),
             vacunaciones: eventosRows.map((row) => ({
-                idVacunacion: Number(row.id_evento ?? row.id_vacunacion),
+                idVacunacion: Number(row.id_evento),
                 tipoBiologico: String(row.tipo_biologico ?? ""),
                 fechaAplicacion: String(row.fecha_aplicacion ?? ""),
                 fechaRefuerzo: (row.fecha_refuerzo as string | null) ?? null,

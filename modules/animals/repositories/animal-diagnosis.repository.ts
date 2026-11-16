@@ -130,25 +130,4 @@ export class AnimalDiagnosisRepository {
         if (error) throw error;
         return data.map(toDomain);
     }
-
-    /** Marca el animal en cuarentena (RF1.3: checkbox obligatorio). */
-    async setCuarentena(
-        idAnimal: number,
-        idRefugio: number | null,
-    ): Promise<void> {
-        await this.assertAnimal(idAnimal, idRefugio);
-
-        let query = this.supabase
-            .from("animal")
-            .update({ en_cuarentena: true })
-            .eq("id_animal", idAnimal);
-
-        if (idRefugio !== null) {
-            query = query.eq("id_refugio", idRefugio);
-        }
-
-        const { error } = await query;
-
-        if (error) throw error;
-    }
 }

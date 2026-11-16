@@ -9,6 +9,8 @@ import { formatEdad } from "@/modules/animals/filters";
 import { AnimalGallery } from "./AnimalGallery";
 import { AnimalDiagnosisPanel } from "./AnimalDiagnosisPanel";
 import { AnimalClinicalRecord } from "./AnimalClinicalRecord";
+import { AnimalCheckupPanel } from "./AnimalCheckupPanel";
+import { AnimalQuarantinePanel } from "./AnimalQuarantinePanel";
 
 type Props = { animal: Animal; canEdit: boolean; canDelete: boolean; canDiagnose: boolean; onClose: () => void };
 
@@ -31,6 +33,10 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
     const [pending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{ type: "ok" | "error"; msg: string } | null>(null);
     const [clinicalRecordVersion, setClinicalRecordVersion] = useState(0);
+    // Espejo local de la cuarentena: al registrar el alta, la ficha abierta se
+    // actualiza al instante. El listado toma el valor nuevo al recargarse
+    // (la action revalida la ruta en el servidor).
+    const [enCuarentena, setEnCuarentena] = useState(animal.enCuarentena);
     const closeRef = useRef<HTMLButtonElement>(null);
     const onCloseRef = useRef(onClose);
     useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
@@ -41,6 +47,10 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
     const sexo = animal.sexo === "M" ? "Macho" : animal.sexo === "H" ? "Hembra" : "No determinado";
 
     function toggleDisponible() {
+        // RF2.4: un paciente en cuarentena no puede ofrecerse en adopción.
+        // Sí puede retirarse de adopción si quedó marcado por datos previos.
+        // El servidor aplica la misma regla, esta guarda solo evita el viaje.
+        if (enCuarentena && !animal.disponibleAdopcion) return;
         setFeedback(null);
         startTransition(async () => {
             const result = await updateAnimalAction({ id: animal.idAnimal, disponibleAdopcion: !animal.disponibleAdopcion });
@@ -69,7 +79,7 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
                     <p className="text-sm text-muted-foreground">{[animal.raza ?? animal.especie, sexo, animal.tamano].filter(Boolean).join(" · ")}</p>
                     <div className="mt-3 flex justify-center gap-2 flex-wrap">
                         {animal.estadoNombre && <span className="text-xs px-2 py-1 rounded-lg bg-secondary text-foreground">{animal.estadoNombre}</span>}
-                        {animal.enCuarentena && <span className="text-xs px-2 py-1 rounded-lg bg-red-100 text-red-700 font-semibold">AISLAMIENTO / RIESGO BIOLÓGICO</span>}
+                        {enCuarentena && <span className="text-xs px-2 py-1 rounded-lg bg-red-100 text-red-700 font-semibold">AISLAMIENTO / RIESGO BIOLÓGICO</span>}
                         {animal.disponibleAdopcion && <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-700">En adopción</span>}
                     </div>
                 </div>
@@ -88,17 +98,33 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
                 <Section title="Salud y comportamiento">
                     <Row label="Estado al ingreso" value={animal.estadoInicial} /><Row label="Temperamento" value={animal.temperamento} />
                     <Row label="Vacunado" value={animal.vacunado ? "Sí" : "No"} /><Row label="Desparasitado" value={animal.desparasitado ? "Sí" : "No"} />
-                    <Row label="Esterilizado" value={animal.esterilizado ? "Sí" : "No"} /><Row label="Cuarentena" value={animal.enCuarentena ? "Sí (aislamiento activo)" : "No (alta médica registrada)"} />
+                    <Row label="Esterilizado" value={animal.esterilizado ? "Sí" : "No"} /><Row label="Cuarentena" value={enCuarentena ? "Sí (aislamiento activo)" : "No (alta médica registrada)"} />
                 </Section>
                 <Section title="Albergue"><Row label="Albergue" value={animal.refugioNombre} /><Row label="Espacio" value={animal.espacioNombre} /><Row label="Fecha de ingreso" value={formatFecha(animal.fechaIngreso)} /></Section>
                 {animal.observaciones && <Section title="Observaciones"><p className="text-sm text-foreground whitespace-pre-line">{animal.observaciones}</p></Section>}
                 {(canEdit || canDelete) && (
                     <div className="mt-8 space-y-3">
-                        {canEdit && <button onClick={toggleDisponible} disabled={pending} className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition disabled:opacity-60 ${animal.disponibleAdopcion ? "border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100" : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"}`}>{pending ? "Procesando..." : animal.disponibleAdopcion ? "Marcar como no disponible" : "Marcar disponible para adopción"}</button>}
+                        {canEdit && <button onClick={toggleDisponible} disabled={pending || (enCuarentena && !animal.disponibleAdopcion)} title={enCuarentena && !animal.disponibleAdopcion ? "El paciente está en cuarentena" : undefined} className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition disabled:opacity-60 disabled:cursor-not-allowed ${animal.disponibleAdopcion ? "border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100" : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"}`}>{pending ? "Procesando..." : animal.disponibleAdopcion ? "Marcar como no disponible" : "Marcar disponible para adopción"}</button>}
+                        {canEdit && enCuarentena && <p className="text-center text-[11px] text-muted-foreground">En cuarentena no puede ofrecerse en adopción. Registra el alta médica para habilitarlo.</p>}
                         {canDelete && <button onClick={darDeBaja} disabled={pending} className="w-full py-2.5 rounded-xl text-sm font-semibold border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition disabled:opacity-60">Dar de baja</button>}
                     </div>
                 )}
                 <AnimalGallery idAnimal={animal.idAnimal} canEdit={canEdit} />
+                <AnimalQuarantinePanel
+                    idAnimal={animal.idAnimal}
+                    canRelease={canDiagnose}
+                    refreshKey={clinicalRecordVersion}
+                    onChanged={() => {
+                        setEnCuarentena(false);
+                        setClinicalRecordVersion((v) => v + 1);
+                    }}
+                />
+                <AnimalCheckupPanel
+                    idAnimal={animal.idAnimal}
+                    canRegister={canDiagnose}
+                    refreshKey={clinicalRecordVersion}
+                    onSaved={() => setClinicalRecordVersion((v) => v + 1)}
+                />
                 <AnimalDiagnosisPanel idAnimal={animal.idAnimal} canDiagnose={canDiagnose} onSaved={() => setClinicalRecordVersion((v) => v + 1)} />
                 <div className="mt-6">
                     <Link href={`/animals/${animal.idAnimal}/clinical-record`} className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition">

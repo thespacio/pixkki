@@ -67,7 +67,7 @@ export class AnimalQuarantineRepository {
         const idRefugio = this.refugioDe(access);
         const animal = await this.getAnimal(idAnimal, idRefugio);
 
-        let query = (this.supabase as unknown as SupabaseClient)
+        let query = this.supabase
             .from("altas_cuarentena")
             .select("*")
             .eq("id_animal", idAnimal)
@@ -117,13 +117,10 @@ export class AnimalQuarantineRepository {
             ...(input.fecha_alta ? { fecha_alta: input.fecha_alta.toISOString() } : {}),
         };
 
-        const { data: created, error: insertError } = await (this.supabase as unknown as SupabaseClient)
-            .from("altas_cuarentena")
-            .insert(payload)
-            .select("*")
-            .single();
-        if (insertError) throw insertError;
-
+        // El UPDATE condicional es el "lock" lógico del alta: solo un proceso
+        // puede pasar de en_cuarentena=true a false. Se ejecuta ANTES del
+        // insert para que el perdedor de una carrera no deje un alta huérfana
+        // (el alta es append-only y no debe borrarse).
         let update = this.supabase
             .from("animal")
             .update({ en_cuarentena: false })
@@ -133,8 +130,29 @@ export class AnimalQuarantineRepository {
         const { error: updateError, data: updatedRows } = await update.select("id_animal");
         if (updateError) throw updateError;
         if (!updatedRows || updatedRows.length === 0) {
-            // Carrera: otro proceso liberó primero
+            // Carrera: otro proceso liberó primero.
             throw new QuarantineAlreadyReleasedError();
+        }
+
+        const { data: created, error: insertError } = await this.supabase
+            .from("altas_cuarentena")
+            .insert(payload)
+            .select("*")
+            .single();
+
+        if (insertError) {
+            // Compensación: si no se pudo registrar el alta, el paciente debe
+            // volver a cuarentena para no quedar liberado sin trazabilidad.
+            // La atomicidad real requiere una función/RPC transaccional
+            // (migración pendiente de aprobación).
+            const { error: revertError } = await this.supabase
+                .from("animal")
+                .update({ en_cuarentena: true })
+                .eq("id_animal", idAnimal);
+            if (revertError) {
+                console.error("[animal-quarantine] No se pudo revertir la cuarentena:", revertError);
+            }
+            throw insertError;
         }
 
         return { ...toRelease(created as AltaRow), enCuarentena: false };

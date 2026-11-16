@@ -19,7 +19,7 @@ import {
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError,
 } from "@/modules/animals/types/animales.types";
-import { AnimalClinicalForbiddenError, QuarantineAlreadyReleasedError } from "@/modules/animals/errors";
+import { AnimalClinicalForbiddenError, AnimalEnCuarentenaError, QuarantineAlreadyReleasedError } from "@/modules/animals/errors";
 
 /**
  * Las acciones devuelven un resultado en vez de lanzar: en producción Next.js
@@ -45,6 +45,7 @@ const USER_FACING_ERRORS = [
     AnimalSpaceMismatchError,
     AnimalStateNotFoundError,
     AnimalClinicalForbiddenError,
+    AnimalEnCuarentenaError,
     QuarantineAlreadyReleasedError,
 ];
 
@@ -73,11 +74,12 @@ export function toErrorMessage(error: unknown): string {
         if (code === "23505") {
             return "Ya existe un animal con ese microchip";
         }
-        // Columna inexistente: la migración de la ficha de rescate no se aplicó.
+        // Columna inexistente: falta aplicar la migración del expediente.
         if (code === "PGRST204" || code === "42703") {
             return (
-                "La base de datos aún no tiene las columnas de la ficha de rescate. " +
-                "Ejecuta la migración database/migrations/20261024_animal_datos_rescate.sql en Supabase."
+                "La base de datos aún no tiene las columnas del expediente. " +
+                "Ejecuta la migración supabase/migrations/20261113_requerimiento_01_expediente.sql " +
+                "(equivalente a 20261024_animal_datos_rescate.sql) en Supabase."
             );
         }
         if (code === "42501") {

@@ -61,12 +61,14 @@ async function fetchDiagnoses(idAnimal: number): Promise<AnimalDiagnosis[]> {
  * Diagnóstico veterinario de ingreso (RF1.3, US07).
  * - Solo veterinario/admin ven el formulario; el servidor vuelve a validar el rol.
  * - Crítico o Delicado exigen observaciones (regla del schema Zod).
+ * - RF2.4: el diagnóstico NO define la cuarentena. Todo ingreso permanece en
+ *   cuarentena y solo el alta médica la libera; por eso aquí no hay checkbox
+ *   de "requiere cuarentena" ni forma de alterar ese estado.
  */
 export function AnimalDiagnosisPanel({ idAnimal, canDiagnose, onSaved }: Props) {
     const [diagnosticos, setDiagnosticos] = useState<AnimalDiagnosis[]>([]);
     const [loading, setLoading] = useState(true);
     const [estadoGeneral, setEstadoGeneral] = useState<EstadoGeneralSalud>("Estable");
-    const [requiereCuarentena, setRequiereCuarentena] = useState(false);
     const [observaciones, setObservaciones] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -110,7 +112,6 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose, onSaved }: Props) 
         setSaving(true);
         const result = await createAnimalDiagnosisAction(idAnimal, {
             estadoGeneral,
-            requiereCuarentena,
             observaciones: observaciones.trim() || undefined,
         });
         setSaving(false);
@@ -122,7 +123,6 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose, onSaved }: Props) 
 
         setOk("Diagnóstico registrado.");
         setObservaciones("");
-        setRequiereCuarentena(false);
         setEstadoGeneral("Estable");
         await load();
         onSaved?.();
@@ -223,15 +223,10 @@ export function AnimalDiagnosisPanel({ idAnimal, canDiagnose, onSaved }: Props) 
                         </p>
                     </div>
 
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                        <input
-                            type="checkbox"
-                            checked={requiereCuarentena}
-                            onChange={(event) => setRequiereCuarentena(event.target.checked)}
-                            className="size-4 rounded border-input"
-                        />
-                        Requiere cuarentena obligatoria
-                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                        Todo paciente permanece en cuarentena hasta que se registre el alta
+                        médica. El diagnóstico no modifica ese estado.
+                    </p>
 
                     {error && (
                         <p role="status" className="text-xs text-red-600">

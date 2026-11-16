@@ -104,7 +104,7 @@ export class AnimalCheckupRepository {
             ...(input.fecha_chequeo ? { fecha_chequeo: input.fecha_chequeo.toISOString() } : {}),
         };
 
-        const { data: created, error } = await (this.supabase as unknown as SupabaseClient)
+        const { data: created, error } = await this.supabase
             .from("chequeos_medicos")
             .insert(payload)
             .select("*")
@@ -114,20 +114,42 @@ export class AnimalCheckupRepository {
         const sintomas = Array.from(new Set(input.sintomas));
         if (sintomas.length > 0) {
             const rows = sintomas.map((sintoma) => ({ id_chequeo: (created as CheckupRow).id_chequeo, sintoma }));
-            const { error: symError } = await (this.supabase as unknown as SupabaseClient)
+            const { error: symError } = await this.supabase
                 .from("chequeo_sintomas")
                 .insert(rows);
-            if (symError) throw symError;
+            if (symError) {
+                // Compensación: no dejar un chequeo sin su checklist.
+                await this.supabase
+                    .from("chequeos_medicos")
+                    .delete()
+                    .eq("id_chequeo", (created as CheckupRow).id_chequeo);
+                throw symError;
+            }
         }
 
-        // Actualizar peso vigente del animal
-        let weightUpdate = this.supabase
-            .from("animal")
-            .update({ peso: input.peso_kg })
-            .eq("id_animal", idAnimal);
-        if (idRefugioScope !== null) weightUpdate = weightUpdate.eq("id_refugio", idRefugioScope);
-        const { error: weightError } = await weightUpdate;
-        if (weightError) throw weightError;
+        // RF2.2 (regla 12): `animal.peso` refleja el ÚLTIMO chequeo. Se consulta
+        // el más reciente en lugar de asumir que el recién creado lo es: un
+        // chequeo con fecha pasada no debe pisar el peso vigente.
+        let latestQuery = this.supabase
+            .from("chequeos_medicos")
+            .select("peso_kg")
+            .eq("id_animal", idAnimal)
+            .order("fecha_chequeo", { ascending: false })
+            .limit(1);
+        if (idRefugioScope !== null) latestQuery = latestQuery.eq("id_refugio", idRefugioScope);
+        const { data: latestRows, error: latestError } = await latestQuery;
+        if (latestError) throw latestError;
+
+        const latest = (latestRows ?? [])[0] as { peso_kg: number } | undefined;
+        if (latest) {
+            let weightUpdate = this.supabase
+                .from("animal")
+                .update({ peso: Number(latest.peso_kg) })
+                .eq("id_animal", idAnimal);
+            if (idRefugioScope !== null) weightUpdate = weightUpdate.eq("id_refugio", idRefugioScope);
+            const { error: weightError } = await weightUpdate;
+            if (weightError) throw weightError;
+        }
 
         return toDomain(created as CheckupRow, sintomas);
     }
@@ -136,7 +158,7 @@ export class AnimalCheckupRepository {
         const idRefugio = this.refugioDe(access);
         await this.assertAnimal(idAnimal, idRefugio);
 
-        let query = (this.supabase as unknown as SupabaseClient)
+        let query = this.supabase
             .from("chequeos_medicos")
             .select("*")
             .eq("id_animal", idAnimal)
@@ -149,7 +171,7 @@ export class AnimalCheckupRepository {
         if (rows.length === 0) return [];
 
         const ids = rows.map((r) => r.id_chequeo);
-        const { data: symData, error: symError } = await (this.supabase as unknown as SupabaseClient)
+        const { data: symData, error: symError } = await this.supabase
             .from("chequeo_sintomas")
             .select("id_chequeo, sintoma")
             .in("id_chequeo", ids);

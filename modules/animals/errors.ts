@@ -47,3 +47,20 @@ export class QuarantineAlreadyReleasedError extends Error {
         this.name = "QuarantineAlreadyReleasedError";
     }
 }
+
+/**
+ * RF2.4: mientras `en_cuarentena = true` el paciente no puede pasar a
+ * disponibilidad de adopción ni a áreas generales. La UI deshabilita el
+ * control; esto es la autorización real en el servidor.
+ */
+export class AnimalEnCuarentenaError extends Error {
+    readonly code = "ANIMAL_EN_CUARENTENA";
+    readonly statusCode = 409;
+
+    constructor() {
+        super(
+            "El paciente está en cuarentena. Registra el alta médica antes de continuar.",
+        );
+        this.name = "AnimalEnCuarentenaError";
+    }
+}

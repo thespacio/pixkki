@@ -160,8 +160,8 @@ export class AnimalRepository {
         if (dto.idEspacio !== undefined) update.id_espacio = dto.idEspacio;
         if (dto.idEstado !== undefined) update.id_estado = dto.idEstado;
         if (dto.disponibleAdopcion !== undefined) update.disponible_adopcion = dto.disponibleAdopcion;
-        // RF2.4: ignorar cambios directos de cuarentena; se gestiona solo por alta médica.
-        // (Se omite deliberadamente dto.enCuarentena en actualizaciones regulares.)
+        // RF2.4: `en_cuarentena` no se actualiza aquí. Solo el alta médica
+        // (AnimalQuarantineRepository.release) puede liberar la cuarentena.
         if (dto.esterilizado !== undefined) update.esterilizado = dto.esterilizado;
         if (dto.activo !== undefined) update.activo = dto.activo;
 

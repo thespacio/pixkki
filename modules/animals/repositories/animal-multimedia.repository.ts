@@ -41,6 +41,18 @@ export type AnimalImage = {
 
 const MB = 1024 * 1024;
 
+/**
+ * `fotografia.formato` tiene el check `chk_foto_formato` (JPG, JPEG, PNG, WEBP).
+ * Cloudinary devuelve el formato en minúsculas, así que se normaliza antes de
+ * insertar; si no, PostgREST devuelve 23514 y el alta pierde sus imágenes.
+ */
+const FORMATOS_PERMITIDOS = new Set(["JPG", "JPEG", "PNG", "WEBP"]);
+
+function normalizeFormato(formato: string | null | undefined): string | null {
+    const normalized = (formato ?? "").trim().toUpperCase();
+    return FORMATOS_PERMITIDOS.has(normalized) ? normalized : null;
+}
+
 function toDomain(row: FotografiaRow): AnimalImage {
     return {
         idImagen: row.id_fotografia,
@@ -148,8 +160,11 @@ export class AnimalMultimediaRepository {
                 url_thumbnail: upload.url_thumbnail,
                 es_principal: esPortada,
                 orden,
-                formato: upload.formato || null,
-                tamano_mb: Number((upload.tamano_bytes / MB).toFixed(3)),
+                formato: normalizeFormato(upload.formato),
+                // `chk_foto_tamano` exige > 0 y la columna es numeric(4,2): el
+                // mínimo representable es 0.01, para que una imagen pequeña no
+                // redondee a 0.00.
+                tamano_mb: Math.max(0.01, Number((upload.tamano_bytes / MB).toFixed(2))),
                 public_id: upload.public_id,
             };
 
