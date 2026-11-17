@@ -9,12 +9,13 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Loader2, Syringe } from "lucide-react";
+import { Loader2, RefreshCw, Syringe } from "lucide-react";
 import {
     createAnimalSanitaryEventAction,
     getAnimalSanitaryEventsAction,
     getAvailableInventoryLotsAction,
 } from "../actions/animal-clinical.actions";
+import { Skeleton } from "@/components/ui/skeleton";
 import { hoyLocalISO } from "../validators/animal.validators";
 import {
     TIPOS_EVENTO_SANITARIO,
@@ -130,7 +131,10 @@ export function AnimalSanitaryEventPanel({ idAnimal, canRegister, onSaved }: Pro
     }, []);
 
     useEffect(() => {
-        if (canRegister) void loadLots(form.tipoEvento);
+        if (canRegister) {
+            const timer = setTimeout(() => void loadLots(form.tipoEvento), 0);
+            return () => clearTimeout(timer);
+        }
     }, [canRegister, form.tipoEvento, loadLots]);
 
     function changeTipo(tipo: TipoEventoSanitario) {
@@ -201,14 +205,41 @@ export function AnimalSanitaryEventPanel({ idAnimal, canRegister, onSaved }: Pro
             </h4>
 
             {loading ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                    Cargando eventos sanitarios…
-                </p>
+                <div className="space-y-3">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                </div>
+            ) : error ? (
+                <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs">
+                    <p>{error}</p>
+                    <button
+                        onClick={() => {
+                            void loadEvents();
+                            if (canRegister) void loadLots(form.tipoEvento);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:underline"
+                    >
+                        <RefreshCw size={12} aria-hidden="true" /> Reintentar
+                    </button>
+                </div>
             ) : eventos.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                    Aún no hay eventos sanitarios registrados.
-                </p>
+                <div className="text-center py-8">
+                    <p className="text-xs text-muted-foreground mb-4">
+                        Aún no hay eventos sanitarios registrados.
+                    </p>
+                    {!canRegister ? (
+                        <p className="text-[11px] text-muted-foreground">
+                            Solo un veterinario o un administrador puede registrar
+                            eventos sanitarios.
+                        </p>
+                    ) : (
+                        <p className="text-[11px] text-muted-foreground">
+                            Selecciona un tipo de evento y un lote con stock para
+                            registrar el primero.
+                        </p>
+                    )}
+                </div>
             ) : (
                 <ul className="space-y-3">
                     {eventos.map((evento) => (

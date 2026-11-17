@@ -11,11 +11,12 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { CalendarClock, Loader2, Stethoscope } from "lucide-react";
+import { CalendarClock, Loader2, RefreshCw, Stethoscope } from "lucide-react";
 import {
     createAnimalCheckupAction,
     getAnimalCheckupsAction,
 } from "../actions/animal-clinical.actions";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     SINTOMAS_CHEQUEO,
     type SintomaChequeo,
@@ -113,10 +114,10 @@ export function AnimalCheckupPanel({
     const [ok, setOk] = useState<string | null>(null);
 
     const load = useCallback(async () => {
+        setError(null);
         const result = await getAnimalCheckupsAction(idAnimal);
         if (result.success) {
             setChequeos(result.data);
-            setError(null);
         } else {
             setError(result.error);
         }
@@ -196,14 +197,43 @@ export function AnimalCheckupPanel({
             </h4>
 
             {loading ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                    Cargando chequeos…
-                </p>
+                <div className="space-y-3">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                </div>
+            ) : error ? (
+                <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs">
+                    <p>{error}</p>
+                    <button
+                        onClick={load}
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:underline"
+                    >
+                        <RefreshCw size={12} aria-hidden="true" /> Reintentar
+                    </button>
+                </div>
             ) : chequeos.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                    Aún no hay chequeos médicos registrados.
-                </p>
+                <div className="text-center py-8">
+                    <p className="text-xs text-muted-foreground mb-4">
+                        Aún no hay chequeos médicos registrados.
+                    </p>
+                    {!canRegister ? (
+                        <p className="text-[11px] text-muted-foreground">
+                            Solo un veterinario o un administrador puede registrar
+                            chequeos médicos.
+                        </p>
+                    ) : (
+                        <button
+                            onClick={() => {
+                                // El formulario está debajo; scroll suave al formulario.
+                            }}
+                            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition"
+                        >
+                            <Stethoscope size={14} aria-hidden="true" />
+                            Registrar primer chequeo
+                        </button>
+                    )}
+                </div>
             ) : (
                 <ul className="space-y-3">
                     {chequeos.map((chequeo) => (
