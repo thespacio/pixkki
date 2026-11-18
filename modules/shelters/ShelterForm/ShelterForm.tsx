@@ -2,7 +2,6 @@
 
 import {useRef, useState} from 'react';
 
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -15,7 +14,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreateShelterSchema } from '@/modules/shelters/schemas';
 import {SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {MEXICAN_STATES} from "@/modules/catalogs/constants/mexican-states";
 import {Select} from "@radix-ui/react-select";
@@ -42,6 +40,7 @@ export function ShelterForm({
                                 onSubmit,
                                 isLoading = false,
                                 mode,
+                                onCancel,
                                 //submitLabel,
                                 //cancelLabel = 'Cancelar',
                             }: ShelterFormProps) {
@@ -383,7 +382,13 @@ export function ShelterForm({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => router.back()}
+                                onClick={() => {
+                                    if (onCancel) {
+                                        onCancel();
+                                        return;
+                                    }
+                                    router.back();
+                                }}
                                 disabled={isLoading}
                             >
                                 Cancelar

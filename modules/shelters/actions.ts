@@ -59,7 +59,11 @@ export async function createShelterAction(
 
     const useCase = await createCreateShelterWithAdminUseCase();
 
-    return await useCase.execute(input);
+    const result = await useCase.execute(input);
+
+    revalidatePath("/refugios");
+
+    return result;
 }
 
 /**
@@ -108,7 +112,7 @@ export async function toggleShelterStatusAction(id: number, activo: boolean) {
             data: shelter
         };
     } catch (error) {
-        // El consumidor (ShelterStatusSwitch) espera un resultado tipado,
+        // El consumidor (ShelterStatusDialog) espera un resultado tipado,
         // no una excepción: se traduce el error a mensaje para la UI.
         return {
             success: false,

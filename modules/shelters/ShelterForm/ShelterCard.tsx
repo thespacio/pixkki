@@ -1,79 +1,93 @@
-// components/shelters/ShelterCard.tsx
-// Componente para mostrar un albergue individual
+// modules/shelters/ShelterForm/ShelterCard.tsx
+// Tarjeta de un refugio en el listado global del superadministrador.
 
-import Link from 'next/link';
-import {Building2, MapPin, Phone, Mail, Users, Cat, InfoIcon, Edit, Coins, Image} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ShelterListItem } from '@/modules/shelters/types';
+import Link from "next/link";
+import { Building2, MapPin, Pencil, Power, PowerOff } from "lucide-react";
 
-interface ShelterCardProps {
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+} from "@/components/ui/card";
+import type { ShelterListItem } from "@/modules/shelters/types";
+
+type ShelterCardProps = {
     shelter: ShelterListItem;
-}
-
-const logo = "/images/logo.png";
-
+};
 
 export function ShelterCard({ shelter }: ShelterCardProps) {
     return (
-        <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-start justify-between ">
-                <div >
-                    <div className="w-15 h-15 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#43AE6D" }}>
-                        <img src={logo} alt="Logo" />
+        <Card className="flex h-full flex-col transition-shadow hover:shadow-lg">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Building2 aria-hidden="true" className="size-5" />
                     </div>
-                    <div className="space-y-1">
-                        <Link href={`/refugios/${shelter.id}`}>
-                            <h3 className="font-semibold text-lg hover:text-primary transition-colors line-clamp-1">
+                    <div className="min-w-0 space-y-1">
+                        <Link
+                            href={`/refugios/${shelter.id}`}
+                            className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                            <h3 className="line-clamp-1 font-semibold text-lg transition-colors hover:text-primary">
                                 {shelter.nombre_albergue}
                             </h3>
                         </Link>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 mr-1" />
+                        <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin aria-hidden="true" className="size-4" />
                             <span>
                                 {shelter.ciudad}, {shelter.estado}
                             </span>
-                        </div>
+                        </p>
                     </div>
                 </div>
-                <Badge variant={shelter.activo ? 'default' : 'secondary'}>
-                    {shelter.activo ? 'Activo' : 'Inactivo'}
+                <Badge variant={shelter.activo ? "default" : "secondary"}>
+                    {shelter.activo ? "Activo" : "Inactivo"}
                 </Badge>
             </CardHeader>
-            <CardFooter>
-                <div className="flex flex-wrap gap-2">
+
+            <CardContent className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                    {shelter.activo
+                        ? "El refugio puede operar y su personal puede iniciar sesión."
+                        : "El refugio está inactivo: su personal no puede iniciar sesión."}
+                </p>
+            </CardContent>
+
+            <CardFooter className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm">
+                    <Link href={`/refugios/${shelter.id}`}>Ver detalle</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
                     <Link href={`/refugios/${shelter.id}/edit`}>
-                        <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                            Editar
-                        </Button>
+                        <Pencil aria-hidden="true" />
+                        Editar
                     </Link>
-                    <Link href="/animales">
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <Cat className="h-4 w-4" />
-                            Animales
-                        </Button>
+                </Button>
+                <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className={shelter.activo ? "text-destructive" : undefined}
+                >
+                    <Link
+                        href={`/refugios?confirmar=${shelter.id}`}
+                        aria-label={
+                            shelter.activo
+                                ? `Desactivar ${shelter.nombre_albergue}`
+                                : `Activar ${shelter.nombre_albergue}`
+                        }
+                    >
+                        {shelter.activo ? (
+                            <PowerOff aria-hidden="true" />
+                        ) : (
+                            <Power aria-hidden="true" />
+                        )}
+                        {shelter.activo ? "Desactivar" : "Activar"}
                     </Link>
-                    <Link href="/animales">
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <Building2 className="h-4 w-4" />
-                            Espacios
-                        </Button>
-                    </Link>
-                    <Link href="/animales">
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <Coins className="h-4 w-4" />
-                            Donaciones
-                        </Button>
-                    </Link>
-                    <Link href="/animales">
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <Users className="h-4 w-4" />
-                            Personal
-                        </Button>
-                    </Link>
-                </div>
+                </Button>
             </CardFooter>
         </Card>
     );

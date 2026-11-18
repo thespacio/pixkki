@@ -27,6 +27,8 @@ type ConfirmDialogProps = {
     cancelLabel?: string;
     pending?: boolean;
     variant?: "default" | "destructive";
+    /** Mensaje en español para mostrar dentro del diálogo si la acción falla. */
+    error?: string;
 };
 
 function ConfirmDialog({
@@ -39,6 +41,7 @@ function ConfirmDialog({
     cancelLabel = "Cancelar",
     pending = false,
     variant = "destructive",
+    error,
 }: ConfirmDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -47,6 +50,14 @@ function ConfirmDialog({
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
+                {error ? (
+                    <p
+                        role="alert"
+                        className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                        {error}
+                    </p>
+                ) : null}
                 <DialogFooter>
                     <Button
                         type="button"

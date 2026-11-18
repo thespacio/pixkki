@@ -7,7 +7,7 @@ import {
     UpdateShelterSchema,
     ShelterFiltersSchema, ShelterFormSchema
 } from './schemas';
-import {DefaultValues, FieldValues, SubmitHandler, UseFormReturn} from "react-hook-form";
+import {UseFormReturn} from "react-hook-form";
 
 // ===== ENTIDADES DEL DOMINIO =====
 // Usamos z.infer para mantener consistencia con los schemas
@@ -71,6 +71,8 @@ export interface ShelterFormProps {
     onSubmit: (data: ShelterFormValues) => Promise<void>;
     mode: "create" | "edit";
     isLoading?: boolean;
+    /** Si se define, el botón "Cancelar" lo usa en vez de `router.back()`. */
+    onCancel?: () => void;
 }
 
 export interface EditShelterFormProps {

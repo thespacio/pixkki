@@ -54,11 +54,10 @@ const nextConfig = {
         destination: '/espacios/:path*',
         permanent: true,
       },
-      // Refugios. El alta conserva una página temporal hasta F4.0, que la
-      // convierte en el overlay `/refugios?nuevo=1`.
+      // Refugios. El alta vive en el overlay `/refugios?nuevo=1`.
       {
         source: '/shelters/new',
-        destination: '/refugios/nuevo',
+        destination: '/refugios?nuevo=1',
         permanent: true,
       },
       {
