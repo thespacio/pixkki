@@ -24,8 +24,8 @@ import type { NavSection } from "./navigation.types";
  * - El permiso es un string del catálogo RBAC; si no está sembrado, el ítem no
  *   se muestra (fail-closed).
  *
- * Las rutas siguen en inglés hasta la fase F2 (renombrado a español con
- * redirects 308). Al mover una página se actualiza solo este archivo.
+ * Las rutas son canónicas en español (fase F2). Las rutas inglesas legadas se
+ * mantienen como redirects 308 temporales en `next.config.js`.
  */
 export const navigationSections: readonly NavSection[] = [
     {
@@ -43,21 +43,21 @@ export const navigationSections: readonly NavSection[] = [
             {
                 id: "animals",
                 label: "Animales",
-                href: "/animals",
+                href: "/animales",
                 icon: PawPrint,
                 permission: "animals.view",
             },
             {
                 id: "adoptions",
                 label: "Adopciones",
-                href: "/adoptions",
+                href: "/adopciones",
                 icon: Heart,
                 permission: "adoptions.view",
             },
             {
                 id: "spaces",
                 label: "Espacios",
-                href: "/spaces",
+                href: "/espacios",
                 icon: Boxes,
                 permission: "spaces.view",
             },
@@ -77,14 +77,14 @@ export const navigationSections: readonly NavSection[] = [
             {
                 id: "shelters",
                 label: "Refugios",
-                href: "/shelters",
+                href: "/refugios",
                 icon: Building2,
                 superadminOnly: true,
             },
             {
                 id: "settings",
                 label: "Configuración",
-                href: "/settings/security",
+                href: "/configuracion/seguridad",
                 icon: Settings,
             },
         ],

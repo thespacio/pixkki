@@ -127,7 +127,7 @@ export function AnimalDetailPanel({ animal, canEdit, canDelete, canDiagnose, onC
                 />
                 <AnimalDiagnosisPanel idAnimal={animal.idAnimal} canDiagnose={canDiagnose} onSaved={() => setClinicalRecordVersion((v) => v + 1)} />
                 <div className="mt-6">
-                    <Link href={`/animals/${animal.idAnimal}/clinical-record`} className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition">
+                    <Link href={`/animales/${animal.idAnimal}/ficha-clinica`} className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition">
                         <FileHeart size={15} aria-hidden="true" />Ver ficha clínica completa
                     </Link>
                 </div>

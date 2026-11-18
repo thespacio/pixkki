@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/modules/auth';
 import { isAdmin, isSuperadmin } from '@/modules/auth/authorization';
 import {getSpacesByShelterAction} from "@/modules/spaces/actions";
-import SpaceClient from "@/app/(protected)/(dashboard)/spaces/SpaceClient";
+import SpaceClient from "@/app/(protected)/(dashboard)/espacios/SpaceClient";
 
 export default async function NewShelterPage() {
     const user = await getCurrentUser();

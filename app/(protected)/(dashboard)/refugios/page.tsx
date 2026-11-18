@@ -53,7 +53,7 @@ export default async function SheltersPage({ searchParams }: PageProps) {
                         Gestiona los albergues registrados en el sistema
                     </p>
                 </div>
-                <Link href="/shelters/new">
+                <Link href="/refugios/nuevo">
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
                         Nuevo Albergue

@@ -21,7 +21,7 @@ import type { AnimalImage } from "../repositories/animal-multimedia.repository";
 import type { AnimalDiagnosis } from "../repositories/animal-diagnosis.repository";
 import type { ClinicalRecord } from "../services/clinical-record.service";
 
-const ANIMALS_PATH = "/animals";
+const ANIMALS_PATH = "/animales";
 
 function ensureCan(
     permissions: string[],

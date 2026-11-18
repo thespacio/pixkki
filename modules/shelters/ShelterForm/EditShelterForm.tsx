@@ -17,7 +17,7 @@ export function EditShelterForm({ shelter, id}: EditShelterFormProps) {
         try {
             const result = await updateShelterAction(id, data);
             if (result.success) {
-                router.push(`/shelters/${id}`);
+                router.push(`/refugios/${id}`);
                 router.refresh();
             } else {
                 form.setError('root', {

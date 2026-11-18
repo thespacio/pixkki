@@ -39,7 +39,7 @@ import type {
 } from "../repositories/animal-quarantine.repository";
 import type { AnimalSanitaryEvent } from "../repositories/animal-sanitary-event.repository";
 
-const ANIMALS_PATH = "/animals";
+const ANIMALS_PATH = "/animales";
 
 function ensureCan(
     permissions: string[],
@@ -60,7 +60,7 @@ function parseId(value: number, field: string): number {
 
 function revalidateClinicalPaths(idAnimal: number): void {
     revalidatePath(ANIMALS_PATH);
-    revalidatePath(`/animals/${idAnimal}/clinical-record`);
+    revalidatePath(`/animales/${idAnimal}/ficha-clinica`);
 }
 
 /** Historial de chequeos médicos del paciente (solo lectura). */

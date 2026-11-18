@@ -40,7 +40,7 @@ export default async function AnimalClinicalRecordPage({ params }: PageProps) {
     return (
         <div className="p-8 max-w-4xl mx-auto">
             <div className="mb-6 flex items-center gap-3">
-                <Link href="/animals" className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition">
+                <Link href="/animales" className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition">
                     <ArrowLeft size={16} aria-hidden="true" /> Volver a animales
                 </Link>
             </div>

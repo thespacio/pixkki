@@ -13,7 +13,7 @@ import {CreateShelterWithAdminInput, ShelterQueryParams, UpdateShelterInput} fro
 
 /**
  * Obtiene un refugio por su ID
- * Ruta: /shelters/[id]
+ * Ruta: /refugios/[id]
  */
 export async function getShelterDetailsByIdAction(id: number) {
     const authContext = await getCurrentUser();
@@ -28,7 +28,7 @@ export async function getShelterDetailsByIdAction(id: number) {
 
 /**
  * Obtiene la lista de refugios con filtros
- * Ruta: /shelters
+ * Ruta: /refugios
  */
 export async function getSheltersAction(filters: ShelterQueryParams) {
     const authContext = await getCurrentUser();
@@ -47,7 +47,7 @@ export async function getSheltersAction(filters: ShelterQueryParams) {
 
 /**
  * Crea un nuevo refugio
- * Ruta: /shelters/new
+ * Ruta: /refugios/nuevo
  */
 
 export async function createShelterAction(
@@ -64,7 +64,7 @@ export async function createShelterAction(
 
 /**
  * Actualiza un refugio existente
- * Ruta: /shelters/[id]/edit
+ * Ruta: /refugios/[id]/edit
  */
 export async function updateShelterAction(id: number, updates: UpdateShelterInput) {
     const authContext = await getCurrentUser();
@@ -73,9 +73,9 @@ export async function updateShelterAction(id: number, updates: UpdateShelterInpu
     const result = await service.update(id, updates, authContext);
 
     // Revalidar las rutas afectadas
-    revalidatePath(`/shelters/${id}`);
-    revalidatePath('/shelters');
-    revalidatePath('/shelters/manage');
+    revalidatePath(`/refugios/${id}`);
+    revalidatePath('/refugios');
+    revalidatePath('/refugios/manage');
 
     return {
         success: true,
@@ -87,7 +87,7 @@ export async function updateShelterAction(id: number, updates: UpdateShelterInpu
 
 /**
  * Activa o desactiva un refugio (F-SHELTER-03 / RF0.2)
- * Ruta: /shelters/manage (Switch de estado)
+ * Ruta: /refugios/manage (Switch de estado)
  * Solo el superadmin puede operarlo (la autorización se valida en el service).
  */
 export async function toggleShelterStatusAction(id: number, activo: boolean) {
@@ -98,9 +98,9 @@ export async function toggleShelterStatusAction(id: number, activo: boolean) {
         const shelter = await service.updateStatus(id, activo, authContext);
 
         // Revalidar las rutas afectadas
-        revalidatePath(`/shelters/${id}`);
-        revalidatePath('/shelters');
-        revalidatePath('/shelters/manage');
+        revalidatePath(`/refugios/${id}`);
+        revalidatePath('/refugios');
+        revalidatePath('/refugios/manage');
 
         return {
             success: true,
@@ -125,7 +125,7 @@ export async function toggleShelterStatusAction(id: number, activo: boolean) {
 
 /!**
  * Elimina (desactiva) un refugio
- * Ruta: /shelters/manage
+ * Ruta: /refugios/manage
  *!/
 export async function deactivateShelterAction(id: number) {
     const authContext = await getCurrentUser();
@@ -135,9 +135,9 @@ export async function deactivateShelterAction(id: number) {
     const result = await service.update(id, { activo: false }, authContext);
 
     // Revalidar rutas
-    revalidatePath(`/shelters/${id}`);
-    revalidatePath('/shelters');
-    revalidatePath('/shelters/manage');
+    revalidatePath(`/refugios/${id}`);
+    revalidatePath('/refugios');
+    revalidatePath('/refugios/manage');
 
     return {
         success: true,
@@ -148,7 +148,7 @@ export async function deactivateShelterAction(id: number) {
 
 /!**
  * Reactiva un refugio
- * Ruta: /shelters/manage
+ * Ruta: /refugios/manage
  *!/
 export async function activateShelterAction(id: number) {
     const authContext = await getCurrentUser();
@@ -158,9 +158,9 @@ export async function activateShelterAction(id: number) {
     const result = await service.update(id, { activo: true }, authContext);
 
     // Revalidar rutas
-    revalidatePath(`/shelters/${id}`);
-    revalidatePath('/shelters');
-    revalidatePath('/shelters/manage');
+    revalidatePath(`/refugios/${id}`);
+    revalidatePath('/refugios');
+    revalidatePath('/refugios/manage');
 
     return {
         success: true,
@@ -171,7 +171,7 @@ export async function activateShelterAction(id: number) {
 
 /!**
  * Obtiene estadísticas de refugios (para dashboard)
- * Ruta: /shelters/info
+ * Ruta: /refugios/info
  *!/
 export async function getSheltersStatsAction(id: number) {
     const authContext = await getCurrentUser();

@@ -6,7 +6,7 @@ import type { Factor } from "@supabase/supabase-js";
 import { listFactors } from "@/modules/auth/mfa/client";
 
 import EnableMfaCard from "./EnableMfaCard";
-import { DisableMfaDialog } from "@/app/(protected)/(dashboard)/settings/security/DisableMfaDialog";
+import { DisableMfaDialog } from "@/app/(protected)/(dashboard)/configuracion/seguridad/DisableMfaDialog";
 
 export default function SecurityPage() {
     // ✅ Tipo real en lugar de `any`

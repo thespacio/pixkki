@@ -24,7 +24,7 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
                         <img src={logo} alt="Logo" />
                     </div>
                     <div className="space-y-1">
-                        <Link href={`/shelters/${shelter.id}`}>
+                        <Link href={`/refugios/${shelter.id}`}>
                             <h3 className="font-semibold text-lg hover:text-primary transition-colors line-clamp-1">
                                 {shelter.nombre_albergue}
                             </h3>
@@ -43,31 +43,31 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
             </CardHeader>
             <CardFooter>
                 <div className="flex flex-wrap gap-2">
-                    <Link href={`/shelters/${shelter.id}/edit`}>
+                    <Link href={`/refugios/${shelter.id}/edit`}>
                         <Button variant="outline" size="sm">
                             <Edit className="h-4 w-4" />
                             Editar
                         </Button>
                     </Link>
-                    <Link href={`/shelters/${shelter.id}/animals`}>
+                    <Link href="/animales">
                         <Button variant="outline" size="sm" className="gap-1">
                             <Cat className="h-4 w-4" />
                             Animales
                         </Button>
                     </Link>
-                    <Link href={`/shelters/${shelter.id}/animals`}>
+                    <Link href="/animales">
                         <Button variant="outline" size="sm" className="gap-1">
                             <Building2 className="h-4 w-4" />
                             Espacios
                         </Button>
                     </Link>
-                    <Link href={`/shelters/${shelter.id}/animals`}>
+                    <Link href="/animales">
                         <Button variant="outline" size="sm" className="gap-1">
                             <Coins className="h-4 w-4" />
                             Donaciones
                         </Button>
                     </Link>
-                    <Link href={`/shelters/${shelter.id}/animals`}>
+                    <Link href="/animales">
                         <Button variant="outline" size="sm" className="gap-1">
                             <Users className="h-4 w-4" />
                             Personal

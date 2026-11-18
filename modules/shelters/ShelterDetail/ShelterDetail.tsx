@@ -32,7 +32,7 @@ export function ShelterDetail({ shelter, canEdit = false }: ShelterDetailProps) 
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push("/shelters")}
+                            onClick={() => router.push("/refugios")}
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Volver
@@ -40,7 +40,7 @@ export function ShelterDetail({ shelter, canEdit = false }: ShelterDetailProps) 
                         {canEdit && (
                             <Button
                                 size="sm"
-                                onClick={() => router.push(`/shelters/${shelter.id}/edit`)}
+                                onClick={() => router.push(`/refugios/${shelter.id}/edit`)}
                             >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar

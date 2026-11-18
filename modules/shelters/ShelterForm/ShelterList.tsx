@@ -76,7 +76,7 @@ export async function ShelterList({ filters }: ShelterListProps) {
                 description="Comienza creando tu primer albergue para comenzar a gestionar animales."
                 action={{
                     label: "Crear albergue",
-                    href: "/shelters/new"
+                    href: "/refugios/nuevo"
                 }}
             />
         );

@@ -98,7 +98,7 @@ export function AppTopbar({
                         </p>
                     </div>
                     <Link
-                        href="/settings/security"
+                        href="/configuracion/seguridad"
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                         <Shield className="size-4" aria-hidden="true" />

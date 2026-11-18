@@ -51,7 +51,7 @@ export function ShelterFilters() {
             estado: '',
             activo: '',
         });
-        router.push('/shelters');
+        router.push('/refugios');
     };
     const hasActiveFilters = () => {
         return filters.search !== '' ||

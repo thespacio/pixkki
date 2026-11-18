@@ -16,7 +16,7 @@ import {
     type AnimalActionResult,
 } from "./animal-action-result";
 
-const ANIMALS_PATH = "/animals";
+const ANIMALS_PATH = "/animales";
 
 function ensureCan(
     permissions: string[],

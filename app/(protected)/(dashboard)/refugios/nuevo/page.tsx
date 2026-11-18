@@ -28,7 +28,7 @@ export default function NewShelterPage() {
             });
 
             if (result) {
-                router.push("/shelters");
+                router.push("/refugios");
             } else {
                 form.setError("root", {
                     message: "Error al crear el refugio",

@@ -49,8 +49,8 @@ export async function createSpaceAction(dto: CreateSpaceInput) {
             shelterId,
         });
 
-        /*revalidatePath(`/shelters/${shelterId}/spaces`);
-        revalidatePath(`/shelters/${shelterId}`);*/
+        /*revalidatePath(`/espacios`);
+        revalidatePath(`/refugios/${shelterId}`);*/
 
         return {
             success: true,
@@ -150,9 +150,8 @@ export async function updateSpaceAction(id: number, dto: UpdateSpaceInput) {
         const result = await service.updateSpace(id, dto, scope);
 
         // Revalidar rutas relacionadas
-        revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
-        revalidatePath(`/shelters/${currentSpace.shelterId}`);
-        revalidatePath(`/spaces/${id}`);
+        revalidatePath(`/espacios`);
+        revalidatePath(`/refugios/${currentSpace.shelterId}`);
 
         return { success: true, data: result };
     } catch (error) {
@@ -183,8 +182,8 @@ export async function deleteSpaceAction(id: number) {
         await service.deleteSpace(id, scope);
 
         // Revalidar rutas relacionadas
-        revalidatePath(`/shelters/${currentSpace.shelterId}/spaces`);
-        revalidatePath(`/shelters/${currentSpace.shelterId}`);
+        revalidatePath(`/espacios`);
+        revalidatePath(`/refugios/${currentSpace.shelterId}`);
 
         return { success: true };
     } catch (error) {
@@ -238,5 +237,5 @@ export async function getAvailableSpacesAction(shelterId: number) {
  * Redirige al listado de espacios de un refugio después de una acción exitosa
  */
 export async function redirectToShelterSpacesAction(shelterId: number) {
-    redirect(`/shelters/${shelterId}/spaces`);
+    redirect(`/refugios/${shelterId}`);
 }

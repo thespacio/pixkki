@@ -51,6 +51,9 @@ export async function middleware(request: NextRequest) {
         // Documentos legales públicos (US27): no requieren sesión.
         "/terminos",
         "/terminos-condiciones",
+        "/aviso-privacidad",
+        // Catálogo público del portal de adopciones (Épica 5).
+        "/api/v1/publico",
         // API v1: endpoints públicos de auth (RF0.5)
         "/api/v1/auth/login",
         "/api/v1/auth/recover-password",

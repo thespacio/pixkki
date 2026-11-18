@@ -183,6 +183,14 @@ Ningún ítem de esta tabla se ejecuta sin aprobación humana. Los marcados **DB
 - [ ] Las rutas públicas cargan sin sesión.
 - [ ] `build` en verde.
 
+**Estado de implementación (F2)**
+
+- Se renombraron las rutas y se añadieron los 308 en `next.config.js`.
+- `/shelters/new` redirige temporalmente a `/refugios/nuevo`; F4.0 lo convierte en el overlay `/refugios?nuevo=1`.
+- `/staff/add` conserva su página hasta F4.0 (sin redirect, para no romper el alta).
+- La allowlist pública de `/adopciones` y `/refugios` se difiere a F4.5: esas URLs sirven hoy las vistas privadas y D-05.1 exige resolver el shell por sesión. Sí se añadieron `/aviso-privacidad` y `/api/v1/publico/*`.
+- Los tests e2e que aún usan rutas inglesas quedan a cargo del responsable de testing.
+
 ---
 
 ### F3 — Primitivas compartidas y estados

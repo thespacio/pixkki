@@ -102,7 +102,7 @@ Este mapa define la estructura objetivo, la convención de rutas, la matriz de p
 | `/spaces` | `/espacios` | Anexo 00 / Épica 3 |
 | `/shelters` | `/refugios` | Épica 0 (superadmin) |
 | `/shelters/[id]` | `/refugios/[id]` | Épica 0 |
-| `/shelters/new` | `/refugios?nuevo=1` | P-01: overlay, no página |
+| `/shelters/new` | `/refugios/nuevo` (temporal; F4.0 → `/refugios?nuevo=1`) | P-01: overlay, no página |
 | `/staff/add` | `/staff?agregar=1` | P-04: overlay |
 | `/donations` | `/donaciones` | Épica 6 |
 | `/reports` | `/reportes` | Épica 7 |
@@ -110,6 +110,8 @@ Este mapa define la estructura objetivo, la convención de rutas, la matriz de p
 | `/settings/customize` | `/configuracion/apariencia` | Extensión existente |
 
 > **Restricción:** el agente no modifica tests. Si algún test e2e referencia las rutas legadas, el responsable de testing debe actualizarlo antes de retirar el redirect.
+>
+> **Estado de implementación (F2):** los redirects 308 ya existen en `next.config.js`. `/shelters/new` apunta temporalmente a `/refugios/nuevo`; la conversión a overlay (`/refugios?nuevo=1`) queda para F4.0. `/staff/add` conserva su página hasta F4.0 para no romper el alta de personal. La allowlist pública de `/adopciones` y `/refugios` se difiere a F4.5: hoy esas URLs sirven las vistas privadas y la decisión D-05.1 exige resolver el shell por sesión antes de abrirlas sin autenticación.
 
 ---
 
