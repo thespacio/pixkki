@@ -1,10 +1,14 @@
 
+import Link from 'next/link';
+import { Building2 } from 'lucide-react';
+
 import { ShelterClient } from '@/modules/shelters/client';
 import { ShelterCard } from './ShelterCard';
 
 
 import { ShelterFilters as ShelterFiltersType, ShelterListItem} from '@/modules/shelters/types';
 import {Button} from "@/components/ui/button";
+import {EmptyState} from "@/components/ui/empty-state";
 import {getCurrentUser} from "@/modules/auth";
 import {createShelterService} from "@/modules/shelters/factories";
 import {Pagination, PaginationContent, PaginationItem, PaginationLink} from "@/components/ui/pagination";
@@ -20,28 +24,6 @@ interface ShelterListProps {
         offset: number;
         page: number;
     };
-}
-
-function EmptyState({
-                        title,
-                        description,
-                        action
-                    }: {
-    title: string;
-    description: string;
-    action?: { label: string; href: string; };
-}) {
-    return (
-        <div className="text-center py-12">
-            <h3 className="text-lg font-semibold text-muted-foreground">{title}</h3>
-            <p className="text-muted-foreground mt-2">{description}</p>
-            {action && (
-                <Button className="mt-4" asChild>
-                    <a href={action.href}>{action.label}</a>
-                </Button>
-            )}
-        </div>
-    );
 }
 
 export async function ShelterList({ filters }: ShelterListProps) {
@@ -72,12 +54,14 @@ export async function ShelterList({ filters }: ShelterListProps) {
     if (!result.data || result.data.length === 0) {
         return (
             <EmptyState
-                title="No hay albergues registrados"
-                description="Comienza creando tu primer albergue para comenzar a gestionar animales."
-                action={{
-                    label: "Crear albergue",
-                    href: "/refugios/nuevo"
-                }}
+                icon={Building2}
+                title="No hay refugios registrados"
+                description="Crea tu primer refugio para empezar a gestionar animales, espacios y personal."
+                action={
+                    <Button asChild size="lg">
+                        <Link href="/refugios/nuevo">Crear refugio</Link>
+                    </Button>
+                }
             />
         );
     }

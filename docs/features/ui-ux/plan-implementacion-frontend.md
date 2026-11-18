@@ -19,7 +19,7 @@ Resultado esperado al cerrar F1–F3: una persona autenticada puede navegar todo
 | **F0** | Prerrequisitos y decisiones | F1–F6 | ✅ Hecho (decisiones + anexos 03–08) |
 | **F1** | Shell y navegación | F3, F5 | ✅ Hecho |
 | **F2** | Rutas canónicas y redirects | F3, F4 | Requiere aprobación |
-| **F3** | Primitivas compartidas y estados | F4, F5 | Requiere aprobación |
+| **F3** | Primitivas compartidas y estados | F4, F5 | 🟡 Implementado — pendiente de aprobación |
 | **F4** | Vistas por épica (00 → 08) | F5 | Parcialmente bloqueada |
 | **F5** | Móvil y accesibilidad | F6 | Requiere aprobación |
 | **F6** | Verificación y entrega | — | Requiere aprobación |
@@ -224,6 +224,16 @@ Ningún ítem de esta tabla se ejecuta sin aprobación humana. Los marcados **DB
 - [ ] Toda ancla tiene `loading.tsx`, `error.tsx` y estado vacío.
 - [ ] Los componentes no contienen lógica de negocio ni acceso a datos.
 - [ ] `typecheck` y `lint` en verde.
+
+**Estado de implementación (F3)**
+
+- Primitivas creadas en `components/ui/`: `empty-state`, `error-state`, `partial-state`, `page-header`, `data-toolbar` y `confirm-dialog`.
+- `modules/shared/result.ts` define el único tipo auxiliar permitido (`Result<T>`, `AGENTS.md` §10) con sus constructores.
+- `loading.tsx` y `error.tsx` creados por ancla: `dashboard`, `animales`, `adopciones`, `espacios`, `refugios`, `donaciones`, `configuracion`, `campaigns` y `events`. `staff` ya contaba con ambos y no se sobrescribió.
+- `loading.tsx` y `error.tsx` globales en `app/(protected)/`; `not-found.tsx` genérico en `app/(protected)/(dashboard)/` para los `notFound()` de detalle.
+- `ShelterList` consume `EmptyState` con CTA a `/refugios/nuevo`; el resto de vistas conserva sus estados locales hasta F4, cuando se migren a las primitivas.
+- El estado "parcial" queda disponible pero sin uso: todavía ningún endpoint devuelve datos incompletos de forma verificable.
+- `typecheck` solo falla en los 3 errores preexistentes de tests; `build` en verde (43 rutas).
 
 ---
 
