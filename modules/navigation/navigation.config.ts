@@ -1,0 +1,122 @@
+import {
+    Boxes,
+    Building2,
+    CalendarDays,
+    Heart,
+    Home,
+    Megaphone,
+    PawPrint,
+    Settings,
+    Users,
+} from "lucide-react";
+
+import type { NavSection } from "./navigation.types";
+
+/**
+ * Configuración canónica de la navegación autenticada.
+ *
+ * Reglas:
+ * - Solo se declaran rutas que existen. Una ruta sin página es UI muerta.
+ *   Las anclas de Inventario, Donaciones y Reportes se añadirán cuando sus
+ *   páginas existan (fases F4.6 y F4.7).
+ * - Un ancla = una entrada. Las subvistas se resuelven como pestañas dentro de
+ *   la página, no como nuevos ítems del sidebar.
+ * - El permiso es un string del catálogo RBAC; si no está sembrado, el ítem no
+ *   se muestra (fail-closed).
+ *
+ * Las rutas siguen en inglés hasta la fase F2 (renombrado a español con
+ * redirects 308). Al mover una página se actualiza solo este archivo.
+ */
+export const navigationSections: readonly NavSection[] = [
+    {
+        id: "operacion",
+        label: "Operación",
+        items: [
+            {
+                id: "panel",
+                label: "Panel",
+                href: "/dashboard",
+                icon: Home,
+                // El panel es la pantalla de aterrizaje: basta con tener sesión.
+                // No depende de `reports.view`, que aún no está sembrado.
+            },
+            {
+                id: "animals",
+                label: "Animales",
+                href: "/animals",
+                icon: PawPrint,
+                permission: "animals.view",
+            },
+            {
+                id: "adoptions",
+                label: "Adopciones",
+                href: "/adoptions",
+                icon: Heart,
+                permission: "adoptions.view",
+            },
+            {
+                id: "spaces",
+                label: "Espacios",
+                href: "/spaces",
+                icon: Boxes,
+                permission: "spaces.view",
+            },
+        ],
+    },
+    {
+        id: "administracion",
+        label: "Administración",
+        items: [
+            {
+                id: "staff",
+                label: "Personal",
+                href: "/staff",
+                icon: Users,
+                permission: "users.view",
+            },
+            {
+                id: "shelters",
+                label: "Refugios",
+                href: "/shelters",
+                icon: Building2,
+                superadminOnly: true,
+            },
+            {
+                id: "settings",
+                label: "Configuración",
+                href: "/settings/security",
+                icon: Settings,
+            },
+        ],
+    },
+    {
+        id: "extension",
+        label: "Extensión",
+        items: [
+            {
+                id: "campaigns",
+                label: "Campañas",
+                href: "/campaigns",
+                icon: Megaphone,
+                permission: "campaigns.view",
+            },
+            {
+                id: "events",
+                label: "Eventos",
+                href: "/events",
+                icon: CalendarDays,
+                permission: "events.view",
+            },
+        ],
+    },
+];
+
+export const navigationItems = navigationSections.flatMap((section) => section.items);
+
+/** Anclas que ocupan la barra inferior móvil, en orden. */
+export const mobilePrimaryNavIds: readonly string[] = [
+    "panel",
+    "animals",
+    "adoptions",
+    "spaces",
+];
