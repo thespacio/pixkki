@@ -470,7 +470,9 @@ Leyenda: ✅ implementado · ◐ parcial · ✗ inexistente.
 
 ---
 
-## 9. Preguntas abiertas (requieren decisión antes de implementar)
+## 9. Decisiones resueltas
+
+> Aprobadas por el responsable del proyecto antes de iniciar F1. D-03 se resolvió manteniendo `/staff`.
 
 | ID | Pregunta | Recomendación |
 | :--- | :--- | :--- |

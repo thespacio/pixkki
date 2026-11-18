@@ -16,8 +16,8 @@ Resultado esperado al cerrar F1–F3: una persona autenticada puede navegar todo
 
 | Fase | Nombre | Bloquea a | Estado |
 | :--- | :--- | :--- | :--- |
-| **F0** | Prerrequisitos y decisiones | F1–F6 | Requiere aprobación |
-| **F1** | Shell y navegación | F3, F5 | Requiere aprobación |
+| **F0** | Prerrequisitos y decisiones | F1–F6 | ✅ Hecho (decisiones + anexos 03–08) |
+| **F1** | Shell y navegación | F3, F5 | ✅ Hecho |
 | **F2** | Rutas canónicas y redirects | F3, F4 | Requiere aprobación |
 | **F3** | Primitivas compartidas y estados | F4, F5 | Requiere aprobación |
 | **F4** | Vistas por épica (00 → 08) | F5 | Parcialmente bloqueada |
