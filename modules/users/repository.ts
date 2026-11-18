@@ -49,6 +49,28 @@ export class UserRepository {
     }
 
     /**
+     * Busca un usuario por ID sin filtro de refugio.
+     * Uso exclusivo del superadmin (alcance global, RF00 regla 1).
+     */
+    async findByIdGlobal(id: number): Promise<User | null> {
+        const { data, error } = await this.supabase
+            .from('usuario')
+            .select('*')
+            .eq('id_usuario', id)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return null;
+            throw new UserRepositoryError(
+                `Error al buscar usuario: ${error.message}`,
+                error.code,
+            );
+        }
+
+        return data ? mapUserRowToDomain(data) : null;
+    }
+
+    /**
      * Busca un usuario por su auth_user_id
      */
     async findByAuthUserId(authUserId: string): Promise<User | null> {

@@ -12,4 +12,8 @@ export class InventoryService implements InventoryPort {
     ): Promise<InventoryLot[]> {
         return this.repository.listAvailableLots(idRefugio, tipoInsumo);
     }
+
+    async listSurgicalLots(idRefugio: number | null): Promise<InventoryLot[]> {
+        return this.repository.listAvailableLots(idRefugio, "insumo_quirurgico");
+    }
 }

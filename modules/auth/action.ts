@@ -161,3 +161,30 @@ export async function resetPasswordAction(password: string) {
         };
     }
 }
+
+/**
+ * Resuelve las flags de compuerta post-login del usuario autenticado
+ * (RF0.5, RF0.7, RF0.9). Se invoca desde el cliente tras un login exitoso
+ * para decidir el siguiente paso de la compuerta: cambio de contraseña,
+ * aceptación de términos, onboarding o panel.
+ */
+export async function getAuthFlagsAction() {
+    try {
+        const user = await getCurrentUser();
+        return {
+            success: true,
+            data: {
+                requiresPasswordChange: user.requiresPasswordChange,
+                requiresOnboarding: user.requiresOnboarding,
+                termsAccepted: user.termsAccepted,
+                shelterId: user.shelterId,
+                role: user.role,
+            },
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: "No se pudo obtener la sesión del usuario.",
+        };
+    }
+}

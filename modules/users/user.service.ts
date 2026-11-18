@@ -2,7 +2,7 @@
 
 import {UserRepository} from './repository';
 import {AuthAdminRepository} from '@/modules/auth/admin-repository';
-import {User, UserQueryParams, GlobalUserItem, ROLE_NAME_TO_ID} from './types';
+import {User, UserQueryParams, GlobalUserItem, ROLE_NAME_TO_ID, StaffListItem} from './types';
 import {UserNotFoundError, EmailAlreadyInUseError} from './errors';
 import {CreateStaffSchema, StaffRole} from './schemas';
 import {CreateStaffDTO} from './dtos';
@@ -91,10 +91,15 @@ export class UserService {
     }
 
     /**
-     * Obtiene el personal de un refugio.
+     * Obtiene el personal de un refugio. Con `shelterId = null` (superadmin)
+     * devuelve el personal de todos los refugios con el nombre del refugio.
      */
-    async listStaff(shelterId: number): Promise<User[]> {
+    async listStaff(shelterId: number | null): Promise<StaffListItem[]> {
         try {
+            if (shelterId === null) {
+                const result = await this.userRepository.findAllGlobal({ limit: 100 });
+                return result.data;
+            }
             return await this.userRepository.findByShelter(shelterId);
         } catch (error) {
             throw new UserServiceError(
@@ -130,9 +135,11 @@ export class UserService {
     /**
      * Obtiene un usuario por ID (filtrado por refugio).
      */
-    async getStaffById(id: number, shelterId: number): Promise<User> {
+    async getStaffById(id: number, shelterId: number | null): Promise<User> {
         try {
-            const user = await this.userRepository.findById(id, shelterId);
+            const user = shelterId === null
+                ? await this.userRepository.findByIdGlobal(id)
+                : await this.userRepository.findById(id, shelterId);
             if (!user) {
                 throw new UserNotFoundError(id);
             }
@@ -153,10 +160,13 @@ export class UserService {
 
     /**
      * Actualiza el estado activo de un miembro del personal.
+     * Con `shelterId = null` el superadmin opera con alcance global.
      */
-    async toggleStaffStatus(id: number, shelterId: number, activo: boolean): Promise<User> {
+    async toggleStaffStatus(id: number, shelterId: number | null, activo: boolean): Promise<User> {
         try {
-            const user = await this.userRepository.findById(id, shelterId);
+            const user = shelterId === null
+                ? await this.userRepository.findByIdGlobal(id)
+                : await this.userRepository.findById(id, shelterId);
             if (!user) {
                 throw new UserNotFoundError(id);
             }
@@ -178,9 +188,11 @@ export class UserService {
     /**
      * Elimina un miembro del personal.
      */
-    async deleteStaff(id: number, shelterId: number): Promise<void> {
+    async deleteStaff(id: number, shelterId: number | null): Promise<void> {
         try {
-            const user = await this.userRepository.findById(id, shelterId);
+            const user = shelterId === null
+                ? await this.userRepository.findByIdGlobal(id)
+                : await this.userRepository.findById(id, shelterId);
             if (!user) {
                 throw new UserNotFoundError(id);
             }

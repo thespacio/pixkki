@@ -65,11 +65,11 @@ export default function SecurityPage() {
     }, [load]);
 
     if (loading) {
-        return <>Cargando...</>;
+        return <div className="p-6 md:p-8">Cargando...</div>;
     }
 
     return (
-        <main className="mx-auto max-w-2xl space-y-6">
+        <main className="mx-auto max-w-2xl space-y-6 p-6 md:p-8">
             <h1 className="text-3xl font-semibold">Seguridad</h1>
 
             {error && (

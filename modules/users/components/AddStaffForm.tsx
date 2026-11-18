@@ -42,17 +42,12 @@ export default function AddStaffForm() {
         setErrors({});
 
         startTransition(async () => {
-            try {
-                await createStaffAction(parsed.data);
-                router.push("/dashboard/staff");
-            } catch (error) {
-                setErrors({
-                    email:
-                        error instanceof Error
-                            ? error.message
-                            : "Error al registrar personal",
-                });
+            const result = await createStaffAction(parsed.data);
+            if (!result.success) {
+                setErrors({ email: result.error });
+                return;
             }
+            router.push("/staff");
         });
     };
 

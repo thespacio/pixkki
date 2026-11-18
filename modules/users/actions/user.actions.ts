@@ -1,83 +1,143 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CreateStaffSchema, type CreateStaffInput } from "@/modules/users/schemas";
+import { CreateStaffSchema } from "@/modules/users/schemas";
 import { createUserService } from "@/modules/users/factories/create-user-service";
-import {getCurrentUser} from "@/modules/auth";
-import {ensureCanManageStaff} from "@/modules/users/authorization";
-import {User} from "@/modules/users/types";
+import { getCurrentUser } from "@/modules/auth";
+import { isSuperadmin } from "@/modules/auth/authorization";
+import { ensureCanManageStaff } from "@/modules/users/authorization";
+import {
+    StaffShelterRequiredError,
+    UserAuthorizationError,
+} from "@/modules/users/errors";
+import type { StaffListItem } from "@/modules/users/types";
+import {
+    toUserErrorMessage,
+    type UserActionResult,
+} from "./user-action-result";
 
+/**
+ * Frontera UI → aplicación para la gestión de personal.
+ *
+ * - Valida con Zod antes de cualquier efecto.
+ * - Toma el `shelterId` del contexto autenticado; el cliente nunca lo elige
+ *   salvo que sea superadmin (alcance global, RF00 regla 1).
+ * - Devuelve un resultado tipado en lugar de lanzar excepciones al cliente.
+ */
+export async function createStaffAction(
+    input: unknown,
+): Promise<UserActionResult<{ tempPassword: string; message: string }>> {
+    try {
+        const parsed = CreateStaffSchema.parse(input);
 
-export async function createStaffAction(input: CreateStaffInput) {
-    // 1. Frontera servidor: validación estructural
-    const parsed = CreateStaffSchema.parse(input);
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            throw new UserAuthorizationError("Inicia sesión para continuar.");
+        }
+        ensureCanManageStaff(currentUser);
 
-    // 2. Contexto confiable: shelterId del admin autenticado, NO del cliente
-    const currentUser = await getCurrentUser();
-    if (!currentUser?.shelterId) {
-        throw new Error("No autorizado");
+        const shelterId = isSuperadmin(currentUser)
+            ? parsed.shelterId
+            : currentUser.shelterId;
+        if (!shelterId) {
+            throw new StaffShelterRequiredError();
+        }
+
+        const service = await createUserService();
+        const result = await service.createStaff({ ...parsed, shelterId });
+
+        revalidatePath("/staff");
+        return {
+            success: true,
+            data: { tempPassword: result.tempPassword, message: result.message },
+        };
+    } catch (error) {
+        return { success: false, error: toUserErrorMessage(error) };
     }
-
-    // 3. Autorización: solo admin/superadmin gestiona personal (F-USERS-01)
-    ensureCanManageStaff(currentUser);
-
-    // 4. Delegar al Service
-    const service = await createUserService();
-    const result = await service.createStaff({
-        ...parsed,
-        shelterId: currentUser.shelterId,
-    });
-
-    // 5. Revalidar UI
-    revalidatePath("/dashboard/staff");
-
-    return result;
 }
 
 /**
- * Obtiene el personal del refugio del usuario autenticado (F-USERS-01).
+ * Personal del refugio de la sesión, o de todos los refugios si es superadmin.
  */
-export async function getStaffAction(): Promise<User[]> {
-    const currentUser = await getCurrentUser();
+export async function getStaffAction(): Promise<UserActionResult<StaffListItem[]>> {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            throw new UserAuthorizationError("Inicia sesión para continuar.");
+        }
+        ensureCanManageStaff(currentUser);
 
-    ensureCanManageStaff(currentUser);
+        const shelterId = isSuperadmin(currentUser)
+            ? null
+            : currentUser.shelterId;
+        if (shelterId === null && !isSuperadmin(currentUser)) {
+            throw new UserAuthorizationError(
+                "Tu usuario no está asociado a un refugio.",
+            );
+        }
 
-    if (!currentUser?.shelterId) {
-        throw new Error("El usuario actual no está asociado a un refugio.");
+        const service = await createUserService();
+        return { success: true, data: await service.listStaff(shelterId) };
+    } catch (error) {
+        return { success: false, error: toUserErrorMessage(error) };
     }
-
-    const service = await createUserService();
-    return service.listStaff(currentUser.shelterId);
 }
 
-/**
- * Activa o desactiva un miembro del personal del refugio actual.
- */
-export async function toggleStaffStatusAction(id: number, activo: boolean): Promise<User> {
-    const currentUser = await getCurrentUser();
+/** Activa o desactiva un miembro, con alcance global para el superadmin. */
+export async function toggleStaffStatusAction(
+    id: number,
+    activo: boolean,
+): Promise<UserActionResult<StaffListItem>> {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            throw new UserAuthorizationError("Inicia sesión para continuar.");
+        }
+        ensureCanManageStaff(currentUser);
 
-    ensureCanManageStaff(currentUser);
+        const shelterId = isSuperadmin(currentUser)
+            ? null
+            : currentUser.shelterId;
+        if (shelterId === null && !isSuperadmin(currentUser)) {
+            throw new UserAuthorizationError(
+                "Tu usuario no está asociado a un refugio.",
+            );
+        }
 
-    if (!currentUser?.shelterId) {
-        throw new Error("El usuario actual no está asociado a un refugio.");
+        const service = await createUserService();
+        const user = await service.toggleStaffStatus(id, shelterId, activo);
+
+        revalidatePath("/staff");
+        return { success: true, data: user };
+    } catch (error) {
+        return { success: false, error: toUserErrorMessage(error) };
     }
-
-    const service = await createUserService();
-    return service.toggleStaffStatus(id, currentUser.shelterId, activo);
 }
 
-/**
- * Elimina un miembro del personal del refugio actual.
- */
-export async function deleteStaffAction(id: number): Promise<void> {
-    const currentUser = await getCurrentUser();
+/** Elimina un miembro, con alcance global para el superadmin. */
+export async function deleteStaffAction(id: number): Promise<UserActionResult> {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            throw new UserAuthorizationError("Inicia sesión para continuar.");
+        }
+        ensureCanManageStaff(currentUser);
 
-    ensureCanManageStaff(currentUser);
+        const shelterId = isSuperadmin(currentUser)
+            ? null
+            : currentUser.shelterId;
+        if (shelterId === null && !isSuperadmin(currentUser)) {
+            throw new UserAuthorizationError(
+                "Tu usuario no está asociado a un refugio.",
+            );
+        }
 
-    if (!currentUser?.shelterId) {
-        throw new Error("El usuario actual no está asociado a un refugio.");
+        const service = await createUserService();
+        await service.deleteStaff(id, shelterId);
+
+        revalidatePath("/staff");
+        return { success: true, data: undefined };
+    } catch (error) {
+        return { success: false, error: toUserErrorMessage(error) };
     }
-
-    const service = await createUserService();
-    await service.deleteStaff(id, currentUser.shelterId);
 }

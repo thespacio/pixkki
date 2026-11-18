@@ -2,7 +2,7 @@ import type { AnimalRepository } from "../repositories/animal.repository";
 import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import type { AnimalAccess } from "../access";
-import { AnimalEnCuarentenaError } from "../errors";
+import { GatekeeperAdopcionRequeridoError } from "../errors";
 import {
     Animal,
     AnimalMicrochipDuplicateError,
@@ -66,7 +66,13 @@ export class AnimalService {
 
         // Regla de negocio (RF1.1): todo ingreso nace en cuarentena. El cliente
         // no puede saltarse esta regla enviando enCuarentena = false.
-        return this.repository.create({ ...dto, enCuarentena: true }, idRefugio);
+        //
+        // RF4.2: la publicación en adopción pasa siempre por el gatekeeper
+        // dedicado; ningún alta puede nacer ya publicada.
+        return this.repository.create(
+            { ...dto, enCuarentena: true, disponibleAdopcion: false },
+            idRefugio,
+        );
     }
 
     async update(dto: UpdateAnimalDTO, access: AnimalAccess): Promise<Animal> {
@@ -99,14 +105,16 @@ export class AnimalService {
             throw new AnimalMicrochipDuplicateError();
         }
 
-        // RF2.4: la cuarentena solo se libera mediante alta médica. El contrato
-        // de edición ya no expone `enCuarentena`, así que aquí no hay nada que
-        // ignorar: la ausencia del campo es la garantía de servidor.
-        //
-        // Tampoco se puede ofrecer en adopción a un paciente en cuarentena: la
-        // UI deshabilita el botón, pero un cliente directo debe recibir 409.
-        if (dto.disponibleAdopcion === true && animal.enCuarentena) {
-            throw new AnimalEnCuarentenaError();
+        // RF4.2: `disponible_adopcion` no se edita desde el expediente. La
+        // publicación y despublicación pasan siempre por el endpoint dedicado
+        // (`PUT /animales/{id}/disponibilidad-adopcion`), que evalúa el
+        // gatekeeper con bloqueo de fila. Si el cliente envía el mismo valor
+        // actual no hay cambio y la edición continúa con normalidad.
+        if (
+            dto.disponibleAdopcion !== undefined &&
+            dto.disponibleAdopcion !== animal.disponibleAdopcion
+        ) {
+            throw new GatekeeperAdopcionRequeridoError();
         }
 
         return this.repository.update(dto.id, dto);

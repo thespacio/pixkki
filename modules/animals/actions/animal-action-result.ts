@@ -22,16 +22,25 @@ import {
 import {
     AnimalClinicalForbiddenError,
     AnimalEnCuarentenaError,
+    CapacidadExcedidaError,
     ConflictoConcurrenciaError,
-    FechaRefuerzoInvalidaError,
+    ConflictoOcupacionError,
+    EspacioInactivoError,
+    EspacioNoEncontradoError,
     FalloTransaccionInventarioError,
+    FalloTransaccionTrasladoError,
+    FechaFinInvalidaError,
+    FechaRefuerzoInvalidaError,
     LoteInactivoError,
     LoteNoEncontradoError,
     LoteVencidoError,
+    NivelesInvalidosError,
     QuarantineAlreadyReleasedError,
     RefuerzoRequeridoError,
     StockInsuficienteError,
     TipoEventoInvalidoError,
+    TrasladoMismoEspacioError,
+    TrasladoOrigenDesactualizadoError,
 } from "@/modules/animals/errors";
 
 /**
@@ -69,6 +78,15 @@ const USER_FACING_ERRORS = [
     RefuerzoRequeridoError,
     StockInsuficienteError,
     TipoEventoInvalidoError,
+    CapacidadExcedidaError,
+    ConflictoOcupacionError,
+    EspacioInactivoError,
+    EspacioNoEncontradoError,
+    FalloTransaccionTrasladoError,
+    FechaFinInvalidaError,
+    NivelesInvalidosError,
+    TrasladoMismoEspacioError,
+    TrasladoOrigenDesactualizadoError,
 ];
 
 export function toErrorMessage(error: unknown): string {

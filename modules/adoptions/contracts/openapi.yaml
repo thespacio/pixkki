@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  title: Pixkki API - Adopciones
+  version: 1.0.0
+  description: Perfil público, catálogo, postulaciones y gestión de adopciones (Requerimiento 05).
+
+paths:
+  /api/v1/animales/{id}/perfil-adopcion:
+    get:
+      summary: Consultar perfil de adopción de un animal
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Perfil encontrado }
+        "403": { description: Sin permiso }
+        "404": { description: Animal no encontrado }
+    put:
+      summary: Crear o actualizar perfil y publicar/despublicar
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertPerfilAdopcion"
+      responses:
+        "200": { description: Perfil actualizado }
+        "400": { description: Datos inválidos }
+        "403": { description: Sin permiso }
+        "404": { description: Animal no encontrado }
+        "409": { description: Animal no disponible o perfil sin fotografía }
+
+  /api/v1/publico/adopciones:
+    get:
+      summary: Catálogo público global de adopciones
+      tags: [Adopciones públicas]
+      parameters:
+        - in: query
+          name: refugio
+          schema: { type: string }
+        - in: query
+          name: especie
+          schema: { type: string }
+        - in: query
+          name: sexo
+          schema: { type: string, enum: [M, H] }
+        - in: query
+          name: tamano
+          schema: { type: string }
+        - in: query
+          name: edadMin
+          schema: { type: integer }
+        - in: query
+          name: edadMax
+          schema: { type: integer }
+        - in: query
+          name: temperamento
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: orden
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        "200": { description: Catálogo paginado }
+        "400": { description: Filtros inválidos }
+
+  /api/v1/publico/adopciones/{id}:
+    get:
+      summary: Perfil público de un animal
+      tags: [Adopciones públicas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Perfil público }
+        "404": { description: Perfil no encontrado }
+
+  /api/v1/publico/adopciones/{id}/solicitudes:
+    post:
+      summary: Enviar solicitud pública de adopción
+      tags: [Adopciones públicas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSolicitudPublica"
+      responses:
+        "201": { description: Solicitud recibida }
+        "400": { description: Datos inválidos, privacidad/edad no aceptada o solicitud inválida }
+        "404": { description: Animal no disponible }
+        "409": { description: Solicitud duplicada, límite o animal reservado }
+        "429": { description: Demasiadas solicitudes }
+
+  /api/v1/publico/refugios:
+    get:
+      summary: Refugios con animales adoptables
+      tags: [Adopciones públicas]
+      responses:
+        "200": { description: Listado de refugios }
+
+  /api/v1/publico/refugios/{slug}:
+    get:
+      summary: Página pública de un refugio
+      tags: [Adopciones públicas]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Refugio }
+        "404": { description: Refugio no encontrado }
+
+  /api/v1/publico/refugios/{slug}/adopciones:
+    get:
+      summary: Adoptables de un refugio
+      tags: [Adopciones públicas]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Catálogo del refugio }
+        "404": { description: Refugio no encontrado }
+
+  /api/v1/adopciones/solicitudes:
+    get:
+      summary: Listar solicitudes internas
+      tags: [Adopciones internas]
+      parameters:
+        - in: query
+          name: estado
+          schema: { type: string }
+        - in: query
+          name: id_animal
+          schema: { type: integer }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: desde
+          schema: { type: string }
+        - in: query
+          name: hasta
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20, maximum: 50 }
+      responses:
+        "200": { description: Solicitudes }
+        "403": { description: Sin permiso }
+
+  /api/v1/adopciones/solicitudes/{id}:
+    get:
+      summary: Detalle de una solicitud
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Solicitud }
+        "403": { description: Sin permiso }
+        "404": { description: Solicitud no encontrada }
+
+  /api/v1/adopciones/solicitudes/{id}/estado:
+    patch:
+      summary: Cambiar estado de la solicitud
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeSolicitudEstado"
+      responses:
+        "200": { description: Estado actualizado }
+        "400": { description: Datos o motivo inválido }
+        "403": { description: Sin permiso }
+        "404": { description: Solicitud no encontrada }
+        "409": { description: Transición inválida, evaluación requerida o conflicto }
+
+  /api/v1/adopciones/solicitudes/{id}/evaluaciones:
+    get:
+      summary: Historial de evaluaciones
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Evaluaciones }
+        "403": { description: Sin permiso }
+        "404": { description: Solicitud no encontrada }
+    post:
+      summary: Registrar evaluación
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvaluacion"
+      responses:
+        "201": { description: Evaluación creada }
+        "400": { description: Datos inválidos }
+        "403": { description: Sin permiso }
+        "404": { description: Solicitud no encontrada }
+
+  /api/v1/adopciones/solicitudes/{id}/completar:
+    post:
+      summary: Completar adopción
+      tags: [Adopciones internas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompletarAdopcion"
+      responses:
+        "200": { description: Adopción completada }
+        "400": { description: Fecha inválida o futura }
+        "403": { description: Sin permiso }
+        "404": { description: Solicitud no encontrada }
+        "409": { description: Solicitud no aprobada o adopción ya completada }
+
+components:
+  schemas:
+    UpsertPerfilAdopcion:
+      type: object
+      required: [publicado]
+      properties:
+        descripcion_publica:
+          type: string
+          nullable: true
+          minLength: 50
+          maxLength: 2000
+        publicado:
+          type: boolean
+
+    CreateSolicitudPublica:
+      type: object
+      required:
+        - nombre_completo
+        - telefono
+        - correo
+        - direccion
+        - tiene_otras_mascotas
+        - tiene_ninos
+        - espacio_techado
+        - motivo_adopcion
+        - acepta_politica_privacidad
+        - declara_mayor_edad
+      properties:
+        nombre_completo: { type: string, minLength: 2, maxLength: 150 }
+        telefono: { type: string, minLength: 7, maxLength: 20 }
+        correo: { type: string, format: email, maxLength: 150 }
+        direccion: { type: string, minLength: 5, maxLength: 255 }
+        tiene_otras_mascotas: { type: boolean }
+        tiene_ninos: { type: boolean }
+        espacio_techado: { type: boolean }
+        tiempo_solo_horas: { type: integer, minimum: 0, maximum: 24, nullable: true }
+        experiencia_mascotas: { type: string, maxLength: 1000, nullable: true }
+        motivo_adopcion: { type: string, minLength: 20, maxLength: 1000 }
+        comentarios_generales: { type: string, maxLength: 2000, nullable: true }
+        acepta_politica_privacidad: { type: boolean }
+        declara_mayor_edad: { type: boolean }
+        sitio_web: { type: string, description: Campo trampa antispam; debe ir vacío }
+
+    ChangeSolicitudEstado:
+      type: object
+      required: [estado_solicitud]
+      properties:
+        estado_solicitud:
+          type: string
+          enum: [Recibida, En entrevista, En evaluación, Aprobada, Rechazada, Cancelada, Completada]
+        motivo:
+          type: string
+          nullable: true
+          minLength: 10
+          maxLength: 500
+
+    CreateEvaluacion:
+      type: object
+      required: [tipo_evaluacion, resultado]
+      properties:
+        tipo_evaluacion:
+          type: string
+          enum: [entrevista, visita_hogar, compatibilidad, referencias, otro]
+        resultado:
+          type: string
+          enum: [Pendiente, Aprobado, Rechazado, Con observaciones]
+        puntuacion:
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
+        comentarios:
+          type: string
+          maxLength: 2000
+          nullable: true
+        fecha_evaluacion:
+          type: string
+          format: date-time
+
+    CompletarAdopcion:
+      type: object
+      required: [fecha_adopcion]
+      properties:
+        fecha_adopcion:
+          type: string
+          format: date
+        observaciones:
+          type: string
+          maxLength: 2000
+          nullable: true

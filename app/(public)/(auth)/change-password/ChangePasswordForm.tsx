@@ -4,13 +4,23 @@ import {useState} from "react";
 import {useRouter} from "next/navigation";
 import {AlertCircle, Eye, EyeOff} from "lucide-react";
 
-import {changePasswordAction} from "@/modules/auth/action";
+import {changePasswordAction, getAuthFlagsAction} from "@/modules/auth/action";
 
 /**
  * Cambio obligatorio de contraseña en primer login (F-AUTH-03).
  * El usuario no puede acceder al dashboard hasta completar este formulario.
  */
-export default function ChangePasswordForm() {
+interface ChangePasswordFormProps {
+    requiresPasswordChange?: boolean;
+    requiresOnboarding?: boolean;
+    termsAccepted?: boolean;
+}
+
+export default function ChangePasswordForm({
+    requiresPasswordChange = false,
+    requiresOnboarding = false,
+    termsAccepted = false,
+}: ChangePasswordFormProps = {}) {
     const router = useRouter();
 
     const [password, setPassword] = useState("");
@@ -40,8 +50,19 @@ export default function ChangePasswordForm() {
 
             setMessage(result.message);
 
+            const flags = await getAuthFlagsAction();
+            const next =
+                flags.success && flags.data
+                    ? !flags.data.termsAccepted
+                        ? "/accept-terms"
+                        : flags.data.requiresOnboarding &&
+                          flags.data.shelterId !== null
+                        ? "/onboarding"
+                        : "/dashboard"
+                    : "/dashboard";
+
             setTimeout(() => {
-                router.replace("/dashboard");
+                router.replace(next);
                 router.refresh();
             }, 1000);
         } catch (err) {
@@ -64,6 +85,9 @@ export default function ChangePasswordForm() {
                 <p className="text-sm text-muted-foreground mb-8">
                     Estás iniciando sesión con una contraseña temporal. Crea una
                     contraseña propia para continuar al panel.
+                </p>
+                <p className="text-xs font-semibold text-muted-foreground mb-4">
+                    Paso 1 de 3&nbsp;·&nbsp; Establece tu contraseña
                 </p>
             </div>
 

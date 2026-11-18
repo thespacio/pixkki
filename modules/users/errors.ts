@@ -25,3 +25,11 @@ export class StaffCreationFailedError extends Error {
         this.name = "StaffCreationFailedError";
     }
 }
+
+/** El superadmin debe indicar el refugio donde se crea el miembro. */
+export class StaffShelterRequiredError extends Error {
+    constructor() {
+        super("Selecciona el refugio al que pertenecerá el nuevo miembro.");
+        this.name = "StaffShelterRequiredError";
+    }
+}

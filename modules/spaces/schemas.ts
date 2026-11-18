@@ -1,6 +1,37 @@
 // modules/spaces/validators/space.validators.ts
 import { z } from 'zod';
 
+/**
+ * RF3.1 / regla 1: `espacio.tipo` solo admite valores canónicos. El formulario
+ * legacy envía variantes como `Canil` o `Rehabilitación`; se normalizan antes
+ * de validar para no romper la UI existente, pero cualquier valor fuera del
+ * conjunto canónico se rechaza.
+ */
+export const SPACE_TYPES = [
+    'canil',
+    'gatera',
+    'cuarentena',
+    'rehabilitacion',
+    'otro',
+] as const;
+
+export const SpaceTypeSchema = z
+    .string({
+        error: 'El tipo es requerido',
+    })
+    .transform((value) =>
+        value
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, ''),
+    )
+    .refine(
+        (value) => (SPACE_TYPES as readonly string[]).includes(value),
+        {
+            error: 'El tipo debe ser canil, gatera, cuarentena, rehabilitación u otro',
+        },
+    );
 
 export const SpaceFieldsSchema = z.object({
     name: z.string({
@@ -17,11 +48,7 @@ export const SpaceFieldsSchema = z.object({
     })
         .min(1, 'La capacidad debe ser al menos 1')
         .max(9999, 'La capacidad no puede ser mayor a 9999'),
-    type: z.string({
-        error: 'El tipo es requerido',
-    })
-        .min(1, 'El tipo es requerido')
-        .max(50, 'El tipo no puede tener más de 50 caracteres'),
+    type: SpaceTypeSchema,
     available: z.boolean().optional().default(true),
 });
 export const SpaceSchema = SpaceFieldsSchema.extend({
@@ -49,7 +76,7 @@ export const UpdateSpaceApiSchema = UpdateSpaceSchema.partial();
 export const SpaceFiltersSchema = z.object({
     shelterId: z.number().optional(),
     available: z.boolean().optional(),
-    type: z.string().optional(),
+    type: SpaceTypeSchema.optional(),
     searchTerm: z.string().optional(),
 });
 

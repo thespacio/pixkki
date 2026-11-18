@@ -11,13 +11,16 @@ export interface RoleReference {
     id_rol: number;
 }
 
+/**
+ * Catálogo canónico de roles (RF00): Administrador (1), Veterinario (2) y
+ * Superadmin (3). La base guarda los nombres en español ("Administrador"),
+ * mientras que este tipo usa identificadores lógicos; las funciones de
+ * autorización normalizan ambos antes de comparar.
+ */
 export type UserRole =
-    | "superadmin"
     | "admin"
     | "veterinario"
-    | "operador"
-    | "coordinador"
-    | "evaluador";
+    | "superadmin";
 
 export interface AuthenticatedUser {
     id: number;

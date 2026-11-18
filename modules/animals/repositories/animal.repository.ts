@@ -49,6 +49,9 @@ export class AnimalRepository {
             disponibleAdopcion: row.disponible_adopcion,
             enCuarentena: row.en_cuarentena,
             esterilizado: row.esterilizado,
+            reservadoAdopcion: Boolean((row as any).reservado_adopcion),
+            fechaReserva: ((row as any).fecha_reserva as string | null) ?? null,
+            fechaAdopcion: ((row as any).fecha_adopcion as string | null) ?? null,
             deletedAt: row.deleted_at,
 
             color: row.color,

@@ -9,6 +9,8 @@ import type {
     ClinicalVaccination,
     ClinicalCheckup,
     ClinicalQuarantineRelease,
+    ClinicalTransfer,
+    ClinicalRehabilitation,
 } from "../repositories/clinical-record.repository";
 import { AnimalNotFoundError } from "../types/animales.types";
 import type { AnimalAccess } from "../access";
@@ -19,11 +21,13 @@ export type ClinicalTimelineEvent =
     | { tipo: "prueba_temperamento"; fecha: string; detalle: ClinicalTemperament }
     | { tipo: "esterilizacion"; fecha: string; detalle: ClinicalSurgery }
     | { tipo: "chequeo"; fecha: string; detalle: ClinicalCheckup }
-    | { tipo: "alta_cuarentena"; fecha: string; detalle: ClinicalQuarantineRelease };
+    | { tipo: "alta_cuarentena"; fecha: string; detalle: ClinicalQuarantineRelease }
+    | { tipo: "traslado"; fecha: string; detalle: ClinicalTransfer }
+    | { tipo: "rehabilitacion"; fecha: string; detalle: ClinicalRehabilitation };
 
 export type ClinicalAlert = "cuarentena" | "estado_critico";
 
-export type ClinicalRecord = Omit<ClinicalRecordData, "vacunaciones" | "evaluacionesTemperamento" | "cirugias" | "chequeos" | "altasCuarentena"> & {
+export type ClinicalRecord = Omit<ClinicalRecordData, "vacunaciones" | "evaluacionesTemperamento" | "cirugias" | "chequeos" | "altasCuarentena" | "traslados" | "rehabilitaciones"> & {
     alertas: ClinicalAlert[];
     lineaTiempo: ClinicalTimelineEvent[];
 };
@@ -73,6 +77,16 @@ export class ClinicalRecordService {
             ...data.altasCuarentena.map((detalle) => ({
                 tipo: "alta_cuarentena" as const,
                 fecha: detalle.fechaAlta,
+                detalle,
+            })),
+            ...data.traslados.map((detalle) => ({
+                tipo: "traslado" as const,
+                fecha: detalle.fechaTraslado,
+                detalle,
+            })),
+            ...data.rehabilitaciones.map((detalle) => ({
+                tipo: "rehabilitacion" as const,
+                fecha: detalle.fechaInicio,
                 detalle,
             })),
         ].sort(

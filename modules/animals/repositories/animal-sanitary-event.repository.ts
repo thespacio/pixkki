@@ -172,11 +172,11 @@ export class AnimalSanitaryEventRepository {
             p_tipo_evento: input.tipo_evento,
             p_tipo_biologico: input.tipo_biologico,
             p_fecha_aplicacion: input.fecha_aplicacion,
-            p_marca_lote: input.marca_lote ?? null,
-            p_fecha_refuerzo: input.fecha_refuerzo ?? null,
+            p_marca_lote: input.marca_lote ?? undefined,
+            p_fecha_refuerzo: input.fecha_refuerzo ?? undefined,
             p_esquema_completo: input.esquema_completo,
             p_id_lote_inventario: input.id_lote_inventario,
-            p_observaciones: input.observaciones ?? null,
+            p_observaciones: input.observaciones ?? undefined,
             p_id_usuario: idUsuario,
         });
         if (error) throw error;

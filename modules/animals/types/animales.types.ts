@@ -59,6 +59,23 @@ export function puedeRegistrarDiagnostico(role: string): boolean {
 
 export const puedeEjecutarOperacionClinica = puedeRegistrarDiagnostico;
 
+/** Roles que pueden evaluar temperamento y registrar rehabilitación (RF3.3/RF3.4). */
+export const ROLES_EVALUADORES = [
+    "evaluador",
+    "veterinario",
+    "veterinarian",
+    "admin",
+    "administrador",
+] as const;
+
+export function puedeRegistrarSocializacion(role: string): boolean {
+    const normalizado = role
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    return (ROLES_EVALUADORES as readonly string[]).includes(normalizado);
+}
+
 export type Animal = {
     idAnimal: number;
     uuid: string | null;
@@ -82,6 +99,10 @@ export type Animal = {
     disponibleAdopcion: boolean;
     enCuarentena: boolean;
     esterilizado: boolean;
+    /** Requerimiento 05: reserva activa durante el proceso de adopción. */
+    reservadoAdopcion?: boolean;
+    fechaReserva?: string | null;
+    fechaAdopcion?: string | null;
     deletedAt: string | null;
 
     // Ficha completa / datos de rescate (migración 20261024_animal_datos_rescate.sql)

@@ -1,5 +1,9 @@
-/** Tipos de insumo que puede consumir el control clínico (RF2.2 / US10). */
-export const TIPOS_INSUMO_CLINICO = ["vacuna", "desparasitante"] as const;
+/** Tipos de insumo que puede consumir el control clínico y quirúrgico (RF2.2 / RF4.1). */
+export const TIPOS_INSUMO_CLINICO = [
+    "vacuna",
+    "desparasitante",
+    "insumo_quirurgico",
+] as const;
 export type TipoInsumoClinico = (typeof TIPOS_INSUMO_CLINICO)[number];
 
 /**

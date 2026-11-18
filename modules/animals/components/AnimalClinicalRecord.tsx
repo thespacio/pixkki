@@ -48,6 +48,16 @@ function describeEvent(event: ClinicalTimelineEvent): { titulo: string; detalle:
             };
         case "alta_cuarentena":
             return { titulo: "Alta médica de cuarentena", detalle: event.detalle.observaciones };
+        case "traslado":
+            return {
+                titulo: `Traslado: espacio ${event.detalle.idEspacioOrigen} → ${event.detalle.idEspacioDestino}`,
+                detalle: event.detalle.motivo ?? "",
+            };
+        case "rehabilitacion":
+            return {
+                titulo: `Rehabilitación ${event.detalle.tipo}: ${event.detalle.objetivo}`,
+                detalle: [event.detalle.fechaFin ? `Hasta ${event.detalle.fechaFin}` : "En curso", event.detalle.observaciones].filter(Boolean).join(" · "),
+            };
         default:
             return { titulo: "Evento clínico", detalle: "" };
     }

@@ -96,6 +96,26 @@ components:
         available:
           type: boolean
           example: true
+        ocupacion:
+          type: integer
+          minimum: 0
+          description: RF3.1 — animales activos asignados al espacio.
+        capacidadLibre:
+          type: integer
+          minimum: 0
+        estadoTexto:
+          type: string
+          example: 5/8 plazas
+
+    DisponibilidadEspacio:
+      type: object
+      required: [idEspacio, disponible, ocupacion, capacidad, capacidadLibre]
+      properties:
+        idEspacio: { type: integer }
+        disponible: { type: boolean }
+        ocupacion: { type: integer, minimum: 0 }
+        capacidad: { type: integer, minimum: 1 }
+        capacidadLibre: { type: integer, minimum: 0 }
 
     CreateEspacio:
       type: object
@@ -267,6 +287,30 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+
+  /espacios/{id}/disponibilidad:
+    get:
+      tags: [espacios]
+      summary: RF3.1 — Consultar disponibilidad y ocupación de un espacio.
+      operationId: getSpaceAvailability
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Disponibilidad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, enum: [true] }
+                  data:
+                    $ref: "#/components/schemas/DisponibilidadEspacio"
+        "401": { description: No autenticado, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "404": { description: ESPACIO_NO_ENCONTRADO, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
 
   /espacios/{id}:
     parameters:

@@ -381,7 +381,7 @@ export const SINTOMAS_CHEQUEO = [
 ] as const;
 export type SintomaChequeo = (typeof SINTOMAS_CHEQUEO)[number];
 
-const fechaChequeoSchema = z
+export const fechaHoraNoFuturaSchema = z
     .union([z.string(), z.date()])
     .optional()
     .transform((value) => {
@@ -408,7 +408,7 @@ export const CreateChequeoSchema = z
         sintomas: z.array(z.enum(SINTOMAS_CHEQUEO)).default([]),
         sintoma_otro_detalle: z.string().trim().min(1).max(300).optional().nullable(),
         observaciones: z.string().trim().max(2000).optional().nullable(),
-        fecha_chequeo: fechaChequeoSchema,
+        fecha_chequeo: fechaHoraNoFuturaSchema,
     })
     .superRefine((data, ctx) => {
         const incluyeOtro = data.sintomas.includes("otro");
@@ -425,7 +425,7 @@ export type CreateChequeoInput = z.infer<typeof CreateChequeoSchema>;
 
 export const CreateAltaCuarentenaSchema = z.object({
     observaciones: z.string().trim().min(1, "Las observaciones son obligatorias").max(2000),
-    fecha_alta: fechaChequeoSchema,
+    fecha_alta: fechaHoraNoFuturaSchema,
 });
 
 export type CreateAltaCuarentenaInput = z.infer<typeof CreateAltaCuarentenaSchema>;

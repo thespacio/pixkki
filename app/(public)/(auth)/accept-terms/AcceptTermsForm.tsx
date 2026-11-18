@@ -4,14 +4,18 @@ import {useState} from "react";
 import {useRouter} from "next/navigation";
 import {AlertCircle} from "lucide-react";
 
-import {acceptTermsAction} from "@/modules/auth/action";
+import {acceptTermsAction, getAuthFlagsAction} from "@/modules/auth/action";
 
 /**
  * Aceptación de Términos y Condiciones (F-AUTH-05).
  * Checkbox obligatorio; el servidor registra versión + timestamp
  * de la aceptación de forma auditable.
  */
-export default function AcceptTermsForm() {
+interface AcceptTermsFormProps {
+    terminosVersion?: string;
+}
+
+export default function AcceptTermsForm({ terminosVersion = "1.0" }: AcceptTermsFormProps) {
     const router = useRouter();
 
     const [accepted, setAccepted] = useState(false);
@@ -41,8 +45,16 @@ export default function AcceptTermsForm() {
 
             setMessage(result.message);
 
+            const flags = await getAuthFlagsAction();
+            const next =
+                flags.success && flags.data
+                    ? flags.data.requiresOnboarding && flags.data.shelterId !== null
+                        ? "/onboarding"
+                        : "/dashboard"
+                    : "/dashboard";
+
             setTimeout(() => {
-                router.replace("/dashboard");
+                router.replace(next);
                 router.refresh();
             }, 1000);
         } catch (err) {
@@ -60,7 +72,7 @@ export default function AcceptTermsForm() {
         <div className="max-w-md w-full space-y-8">
             <div>
                 <h1 className="text-3xl font-semibold text-foreground tracking-tight mb-2 mt-16">
-                    Términos y Condiciones
+                    Términos y Condiciones <span className="text-xs font-normal text-muted-foreground">v{terminosVersion}</span>
                 </h1>
                 <p className="text-sm text-muted-foreground mb-8">
                     Antes de acceder al panel debes leer y aceptar los términos

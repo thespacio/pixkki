@@ -84,7 +84,7 @@ export const navigationSections: readonly NavSection[] = [
             {
                 id: "settings",
                 label: "Configuración",
-                href: "/configuracion/seguridad",
+                href: "/configuracion/refugio",
                 icon: Settings,
             },
         ],

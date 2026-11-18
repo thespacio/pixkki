@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
         };
 
         const service = await createSpaceService();
-        const espacios = await service.getSpaces(filters);
+        // RF3.1: el listado público incluye ocupación calculada y texto de estado.
+        const espacios = await service.listWithOccupancy(filters);
 
         return apiSuccess({ espacios, total: espacios.length });
     } catch (error) {

@@ -45,6 +45,16 @@ export function mapShelterRowToListItem(row: ShelterRow): ShelterListItem {
     };
 }
 
+function slugifyShelterName(name: string): string {
+    const base = name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-+|-+$)/g, "");
+    return base || "refugio";
+}
+
 /**
  * Mapea una entidad de dominio o datos de entrada a ShelterInsert
  * (para operaciones de creación en Supabase)
@@ -52,10 +62,11 @@ export function mapShelterRowToListItem(row: ShelterRow): ShelterListItem {
 export function mapShelterToRow(
     data: Partial<Omit<Shelter, 'id' | 'fecha_registro'>> | CreateShelterInput | UpdateShelterInput
 ): ShelterInsert {
-    const row: ShelterInsert = {ciudad: "", correo_contacto: "", estado: "", nombre: ""};
+    const row: ShelterInsert = { ciudad: "", correo_contacto: "", estado: "", nombre: "" } as ShelterInsert;
 
     if ('nombre_albergue' in data && data.nombre_albergue !== undefined) {
         row.nombre = data.nombre_albergue;
+        row.slug = slugifyShelterName(data.nombre_albergue);
     }
 
     if ('ciudad' in data && data.ciudad !== undefined) {

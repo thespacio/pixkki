@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: Pixkki Animals API
-  version: 1.2.0
-  description: Contrato de la API del módulo animals (ingresos y expedientes clínicos).
+  version: 1.3.0
+  description: Contrato de la API del módulo animals (ingresos, expedientes clínicos, control poblacional y adopción).
 servers:
   - url: /api/v1
 security:
@@ -34,6 +34,12 @@ components:
             code: { type: string }
             message: { type: string }
             statusCode: { type: integer }
+            details:
+              type: object
+              nullable: true
+              description: >-
+                Contexto adicional para errores que lo requieren, por ejemplo
+                `bloqueos` y `advertencias` en `APTITUD_ADOPCION_INSUFICIENTE`.
     CreateAnimalRequest:
       type: object
       required: [especie, procedencia, rasgosFisicos, estadoInicial, idEstado, idEspacio]
@@ -299,6 +305,83 @@ components:
         `fecha_refuerzo` es obligatoria si `esquema_completo = true` y siempre
         posterior a `fecha_aplicacion`. La cantidad descontada la fija el
         servidor en 1 unidad.
+    Traslado:
+      type: object
+      properties:
+        idTraslado: { type: integer }
+        idAnimal: { type: integer }
+        idRefugio: { type: integer }
+        idEspacioOrigen: { type: integer }
+        idEspacioDestino: { type: integer }
+        fechaTraslado: { type: string, format: date-time }
+        motivo: { type: string, nullable: true }
+        idUsuario: { type: integer, nullable: true }
+        ocupacionDestino: { type: integer, nullable: true }
+        enCuarentena: { type: boolean, nullable: true }
+        alta: { type: object, nullable: true }
+    CreateTrasladoRequest:
+      type: object
+      required: [id_espacio_destino]
+      properties:
+        id_espacio_destino: { type: integer, minimum: 1 }
+        motivo: { type: string, maxLength: 255, nullable: true }
+        alta_medica:
+          nullable: true
+          type: object
+          required: [observaciones]
+          properties:
+            observaciones: { type: string, minLength: 1, maxLength: 2000 }
+            fecha_alta: { type: string, format: date-time }
+      description: >-
+        `alta_medica` solo puede ser enviada por Veterinario/Admin. Si el
+        paciente está en cuarentena y el destino no es de tipo cuarentena,
+        es obligatoria.
+    EvaluacionTemperamento:
+      type: object
+      properties:
+        idEvaluacion: { type: integer }
+        idAnimal: { type: integer }
+        idRefugio: { type: integer }
+        comportamiento: { type: string, enum: [Dócil, Sociable, Tímido, Miedoso, Reactivo, Agresivo] }
+        nivelEnergia: { type: string, enum: [Baja, Media, Alta] }
+        aptoPerros: { type: string, enum: [si, no, con_supervision] }
+        aptoGatos: { type: string, enum: [si, no, con_supervision] }
+        aptoNinos: { type: string, enum: [si, no, con_supervision] }
+        idUsuario: { type: integer }
+        fechaEvaluacion: { type: string, format: date-time }
+        temperamentoVigente: { type: string, nullable: true }
+    CreateEvaluacionTemperamentoRequest:
+      type: object
+      required: [comportamiento, nivel_energia, apto_perros, apto_gatos, apto_ninos]
+      properties:
+        comportamiento: { type: string, enum: [Dócil, Sociable, Tímido, Miedoso, Reactivo, Agresivo] }
+        nivel_energia: { type: string, enum: [Baja, Media, Alta] }
+        apto_perros: { type: string, enum: [si, no, con_supervision] }
+        apto_gatos: { type: string, enum: [si, no, con_supervision] }
+        apto_ninos: { type: string, enum: [si, no, con_supervision] }
+        fecha_evaluacion: { type: string, format: date-time }
+    Rehabilitacion:
+      type: object
+      properties:
+        idRehabilitacion: { type: integer }
+        idAnimal: { type: integer }
+        idRefugio: { type: integer }
+        tipo: { type: string, enum: [fisica, emocional, conductual] }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date, nullable: true }
+        objetivo: { type: string }
+        observaciones: { type: string, nullable: true }
+        idUsuario: { type: integer }
+        fechaRegistro: { type: string, format: date-time }
+    CreateRehabilitacionRequest:
+      type: object
+      required: [tipo, fecha_inicio, objetivo]
+      properties:
+        tipo: { type: string, enum: [fisica, emocional, conductual] }
+        fecha_inicio: { type: string, format: date }
+        fecha_fin: { type: string, format: date, nullable: true }
+        objetivo: { type: string, minLength: 1, maxLength: 500 }
+        observaciones: { type: string, maxLength: 2000, nullable: true }
     EstadoCuarentena:
       type: object
       properties:
@@ -314,6 +397,97 @@ components:
         fechaIngreso: { type: string, format: date-time }
         alta: { nullable: true }
         historialAltas: { type: array, items: { type: object } }
+    CirugiaInsumo:
+      type: object
+      properties:
+        idLoteInventario: { type: integer }
+        nombreInsumo: { type: string }
+        cantidad: { type: integer, minimum: 1 }
+    Cirugia:
+      type: object
+      properties:
+        idCirugia: { type: integer }
+        idAnimal: { type: integer }
+        idRefugio: { type: integer }
+        tipoCirugia: { type: string, enum: [Esterilización, Castración] }
+        fechaCirugia: { type: string, format: date-time }
+        exitosa: { type: boolean }
+        notasPostoperatorias: { type: string, nullable: true }
+        idUsuario: { type: integer }
+        insumos: { type: array, items: { $ref: "#/components/schemas/CirugiaInsumo" } }
+    CreateCirugiaRequest:
+      type: object
+      required: [tipo_cirugia, fecha_cirugia, exitosa]
+      properties:
+        tipo_cirugia: { type: string, enum: [Esterilización, Castración] }
+        fecha_cirugia: { type: string, format: date-time }
+        exitosa: { type: boolean }
+        notas_postoperatorias: { type: string, maxLength: 2000, nullable: true }
+        insumos:
+          type: array
+          maxItems: 50
+          description: Opcional. Si se omite se interpreta como `[]`.
+          items:
+            type: object
+            required: [id_lote_inventario, cantidad]
+            properties:
+              id_lote_inventario: { type: integer, minimum: 1 }
+              cantidad: { type: integer, minimum: 1 }
+    CriterioAptitud:
+      type: object
+      properties:
+        clave:
+          type: string
+          enum:
+            - expediente_activo
+            - sin_cuarentena
+            - esterilizado
+            - salud_no_critica
+            - temperamento_compatible
+            - rehabilitacion_al_dia
+        etiqueta: { type: string }
+        cumple: { type: boolean }
+        omitible: { type: boolean }
+        detalle: { type: string }
+    ExcepcionAptitud:
+      type: object
+      properties:
+        idExcepcion: { type: integer }
+        idUsuario: { type: integer }
+        motivo: { type: string }
+        criteriosOmitidos: { type: array, items: { type: string } }
+        fechaExcepcion: { type: string, format: date-time }
+    AptitudAdopcion:
+      type: object
+      properties:
+        idAnimal: { type: integer }
+        apto: { type: boolean }
+        disponibleAdopcion: { type: boolean }
+        bloqueos: { type: array, items: { type: string } }
+        advertencias: { type: array, items: { type: string } }
+        criterios: { type: array, items: { $ref: "#/components/schemas/CriterioAptitud" } }
+        excepcionVigente: { allOf: [ { $ref: "#/components/schemas/ExcepcionAptitud" } ], nullable: true }
+    UpdateDisponibilidadAdopcionRequest:
+      type: object
+      required: [disponible_adopcion]
+      properties:
+        disponible_adopcion: { type: boolean }
+        autorizar_excepcion: { type: boolean, default: false }
+        motivo_excepcion:
+          type: string
+          minLength: 20
+          maxLength: 1000
+          nullable: true
+          description: Obligatorio cuando `autorizar_excepcion = true`. Solo Administrador.
+    DisponibilidadAdopcion:
+      type: object
+      properties:
+        idAnimal: { type: integer }
+        disponibleAdopcion: { type: boolean }
+        apto: { type: boolean }
+        excepcionAplicada: { type: boolean }
+        excepcion: { allOf: [ { $ref: "#/components/schemas/ExcepcionAptitud" } ], nullable: true }
+        auditoriaId: { type: integer, nullable: true }
   responses:
     ValidationError: { description: "400", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
     Unauthorized: { description: "401", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
@@ -538,6 +712,132 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { description: Conflicto de stock o lote inválido, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
         "500": { description: Fallo transaccional, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+  /animales/{id}/traslados:
+    get:
+      tags: [animals]
+      summary: RF3.2 — Historial de traslados del paciente.
+      operationId: listAnimalTransfers
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Traslados, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { traslados: { type: array, items: { $ref: "#/components/schemas/Traslado" } } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [animals]
+      summary: RF3.2 — Registrar traslado con validación de cuarentena y capacidad.
+      operationId: createAnimalTransfer
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CreateTrasladoRequest" } } } }
+      responses:
+        "201": { description: Traslado creado, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { traslado: { $ref: "#/components/schemas/Traslado" } } } } } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: Conflicto de cuarentena, capacidad u ocupación, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+  /animales/{id}/evaluaciones-temperamento:
+    get:
+      tags: [animals]
+      summary: RF3.3 — Historial de evaluaciones de temperamento.
+      operationId: listAnimalTemperamentEvaluations
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Evaluaciones, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { evaluaciones: { type: array, items: { $ref: "#/components/schemas/EvaluacionTemperamento" } } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [animals]
+      summary: RF3.3 — Registrar evaluación y actualizar temperamento vigente.
+      operationId: createAnimalTemperamentEvaluation
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CreateEvaluacionTemperamentoRequest" } } } }
+      responses:
+        "201": { description: Evaluación creada, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { evaluacion: { $ref: "#/components/schemas/EvaluacionTemperamento" } } } } } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /animales/{id}/rehabilitaciones:
+    get:
+      tags: [animals]
+      summary: RF3.4 — Historial de rehabilitación.
+      operationId: listAnimalRehabilitations
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Rehabilitaciones, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { rehabilitaciones: { type: array, items: { $ref: "#/components/schemas/Rehabilitacion" } } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [animals]
+      summary: RF3.4 — Registrar entrada de rehabilitación.
+      operationId: createAnimalRehabilitation
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CreateRehabilitacionRequest" } } } }
+      responses:
+        "201": { description: Entrada creada, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { rehabilitacion: { $ref: "#/components/schemas/Rehabilitacion" } } } } } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /animales/{id}/cirugias:
+    get:
+      tags: [animals]
+      summary: RF4.1 — Historial de cirugías reproductivas del paciente.
+      operationId: listAnimalSurgeries
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Cirugías, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { cirugias: { type: array, items: { $ref: "#/components/schemas/Cirugia" } } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [animals]
+      summary: RF4.1 — Registrar cirugía reproductiva y consumir insumos quirúrgicos.
+      operationId: createAnimalSurgery
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CreateCirugiaRequest" } } } }
+      responses:
+        "201": { description: Cirugía registrada, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { cirugia: { $ref: "#/components/schemas/Cirugia" } } } } } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "403 ROL_SIN_PERMISO", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "409 CIRUGIA_DUPLICADA, LOTE_INACTIVO, LOTE_VENCIDO, STOCK_INSUFICIENTE, TIPO_INSUMO_INVALIDO, CONFLICTO_CONCURRENCIA", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "500": { description: "500 FALLO_TRANSACCION_CIRUGIA", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+  /animales/{id}/aptitud-adopcion:
+    get:
+      tags: [animals]
+      summary: RF4.2 — Consultar criterios, bloqueos y advertencias de aptitud.
+      operationId: getAnimalAdoptionAptitude
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Aptitud, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { aptitud: { $ref: "#/components/schemas/AptitudAdopcion" } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /animales/{id}/disponibilidad-adopcion:
+    put:
+      tags: [animals]
+      summary: RF4.2 — Publicar o despublicar para adopción (gatekeeper en servidor).
+      operationId: updateAnimalAdoptionAvailability
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/UpdateDisponibilidadAdopcionRequest" } } } }
+      responses:
+        "200": { description: Disponibilidad actualizada, content: { application/json: { schema: { type: object, properties: { success: { type: boolean, enum: [true] }, data: { type: object, properties: { disponibilidad: { $ref: "#/components/schemas/DisponibilidadAdopcion" } } } } } } } }
+        "400": { description: "400 DATOS_INVALIDOS, MOTIVO_EXCEPCION_REQUERIDO, EXCEPCION_INNECESARIA", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "403 EXCEPCION_NO_AUTORIZADA o falta animals.edit", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "409 ANIMAL_EN_CUARENTENA, APTITUD_ADOPCION_INSUFICIENTE, BLOQUEO_NO_EXCEPCIONABLE", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
+        "500": { $ref: "#/components/responses/ValidationError" }
   /animales/{id}/cuarentena:
     get:
       tags: [animals]

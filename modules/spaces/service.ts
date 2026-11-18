@@ -3,6 +3,11 @@ import { ZodError } from 'zod';
 import {SpaceRepository, SpaceRepositoryError} from "@/modules/spaces/repositories/repository";
 import {CreateSpaceData, CreateSpaceInput, Space, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces/types/types";
 import {CreateSpaceSchema, SpaceFiltersSchema, UpdateSpaceSchema} from "@/modules/spaces/schemas";
+import type {
+    SpaceOccupancyInfo,
+    SpaceOccupancyPort,
+    SpaceWithOccupancy,
+} from "@/modules/spaces/ports/space-occupancy.port";
 
 /**
  * Códigos de error del módulo de espacios y su equivalente HTTP. Se mantiene
@@ -31,8 +36,44 @@ export class SpaceServiceError extends Error {
     readonly statusCode: number;
 }
 
-export class SpaceService {
+export class SpaceService implements SpaceOccupancyPort {
     constructor(private readonly spaceRepository: SpaceRepository) {}
+
+    /** RF3.1: ocupación y texto explícito de estado (accesibilidad). */
+    async listWithOccupancy(filters?: SpaceFilters): Promise<SpaceWithOccupancy[]> {
+        const spaces = await this.getSpaces(filters);
+        const result: SpaceWithOccupancy[] = [];
+        for (const space of spaces) {
+            const ocupacion = await this.spaceRepository.getAnimalCount(space.id);
+            const capacidadLibre = Math.max(0, space.capacity - ocupacion);
+            result.push({
+                ...space,
+                ocupacion,
+                capacidadLibre,
+                estadoTexto: !space.available
+                    ? "No disponible"
+                    : capacidadLibre === 0
+                        ? "Sin cupo"
+                        : `${ocupacion}/${space.capacity} plazas`,
+            });
+        }
+        return result;
+    }
+
+    /** RF3.1: disponibilidad de un espacio, restringida al refugio si se indica. */
+    async getOccupancy(id: number, idRefugio?: number): Promise<SpaceOccupancyInfo | null> {
+        const space = await this.spaceRepository.findById(id, idRefugio);
+        if (!space) return null;
+        const ocupacion = await this.spaceRepository.getAnimalCount(id);
+        const capacidadLibre = Math.max(0, space.capacity - ocupacion);
+        return {
+            idEspacio: space.id,
+            disponible: space.available && capacidadLibre > 0,
+            ocupacion,
+            capacidad: space.capacity,
+            capacidadLibre,
+        };
+    }
 
     async createSpace(data: CreateSpaceData): Promise<Space> {
         try {

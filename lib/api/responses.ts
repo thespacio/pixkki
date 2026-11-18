@@ -24,11 +24,15 @@ export function apiError(
     message: string,
     statusCode: number,
     headers?: Record<string, string>,
+    details?: unknown,
 ): NextResponse {
+    const error: Record<string, unknown> = { code, message, statusCode };
+    if (details !== undefined) error.details = details;
+
     return NextResponse.json(
         {
             success: false,
-            error: { code, message, statusCode },
+            error,
         },
         { status: statusCode, headers },
     );
@@ -75,11 +79,20 @@ export function handleApiError(error: unknown): NextResponse {
             error.message,
             statusCode,
             readRetryAfterHeaders(error),
+            readErrorDetails(error),
         );
     }
 
     console.error("[api] Error interno desconocido:", error);
     return apiError("INTERNAL_ERROR", "Error interno del servidor.", 500);
+}
+
+/**
+ * Lee `details` si el error de dominio lo expone (por ejemplo, los bloqueos de
+ * `APTITUD_ADOPCION_INSUFICIENTE`). Los 5xx nunca llegan hasta aquí.
+ */
+function readErrorDetails(error: Error): unknown {
+    return "details" in error ? error.details : undefined;
 }
 
 /** Lee `statusCode` si el error lo define (AuthError, ShelterError, RateLimitError...). */

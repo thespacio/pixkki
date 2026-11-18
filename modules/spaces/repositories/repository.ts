@@ -22,6 +22,18 @@ export class SpaceRepositoryError extends Error {
     }
 }
 
+/** RF3.1: los valores legacy del formulario se normalizan antes de persistir. */
+function normalizarTipoEspacio(valor: string): string {
+    switch (valor.trim().toLowerCase()) {
+        case 'canil': return 'canil';
+        case 'gatera': return 'gatera';
+        case 'cuarentena': return 'cuarentena';
+        case 'rehabilitacion':
+        case 'rehabilitación': return 'rehabilitacion';
+        default: return 'otro';
+    }
+}
+
 function mapSpaceRowToDomain(row: SpaceRow): Space {
     return {
         id: row.id_espacio,
@@ -42,7 +54,7 @@ function mapSpaceToRow(
         nombre_espacio: data.dto.name,
         descripcion: data.dto.description ?? null,
         capacidad: data.dto.capacity,
-        tipo: data.dto.type ?? null,
+        tipo: normalizarTipoEspacio(data.dto.type),
         disponible: data.dto.available ?? true,
     };
 }
@@ -190,7 +202,7 @@ export class SpaceRepository {
             if (dto.name !== undefined) updateData.nombre_espacio = dto.name;
             if (dto.description !== undefined) updateData.descripcion = dto.description;
             if (dto.capacity !== undefined) updateData.capacidad = dto.capacity;
-            if (dto.type !== undefined) updateData.tipo = dto.type;
+            if (dto.type !== undefined) updateData.tipo = normalizarTipoEspacio(dto.type);
             if (dto.available !== undefined) updateData.disponible = dto.available;
 
             let query = this.supabase
@@ -289,10 +301,13 @@ export class SpaceRepository {
      */
     async getAnimalCount(spaceId: number): Promise<number> {
         try {
+            // RF3.1: solo ocupan plaza los animales activos y no eliminados.
             const { count, error } = await this.supabase
                 .from('animal')
                 .select('*', { count: 'exact', head: true })
-                .eq('id_espacio', spaceId);
+                .eq('id_espacio', spaceId)
+                .eq('activo', true)
+                .is('deleted_at', null);
 
             if (error) {
                 throw new SpaceRepositoryError(

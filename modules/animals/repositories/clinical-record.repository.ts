@@ -33,6 +33,9 @@ export type ClinicalAnimal = {
     enCuarentena: boolean;
     disponibleAdopcion: boolean;
     esterilizado: boolean;
+    reservadoAdopcion: boolean;
+    fechaAdopcion: string | null;
+    activo: boolean;
     vacunado: boolean;
     desparasitado: boolean;
     observaciones: string | null;
@@ -86,6 +89,23 @@ export type ClinicalQuarantineRelease = {
     idUsuarioVeterinario: number;
 };
 
+export type ClinicalTransfer = {
+    idTraslado: number;
+    fechaTraslado: string;
+    idEspacioOrigen: number;
+    idEspacioDestino: number;
+    motivo: string | null;
+};
+
+export type ClinicalRehabilitation = {
+    idRehabilitacion: number;
+    fechaInicio: string;
+    fechaFin: string | null;
+    tipo: string;
+    objetivo: string;
+    observaciones: string | null;
+};
+
 export type ClinicalTemperament = {
     idEvaluacion: number;
     fechaEvaluacion: string;
@@ -96,12 +116,20 @@ export type ClinicalTemperament = {
     aptoNinos: string | null;
 };
 
+export type ClinicalSurgerySupply = {
+    idLoteInventario: number;
+    nombreInsumo: string;
+    cantidad: number;
+};
+
 export type ClinicalSurgery = {
     idCirugia: number;
     tipoCirugia: string;
     fechaCirugia: string;
     exitosa: boolean;
     notasPostoperatorias: string | null;
+    idUsuario: number;
+    insumos: ClinicalSurgerySupply[];
 };
 
 export type ClinicalRecordData = {
@@ -113,6 +141,26 @@ export type ClinicalRecordData = {
     cirugias: ClinicalSurgery[];
     chequeos: ClinicalCheckup[];
     altasCuarentena: ClinicalQuarantineRelease[];
+    traslados: ClinicalTransfer[];
+    rehabilitaciones: ClinicalRehabilitation[];
+};
+
+type SurgeryRowWithSupplies = {
+    id_cirugia: number;
+    tipo_cirugia: string;
+    fecha_cirugia: string;
+    exitosa: boolean;
+    notas_postoperatorias: string | null;
+    id_usuario: number;
+    cirugia_insumo:
+        | Array<{
+              cantidad: number;
+              id_lote_inventario: number;
+              inventario_lote: {
+                  inventario_insumo: { nombre: string } | null;
+              } | null;
+          }>
+        | null;
 };
 
 function toAnimalDomain(row: AnimalRowWithRelations): ClinicalAnimal {
@@ -138,6 +186,9 @@ function toAnimalDomain(row: AnimalRowWithRelations): ClinicalAnimal {
         enCuarentena: row.en_cuarentena,
         disponibleAdopcion: row.disponible_adopcion,
         esterilizado: row.esterilizado,
+        reservadoAdopcion: Boolean((row as any).reservado_adopcion),
+        fechaAdopcion: ((row as any).fecha_adopcion as string | null) ?? null,
+        activo: row.activo,
         vacunado: row.vacunado,
         desparasitado: row.desparasitado,
         observaciones: row.observaciones,
@@ -204,14 +255,48 @@ export class ClinicalRecordRepository {
             .order("fecha_aplicacion", { ascending: false });
         if (idRefugio !== null) eventosQuery = eventosQuery.eq("id_refugio", idRefugio);
 
+        let evaluacionesQuery = client
+            .from("evaluacion_temperamento")
+            .select(
+                "id_evaluacion_temperamento, fecha_evaluacion, comportamiento, nivel_energia, apto_perros, apto_gatos, apto_ninos",
+            )
+            .eq("id_animal", idAnimal)
+            .order("fecha_evaluacion", { ascending: false });
+        if (idRefugio !== null) evaluacionesQuery = evaluacionesQuery.eq("id_refugio", idRefugio);
+
+        let trasladosQuery = client
+            .from("traslado")
+            .select("id_traslado, fecha_traslado, id_espacio_origen, id_espacio_destino, motivo")
+            .eq("id_animal", idAnimal)
+            .order("fecha_traslado", { ascending: false });
+        if (idRefugio !== null) trasladosQuery = trasladosQuery.eq("id_refugio", idRefugio);
+
+        let rehabilitacionesQuery = client
+            .from("rehabilitacion")
+            .select("id_rehabilitacion, fecha_inicio, fecha_fin, tipo, objetivo, observaciones")
+            .eq("id_animal", idAnimal)
+            .order("fecha_inicio", { ascending: false });
+        if (idRefugio !== null) rehabilitacionesQuery = rehabilitacionesQuery.eq("id_refugio", idRefugio);
+
+        let cirugiasQuery = client
+            .from("cirugia_reproductiva")
+            .select(
+                "id_cirugia, tipo_cirugia, fecha_cirugia, exitosa, notas_postoperatorias, id_usuario, cirugia_insumo(cantidad, id_lote_inventario, inventario_lote(inventario_insumo(nombre)))",
+            )
+            .eq("id_animal", idAnimal)
+            .order("fecha_cirugia", { ascending: false });
+        if (idRefugio !== null) cirugiasQuery = cirugiasQuery.eq("id_refugio", idRefugio);
+
         const [
             { data: imagenes, error: imagenesError },
             { data: diagnosticos, error: diagnosticosError },
             eventosSanitariosRes,
-            { data: evaluaciones, error: evaluacionesError },
-            { data: cirugias, error: cirugiasError },
+            evaluacionesRes,
+            cirugiasRes,
             chequeosRes,
             altasRes,
+            trasladosRes,
+            rehabilitacionesRes,
         ] = await Promise.all([
             this.supabase
                 .from("fotografia")
@@ -229,34 +314,29 @@ export class ClinicalRecordRepository {
                 .eq("id_animal", idAnimal)
                 .order("fecha_diagnostico", { ascending: false }),
             eventosQuery,
-            this.supabase
-                .from("evaluacion_temperamento")
-                .select(
-                    "id_evaluacion_temperamento, fecha_evaluacion, comportamiento, nivel_energia, apto_perros, apto_gatos, apto_ninos",
-                )
-                .eq("id_animal", idAnimal)
-                .order("fecha_evaluacion", { ascending: false }),
-            this.supabase
-                .from("cirugia_reproductiva")
-                .select(
-                    "id_cirugia, tipo_cirugia, fecha_cirugia, exitosa, notas_postoperatorias",
-                )
-                .eq("id_animal", idAnimal)
-                .order("fecha_cirugia", { ascending: false }),
+            evaluacionesQuery,
+            cirugiasQuery,
             chequeosQuery,
             altasQuery,
+            trasladosQuery,
+            rehabilitacionesQuery,
         ]);
 
         if (imagenesError) throw imagenesError;
         if (diagnosticosError) throw diagnosticosError;
-        if (evaluacionesError) throw evaluacionesError;
-        if (cirugiasError) throw cirugiasError;
+        if (cirugiasRes.error) throw cirugiasRes.error;
         // Tablas nuevas pueden no existir aún en entornos sin migrar: tolerar ausencia.
         if (eventosSanitariosRes.error && !String((eventosSanitariosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((eventosSanitariosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw eventosSanitariosRes.error;
         if (chequeosRes.error && !String((chequeosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((chequeosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw chequeosRes.error;
         if (altasRes.error && !String((altasRes.error as { code?: string }).code ?? "").includes("42P01") && !String((altasRes.error as { code?: string }).code ?? "").includes("PGRST")) throw altasRes.error;
+        if (evaluacionesRes.error && !String((evaluacionesRes.error as { code?: string }).code ?? "").includes("42P01") && !String((evaluacionesRes.error as { code?: string }).code ?? "").includes("PGRST")) throw evaluacionesRes.error;
+        if (trasladosRes.error && !String((trasladosRes.error as { code?: string }).code ?? "").includes("42P01") && !String((trasladosRes.error as { code?: string }).code ?? "").includes("PGRST")) throw trasladosRes.error;
+        if (rehabilitacionesRes.error && !String((rehabilitacionesRes.error as { code?: string }).code ?? "").includes("42P01") && !String((rehabilitacionesRes.error as { code?: string }).code ?? "").includes("PGRST")) throw rehabilitacionesRes.error;
 
         const eventosRows = (!eventosSanitariosRes.error ? (eventosSanitariosRes.data ?? []) : []) as Array<Record<string, unknown>>;
+        const evaluacionesRows = (!evaluacionesRes.error ? (evaluacionesRes.data ?? []) : []) as Array<Record<string, unknown>>;
+        const trasladosRows = (!trasladosRes.error ? (trasladosRes.data ?? []) : []) as Array<Record<string, unknown>>;
+        const rehabilitacionesRows = (!rehabilitacionesRes.error ? (rehabilitacionesRes.data ?? []) : []) as Array<Record<string, unknown>>;
         const chequeosRows = (!chequeosRes.error ? (chequeosRes.data ?? []) : []) as Array<Record<string, unknown>>;
 
         // Los síntomas se consultan SOLO para los chequeos de este animal.
@@ -311,23 +391,28 @@ export class ClinicalRecordRepository {
                 observaciones: (row.observaciones as string | null) ?? null,
                 tipoEvento: (row.tipo_evento as "vacunacion" | "desparasitacion" | undefined) ?? "vacunacion",
             })),
-            evaluacionesTemperamento: (evaluaciones ?? []).map(
-                (row) => ({
-                    idEvaluacion: row.id_evaluacion_temperamento,
-                    fechaEvaluacion: row.fecha_evaluacion,
-                    comportamiento: row.comportamiento,
-                    nivelEnergia: row.nivel_energia,
-                    aptoPerros: row.apto_perros,
-                    aptoGatos: row.apto_gatos,
-                    aptoNinos: row.apto_ninos,
-                }),
-            ),
-            cirugias: (cirugias ?? []).map((row) => ({
+            evaluacionesTemperamento: evaluacionesRows.map((row) => ({
+                idEvaluacion: Number(row.id_evaluacion_temperamento),
+                fechaEvaluacion: String(row.fecha_evaluacion ?? ""),
+                comportamiento: (row.comportamiento as string | null) ?? null,
+                nivelEnergia: (row.nivel_energia as string | null) ?? null,
+                aptoPerros: (row.apto_perros as string | null) ?? null,
+                aptoGatos: (row.apto_gatos as string | null) ?? null,
+                aptoNinos: (row.apto_ninos as string | null) ?? null,
+            })),
+            cirugias: ((cirugiasRes.data ?? []) as unknown as SurgeryRowWithSupplies[]).map((row) => ({
                 idCirugia: row.id_cirugia,
                 tipoCirugia: row.tipo_cirugia,
                 fechaCirugia: row.fecha_cirugia,
                 exitosa: row.exitosa,
                 notasPostoperatorias: row.notas_postoperatorias,
+                idUsuario: row.id_usuario,
+                insumos: (row.cirugia_insumo ?? []).map((insumo) => ({
+                    idLoteInventario: insumo.id_lote_inventario,
+                    nombreInsumo:
+                        insumo.inventario_lote?.inventario_insumo?.nombre ?? "",
+                    cantidad: insumo.cantidad,
+                })),
             })),
             chequeos: chequeosRows.map((row) => {
                 const idChequeo = Number(row.id_chequeo);
@@ -349,6 +434,21 @@ export class ClinicalRecordRepository {
                 fechaAlta: String(row.fecha_alta ?? ""),
                 observaciones: String(row.observaciones ?? ""),
                 idUsuarioVeterinario: Number(row.id_usuario_veterinario ?? 0),
+            })),
+            traslados: trasladosRows.map((row) => ({
+                idTraslado: Number(row.id_traslado),
+                fechaTraslado: String(row.fecha_traslado ?? ""),
+                idEspacioOrigen: Number(row.id_espacio_origen ?? 0),
+                idEspacioDestino: Number(row.id_espacio_destino ?? 0),
+                motivo: (row.motivo as string | null) ?? null,
+            })),
+            rehabilitaciones: rehabilitacionesRows.map((row) => ({
+                idRehabilitacion: Number(row.id_rehabilitacion),
+                fechaInicio: String(row.fecha_inicio ?? ""),
+                fechaFin: (row.fecha_fin as string | null) ?? null,
+                tipo: String(row.tipo ?? ""),
+                objetivo: String(row.objetivo ?? ""),
+                observaciones: (row.observaciones as string | null) ?? null,
             })),
         };
     }

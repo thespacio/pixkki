@@ -82,40 +82,52 @@ export type Database = {
         Row: {
           acepta_politica_privacidad: boolean
           correo: string
+          declara_mayor_edad: boolean
           direccion: string
           espacio_techado: boolean
+          experiencia_mascotas: string | null
+          fecha_aceptacion_privacidad: string | null
           fecha_registro: string
           id_adoptante: number
           id_refugio: number
           nombre_completo: string
           telefono: string
           tiempo_solo_horas: number | null
+          tiene_ninos: boolean
           tiene_otras_mascotas: boolean
         }
         Insert: {
           acepta_politica_privacidad?: boolean
           correo: string
+          declara_mayor_edad?: boolean
           direccion: string
           espacio_techado?: boolean
+          experiencia_mascotas?: string | null
+          fecha_aceptacion_privacidad?: string | null
           fecha_registro?: string
           id_adoptante?: number
           id_refugio: number
           nombre_completo: string
           telefono: string
           tiempo_solo_horas?: number | null
+          tiene_ninos?: boolean
           tiene_otras_mascotas?: boolean
         }
         Update: {
           acepta_politica_privacidad?: boolean
           correo?: string
+          declara_mayor_edad?: boolean
           direccion?: string
           espacio_techado?: boolean
+          experiencia_mascotas?: string | null
+          fecha_aceptacion_privacidad?: string | null
           fecha_registro?: string
           id_adoptante?: number
           id_refugio?: number
           nombre_completo?: string
           telefono?: string
           tiempo_solo_horas?: number | null
+          tiene_ninos?: boolean
           tiene_otras_mascotas?: boolean
         }
         Relationships: [
@@ -250,6 +262,13 @@ export type Database = {
             referencedColumns: ["id_animal"]
           },
           {
+            foreignKeyName: "altas_cuarentena_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
             foreignKeyName: "altas_cuarentena_id_refugio_fkey"
             columns: ["id_refugio"]
             isOneToOne: false
@@ -277,8 +296,10 @@ export type Database = {
           especie: string
           estado_inicial: string
           esterilizado: boolean
+          fecha_adopcion: string | null
           fecha_ingreso: string
           fecha_rescate: string | null
+          fecha_reserva: string | null
           id_animal: number
           id_espacio: number
           id_estado: number
@@ -293,6 +314,7 @@ export type Database = {
           raza: string | null
           rescatista_contacto: string | null
           rescatista_nombre: string | null
+          reservado_adopcion: boolean
           sexo: string | null
           situacion_rescate: string | null
           tamano: string | null
@@ -311,8 +333,10 @@ export type Database = {
           especie: string
           estado_inicial: string
           esterilizado?: boolean
+          fecha_adopcion?: string | null
           fecha_ingreso?: string
           fecha_rescate?: string | null
+          fecha_reserva?: string | null
           id_animal?: number
           id_espacio: number
           id_estado: number
@@ -327,6 +351,7 @@ export type Database = {
           raza?: string | null
           rescatista_contacto?: string | null
           rescatista_nombre?: string | null
+          reservado_adopcion?: boolean
           sexo?: string | null
           situacion_rescate?: string | null
           tamano?: string | null
@@ -345,8 +370,10 @@ export type Database = {
           especie?: string
           estado_inicial?: string
           esterilizado?: boolean
+          fecha_adopcion?: string | null
           fecha_ingreso?: string
           fecha_rescate?: string | null
+          fecha_reserva?: string | null
           id_animal?: number
           id_espacio?: number
           id_estado?: number
@@ -361,6 +388,7 @@ export type Database = {
           raza?: string | null
           rescatista_contacto?: string | null
           rescatista_nombre?: string | null
+          reservado_adopcion?: boolean
           sexo?: string | null
           situacion_rescate?: string | null
           tamano?: string | null
@@ -546,6 +574,13 @@ export type Database = {
             referencedColumns: ["id_animal"]
           },
           {
+            foreignKeyName: "campana_animal_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
             foreignKeyName: "campana_animal_id_campana_fkey"
             columns: ["id_campana"]
             isOneToOne: false
@@ -636,6 +671,13 @@ export type Database = {
             referencedColumns: ["id_animal"]
           },
           {
+            foreignKeyName: "chequeos_medicos_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
             foreignKeyName: "chequeos_medicos_id_refugio_fkey"
             columns: ["id_refugio"]
             isOneToOne: false
@@ -651,12 +693,62 @@ export type Database = {
           },
         ]
       }
+      cirugia_insumo: {
+        Row: {
+          cantidad: number
+          created_at: string
+          id_cirugia: number
+          id_cirugia_insumo: number
+          id_lote_inventario: number
+          id_refugio: number
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          id_cirugia: number
+          id_cirugia_insumo?: number
+          id_lote_inventario: number
+          id_refugio: number
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          id_cirugia?: number
+          id_cirugia_insumo?: number
+          id_lote_inventario?: number
+          id_refugio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cirugia_insumo_id_cirugia_fkey"
+            columns: ["id_cirugia"]
+            isOneToOne: false
+            referencedRelation: "cirugia_reproductiva"
+            referencedColumns: ["id_cirugia"]
+          },
+          {
+            foreignKeyName: "cirugia_insumo_id_lote_inventario_fkey"
+            columns: ["id_lote_inventario"]
+            isOneToOne: false
+            referencedRelation: "inventario_lote"
+            referencedColumns: ["id_lote_inventario"]
+          },
+          {
+            foreignKeyName: "cirugia_insumo_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
       cirugia_reproductiva: {
         Row: {
           exitosa: boolean
           fecha_cirugia: string
           id_animal: number
           id_cirugia: number
+          id_refugio: number
           id_usuario: number
           notas_postoperatorias: string | null
           tipo_cirugia: string
@@ -666,6 +758,7 @@ export type Database = {
           fecha_cirugia: string
           id_animal: number
           id_cirugia?: number
+          id_refugio: number
           id_usuario: number
           notas_postoperatorias?: string | null
           tipo_cirugia: string
@@ -675,16 +768,31 @@ export type Database = {
           fecha_cirugia?: string
           id_animal?: number
           id_cirugia?: number
+          id_refugio?: number
           id_usuario?: number
           notas_postoperatorias?: string | null
           tipo_cirugia?: string
         }
         Relationships: [
           {
+            foreignKeyName: "cirugia_reproductiva_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
             foreignKeyName: "fk_cirugia_animal"
             columns: ["id_animal"]
             isOneToOne: false
             referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_cirugia_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
             referencedColumns: ["id_animal"]
           },
           {
@@ -736,6 +844,13 @@ export type Database = {
             columns: ["id_animal"]
             isOneToOne: false
             referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_dx_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
             referencedColumns: ["id_animal"]
           },
           {
@@ -871,6 +986,7 @@ export type Database = {
           comentarios: string | null
           fecha_evaluacion: string
           id_evaluacion_adopcion: number
+          id_refugio: number
           id_solicitud: number
           id_usuario: number
           puntuacion: number | null
@@ -881,6 +997,7 @@ export type Database = {
           comentarios?: string | null
           fecha_evaluacion?: string
           id_evaluacion_adopcion?: number
+          id_refugio: number
           id_solicitud: number
           id_usuario: number
           puntuacion?: number | null
@@ -891,6 +1008,7 @@ export type Database = {
           comentarios?: string | null
           fecha_evaluacion?: string
           id_evaluacion_adopcion?: number
+          id_refugio?: number
           id_solicitud?: number
           id_usuario?: number
           puntuacion?: number | null
@@ -898,6 +1016,13 @@ export type Database = {
           tipo_evaluacion?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "evaluacion_adopcion_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
           {
             foreignKeyName: "fk_eval_solicitud"
             columns: ["id_solicitud"]
@@ -923,6 +1048,7 @@ export type Database = {
           fecha_evaluacion: string
           id_animal: number
           id_evaluacion_temperamento: number
+          id_refugio: number | null
           id_usuario: number
           nivel_energia: string | null
         }
@@ -934,6 +1060,7 @@ export type Database = {
           fecha_evaluacion?: string
           id_animal: number
           id_evaluacion_temperamento?: number
+          id_refugio?: number | null
           id_usuario: number
           nivel_energia?: string | null
         }
@@ -945,15 +1072,30 @@ export type Database = {
           fecha_evaluacion?: string
           id_animal?: number
           id_evaluacion_temperamento?: number
+          id_refugio?: number | null
           id_usuario?: number
           nivel_energia?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "evaluacion_temperamento_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
             foreignKeyName: "fk_temp_animal"
             columns: ["id_animal"]
             isOneToOne: false
             referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_temp_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
             referencedColumns: ["id_animal"]
           },
           {
@@ -1023,6 +1165,13 @@ export type Database = {
             referencedColumns: ["id_refugio"]
           },
           {
+            foreignKeyName: "evento_sanitario_lote_fkey"
+            columns: ["id_lote_inventario"]
+            isOneToOne: false
+            referencedRelation: "inventario_lote"
+            referencedColumns: ["id_lote_inventario"]
+          },
+          {
             foreignKeyName: "fk_vacuna_animal"
             columns: ["id_animal"]
             isOneToOne: false
@@ -1030,7 +1179,79 @@ export type Database = {
             referencedColumns: ["id_animal"]
           },
           {
+            foreignKeyName: "fk_vacuna_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
             foreignKeyName: "fk_vacuna_usuario"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
+      }
+      excepcion_aptitud_adopcion: {
+        Row: {
+          criterios_omitidos: string[]
+          fecha_excepcion: string
+          fecha_revocacion: string | null
+          id_animal: number
+          id_excepcion: number
+          id_refugio: number
+          id_usuario: number
+          motivo: string
+          revocada: boolean
+        }
+        Insert: {
+          criterios_omitidos?: string[]
+          fecha_excepcion?: string
+          fecha_revocacion?: string | null
+          id_animal: number
+          id_excepcion?: number
+          id_refugio: number
+          id_usuario: number
+          motivo: string
+          revocada?: boolean
+        }
+        Update: {
+          criterios_omitidos?: string[]
+          fecha_excepcion?: string
+          fecha_revocacion?: string | null
+          id_animal?: number
+          id_excepcion?: number
+          id_refugio?: number
+          id_usuario?: number
+          motivo?: string
+          revocada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excepcion_aptitud_adopcion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "excepcion_aptitud_adopcion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "excepcion_aptitud_adopcion_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "excepcion_aptitud_adopcion_id_usuario_fkey"
             columns: ["id_usuario"]
             isOneToOne: false
             referencedRelation: "usuario"
@@ -1086,6 +1307,13 @@ export type Database = {
             referencedRelation: "animal"
             referencedColumns: ["id_animal"]
           },
+          {
+            foreignKeyName: "fk_foto_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
         ]
       }
       historial_pago: {
@@ -1127,44 +1355,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suscripcion"
             referencedColumns: ["id_suscripcion"]
-          },
-        ]
-      }
-      invitacion_admin: {
-        Row: {
-          correo: string
-          fecha_envio: string
-          fecha_expira: string
-          id_invitacion: number
-          id_refugio: number
-          token: string
-          usado: boolean
-        }
-        Insert: {
-          correo: string
-          fecha_envio?: string
-          fecha_expira?: string
-          id_invitacion?: number
-          id_refugio: number
-          token: string
-          usado?: boolean
-        }
-        Update: {
-          correo?: string
-          fecha_envio?: string
-          fecha_expira?: string
-          id_invitacion?: number
-          id_refugio?: number
-          token?: string
-          usado?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_invitacion_refugio"
-            columns: ["id_refugio"]
-            isOneToOne: false
-            referencedRelation: "refugio"
-            referencedColumns: ["id_refugio"]
           },
         ]
       }
@@ -1309,6 +1499,129 @@ export type Database = {
             referencedRelation: "refugio"
             referencedColumns: ["id_refugio"]
           },
+          {
+            foreignKeyName: "inventario_movimiento_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
+      }
+      invitacion_admin: {
+        Row: {
+          correo: string
+          fecha_envio: string
+          fecha_expira: string
+          id_invitacion: number
+          id_refugio: number
+          token: string
+          usado: boolean
+        }
+        Insert: {
+          correo: string
+          fecha_envio?: string
+          fecha_expira?: string
+          id_invitacion?: number
+          id_refugio: number
+          token: string
+          usado?: boolean
+        }
+        Update: {
+          correo?: string
+          fecha_envio?: string
+          fecha_expira?: string
+          id_invitacion?: number
+          id_refugio?: number
+          token?: string
+          usado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_invitacion_refugio"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+        ]
+      }
+      perfil_adopcion: {
+        Row: {
+          created_at: string
+          descripcion_publica: string | null
+          fecha_despublicacion: string | null
+          fecha_publicacion: string | null
+          id_animal: number
+          id_perfil_adopcion: number
+          id_refugio: number
+          id_usuario_actualizacion: number | null
+          id_usuario_creacion: number | null
+          publicado: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion_publica?: string | null
+          fecha_despublicacion?: string | null
+          fecha_publicacion?: string | null
+          id_animal: number
+          id_perfil_adopcion?: number
+          id_refugio: number
+          id_usuario_actualizacion?: number | null
+          id_usuario_creacion?: number | null
+          publicado?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion_publica?: string | null
+          fecha_despublicacion?: string | null
+          fecha_publicacion?: string | null
+          id_animal?: number
+          id_perfil_adopcion?: number
+          id_refugio?: number
+          id_usuario_actualizacion?: number | null
+          id_usuario_creacion?: number | null
+          publicado?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfil_adopcion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: true
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "perfil_adopcion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: true
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "perfil_adopcion_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "perfil_adopcion_id_usuario_actualizacion_fkey"
+            columns: ["id_usuario_actualizacion"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+          {
+            foreignKeyName: "perfil_adopcion_id_usuario_creacion_fkey"
+            columns: ["id_usuario_creacion"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
         ]
       }
       permiso: {
@@ -1358,6 +1671,7 @@ export type Database = {
           codigo_postal: string | null
           colonia: string | null
           correo_contacto: string
+          descripcion_publica: string | null
           direccion: string | null
           estado: string
           fecha_registro: string
@@ -1366,6 +1680,7 @@ export type Database = {
           longitud: number | null
           nombre: string
           numero: string | null
+          slug: string
           telefono: string | null
         }
         Insert: {
@@ -1375,6 +1690,7 @@ export type Database = {
           codigo_postal?: string | null
           colonia?: string | null
           correo_contacto: string
+          descripcion_publica?: string | null
           direccion?: string | null
           estado: string
           fecha_registro?: string
@@ -1383,6 +1699,7 @@ export type Database = {
           longitud?: number | null
           nombre: string
           numero?: string | null
+          slug: string
           telefono?: string | null
         }
         Update: {
@@ -1392,6 +1709,7 @@ export type Database = {
           codigo_postal?: string | null
           colonia?: string | null
           correo_contacto?: string
+          descripcion_publica?: string | null
           direccion?: string | null
           estado?: string
           fecha_registro?: string
@@ -1400,9 +1718,78 @@ export type Database = {
           longitud?: number | null
           nombre?: string
           numero?: string | null
+          slug?: string
           telefono?: string | null
         }
         Relationships: []
+      }
+      rehabilitacion: {
+        Row: {
+          fecha_fin: string | null
+          fecha_inicio: string
+          fecha_registro: string
+          id_animal: number
+          id_refugio: number
+          id_rehabilitacion: number
+          id_usuario: number
+          objetivo: string
+          observaciones: string | null
+          tipo: string
+        }
+        Insert: {
+          fecha_fin?: string | null
+          fecha_inicio: string
+          fecha_registro?: string
+          id_animal: number
+          id_refugio: number
+          id_rehabilitacion?: number
+          id_usuario: number
+          objetivo: string
+          observaciones?: string | null
+          tipo: string
+        }
+        Update: {
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          fecha_registro?: string
+          id_animal?: number
+          id_refugio?: number
+          id_rehabilitacion?: number
+          id_usuario?: number
+          objetivo?: string
+          observaciones?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehabilitacion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "rehabilitacion_id_animal_fkey"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "rehabilitacion_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "rehabilitacion_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
       }
       rol: {
         Row: {
@@ -1457,31 +1844,46 @@ export type Database = {
       }
       solicitud_adopcion: {
         Row: {
+          codigo_seguimiento: string
           comentarios_generales: string | null
           estado_solicitud: string
+          fecha_cierre: string | null
           fecha_solicitud: string
           id_adoptante: number
           id_animal: number
+          id_refugio: number
           id_solicitud: number
+          id_usuario_cierre: number | null
           motivo_adopcion: string | null
+          motivo_rechazo: string | null
         }
         Insert: {
+          codigo_seguimiento?: string
           comentarios_generales?: string | null
           estado_solicitud?: string
+          fecha_cierre?: string | null
           fecha_solicitud?: string
           id_adoptante: number
           id_animal: number
+          id_refugio: number
           id_solicitud?: number
+          id_usuario_cierre?: number | null
           motivo_adopcion?: string | null
+          motivo_rechazo?: string | null
         }
         Update: {
+          codigo_seguimiento?: string
           comentarios_generales?: string | null
           estado_solicitud?: string
+          fecha_cierre?: string | null
           fecha_solicitud?: string
           id_adoptante?: number
           id_animal?: number
+          id_refugio?: number
           id_solicitud?: number
+          id_usuario_cierre?: number | null
           motivo_adopcion?: string | null
+          motivo_rechazo?: string | null
         }
         Relationships: [
           {
@@ -1497,6 +1899,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "animal"
             referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_solicitud_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "solicitud_adopcion_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "solicitud_adopcion_id_usuario_cierre_fkey"
+            columns: ["id_usuario_cierre"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
           },
         ]
       }
@@ -1575,7 +1998,9 @@ export type Database = {
           id_animal: number
           id_espacio_destino: number
           id_espacio_origen: number
+          id_refugio: number | null
           id_traslado: number
+          id_usuario: number | null
           motivo: string | null
         }
         Insert: {
@@ -1583,7 +2008,9 @@ export type Database = {
           id_animal: number
           id_espacio_destino: number
           id_espacio_origen: number
+          id_refugio?: number | null
           id_traslado?: number
+          id_usuario?: number | null
           motivo?: string | null
         }
         Update: {
@@ -1591,7 +2018,9 @@ export type Database = {
           id_animal?: number
           id_espacio_destino?: number
           id_espacio_origen?: number
+          id_refugio?: number | null
           id_traslado?: number
+          id_usuario?: number | null
           motivo?: string | null
         }
         Relationships: [
@@ -1600,6 +2029,13 @@ export type Database = {
             columns: ["id_animal"]
             isOneToOne: false
             referencedRelation: "animal"
+            referencedColumns: ["id_animal"]
+          },
+          {
+            foreignKeyName: "fk_traslado_animal"
+            columns: ["id_animal"]
+            isOneToOne: false
+            referencedRelation: "animal_adopcion_publica"
             referencedColumns: ["id_animal"]
           },
           {
@@ -1615,6 +2051,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "espacio"
             referencedColumns: ["id_espacio"]
+          },
+          {
+            foreignKeyName: "traslado_id_refugio_fkey"
+            columns: ["id_refugio"]
+            isOneToOne: false
+            referencedRelation: "refugio"
+            referencedColumns: ["id_refugio"]
+          },
+          {
+            foreignKeyName: "traslado_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
           },
         ]
       }
@@ -1710,6 +2160,30 @@ export type Database = {
       }
     }
     Views: {
+      animal_adopcion_publica: {
+        Row: {
+          color: string | null
+          compatibilidad: Json | null
+          descripcion_publica: string | null
+          desparasitado: boolean | null
+          edad_estimada: number | null
+          especie: string | null
+          esterilizado: boolean | null
+          fecha_publicacion: string | null
+          foto_principal: string | null
+          fotos: Json | null
+          id_animal: number | null
+          nombre: string | null
+          rasgos_fisicos: string | null
+          raza: string | null
+          refugio: Json | null
+          sexo: string | null
+          tamano: string | null
+          temperamento: string | null
+          vacunado: boolean | null
+        }
+        Relationships: []
+      }
       campana_publica: {
         Row: {
           animales: Json | null
@@ -1725,10 +2199,64 @@ export type Database = {
         }
         Relationships: []
       }
+      refugio_publico: {
+        Row: {
+          adoptables: number | null
+          ciudad: string | null
+          correo_contacto: string | null
+          descripcion_publica: string | null
+          estado: string | null
+          nombre: string | null
+          slug: string | null
+          telefono: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cambiar_estado_solicitud_adopcion: {
+        Args: {
+          p_estado_solicitud: string
+          p_id_solicitud: number
+          p_id_usuario?: number
+          p_motivo?: string
+        }
+        Returns: Json
+      }
       campanas_es_superadmin: { Args: never; Returns: boolean }
       campanas_refugio_usuario: { Args: never; Returns: number }
+      completar_adopcion: {
+        Args: {
+          p_fecha_adopcion: string
+          p_id_solicitud: number
+          p_id_usuario?: number
+          p_observaciones?: string
+        }
+        Returns: Json
+      }
+      current_refugio_id: { Args: never; Returns: number }
+      current_user_is_admin: { Args: never; Returns: boolean }
+      current_user_is_superadmin: { Args: never; Returns: boolean }
+      evaluar_aptitud_adopcion: { Args: { p_id_animal: number }; Returns: Json }
+      publicar_adopcion: {
+        Args: {
+          p_autorizar_excepcion: boolean
+          p_disponible: boolean
+          p_id_animal: number
+          p_id_usuario: number
+          p_motivo_excepcion: string
+        }
+        Returns: Json
+      }
+      publicar_perfil_adopcion: {
+        Args: {
+          p_descripcion_publica?: string
+          p_id_animal: number
+          p_id_usuario?: number
+          p_publicado?: boolean
+        }
+        Returns: Json
+      }
       registrar_alta_cuarentena: {
         Args: {
           p_fecha_alta: string
@@ -1738,18 +2266,73 @@ export type Database = {
         }
         Returns: Json
       }
+      registrar_cirugia_reproductiva: {
+        Args: {
+          p_exitosa: boolean
+          p_fecha_cirugia: string
+          p_id_animal: number
+          p_id_usuario: number
+          p_insumos: Json
+          p_notas_postoperatorias: string
+          p_tipo_cirugia: string
+        }
+        Returns: Json
+      }
+      registrar_evaluacion_temperamento: {
+        Args: {
+          p_apto_gatos: string
+          p_apto_ninos: string
+          p_apto_perros: string
+          p_comportamiento: string
+          p_fecha_evaluacion?: string
+          p_id_animal: number
+          p_id_usuario?: number
+          p_nivel_energia: string
+        }
+        Returns: Json
+      }
       registrar_evento_sanitario: {
         Args: {
-          p_esquema_completo: boolean
+          p_esquema_completo?: boolean
           p_fecha_aplicacion: string
-          p_fecha_refuerzo: string | null
+          p_fecha_refuerzo?: string
           p_id_animal: number
-          p_id_lote_inventario: number
-          p_id_usuario: number
-          p_marca_lote: string | null
-          p_observaciones: string | null
+          p_id_lote_inventario?: number
+          p_id_usuario?: number
+          p_marca_lote?: string
+          p_observaciones?: string
           p_tipo_biologico: string
           p_tipo_evento: string
+        }
+        Returns: Json
+      }
+      registrar_solicitud_adopcion: {
+        Args: {
+          p_acepta_politica_privacidad?: boolean
+          p_comentarios_generales?: string
+          p_correo: string
+          p_declara_mayor_edad?: boolean
+          p_direccion: string
+          p_espacio_techado: boolean
+          p_experiencia_mascotas?: string
+          p_id_animal: number
+          p_motivo_adopcion?: string
+          p_nombre_completo: string
+          p_telefono: string
+          p_tiempo_solo_horas?: number
+          p_tiene_ninos: boolean
+          p_tiene_otras_mascotas: boolean
+        }
+        Returns: Json
+      }
+      registrar_traslado: {
+        Args: {
+          p_alta_fecha?: string
+          p_alta_observaciones?: string
+          p_id_animal: number
+          p_id_espacio_destino: number
+          p_id_usuario?: number
+          p_motivo?: string
         }
         Returns: Json
       }

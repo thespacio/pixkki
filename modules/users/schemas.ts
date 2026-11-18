@@ -63,11 +63,14 @@ export const UserParamsSchema = z.object({
     userId: UserIdSchema
 });
 
+/**
+ * Roles asignables desde la gestión de personal de un refugio.
+ * `Superadmin` queda fuera: tiene `id_refugio = NULL` y se aprovisiona
+ * globalmente (RF00 regla 1), no desde la vista `/staff`.
+ */
 export const STAFF_ROLES = [
-    "veterinarian",
-    "operator",
-    "coordinator",
-    "evaluator",
+    "administrador",
+    "veterinario",
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -77,6 +80,9 @@ export const CreateStaffSchema = z.object({
     email: z.string().trim().toLowerCase().email("Ingresa un email válido"),
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(72),
     role: z.enum(STAFF_ROLES, { message: "Selecciona un rol válido" }),
+    // Solo el superadmin lo envía; la Action ignora el valor si proviene de
+    // otro rol y siempre aplica el refugio de la sesión (multitenant).
+    shelterId: ShelterIdSchema.optional(),
 });
 
 export type CreateStaffInput = z.infer<typeof CreateStaffSchema>;

@@ -7,6 +7,7 @@ import { useState} from 'react'
 import {AuthError} from "@/modules/auth/errors";
 import {requiresMfa} from "@/modules/auth/mfa/service";
 import {login, verifyMfa} from "@/modules/auth/login/service";
+import {getAuthFlagsAction} from "@/modules/auth/action";
 
 const logo = '/images/logo.png'
 
@@ -76,9 +77,19 @@ export default function Login() {
             console.log(
                 "Login completado."
             );
-            router.replace(
-                "/dashboard"
-            );
+            const flags = await getAuthFlagsAction();
+            const next =
+                flags.success && flags.data
+                    ? flags.data.requiresPasswordChange
+                        ? "/change-password"
+                        : !flags.data.termsAccepted
+                        ? "/accept-terms"
+                        : flags.data.requiresOnboarding &&
+                          flags.data.shelterId !== null
+                        ? "/onboarding"
+                        : "/dashboard"
+                    : "/dashboard";
+            router.replace(next);
             router.refresh();
             return;
         }
@@ -104,9 +115,19 @@ export default function Login() {
         console.log(
             "MFA verificado correctamente."
         );
-        router.replace(
-            "/dashboard"
-        );
+        const flags = await getAuthFlagsAction();
+        const next =
+            flags.success && flags.data
+                ? flags.data.requiresPasswordChange
+                    ? "/change-password"
+                    : !flags.data.termsAccepted
+                    ? "/accept-terms"
+                    : flags.data.requiresOnboarding &&
+                      flags.data.shelterId !== null
+                    ? "/onboarding"
+                    : "/dashboard"
+                : "/dashboard";
+        router.replace(next);
         router.refresh();
       }
     }

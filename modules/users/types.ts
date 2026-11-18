@@ -5,7 +5,7 @@ import {
     UserSchema,
     CreateUserSchema,
     UpdateUserSchema,
-    UserFiltersSchema, StaffRole
+    UserFiltersSchema
 } from './schemas';
 
 // ===== ENTIDADES DEL DOMINIO =====
@@ -60,29 +60,38 @@ export type GlobalUserItem = User & {
 };
 
 /**
- * Mapa rol lógico -> id numérico en tabla `rol`.
- * Debe coincidir con los IDs reales de tu base de datos.
+ * Catálogo canónico de roles (RF00 / migración 20261112000000):
+ * 1 Administrador, 2 Veterinario, 3 Superadmin.
+ * No existen Operador, Coordinador ni Evaluador en la base de datos.
  */
-export const ROLE_NAME_TO_ID: Record<StaffRole, number> = {
-    veterinarian: 1,
-    operator: 2,
-    coordinator: 3,
-    evaluator: 4,
+export const ROLE_CATALOG = {
+    administrador: { id: 1, label: "Administrador", color: "#43AE6D", bg: "#EBF7F1" },
+    veterinario: { id: 2, label: "Veterinario", color: "#6B9FAE", bg: "#EAF3F6" },
+    superadmin: { id: 3, label: "Superadmin", color: "#7A7670", bg: "#EDE9E1" },
+} as const;
+
+export type RoleName = keyof typeof ROLE_CATALOG;
+
+export const ROLE_NAME_TO_ID: Record<RoleName, number> = {
+    administrador: ROLE_CATALOG.administrador.id,
+    veterinario: ROLE_CATALOG.veterinario.id,
+    superadmin: ROLE_CATALOG.superadmin.id,
 };
 
-export const ROLE_ID_TO_NAME: Record<number, StaffRole> = {
-    1: "veterinarian",
-    2: "operator",
-    3: "coordinator",
-    4: "evaluator",
+export const ROLE_ID_TO_NAME: Record<number, RoleName> = {
+    [ROLE_CATALOG.administrador.id]: "administrador",
+    [ROLE_CATALOG.veterinario.id]: "veterinario",
+    [ROLE_CATALOG.superadmin.id]: "superadmin",
 };
 
 export const roleConfig: Record<
-    StaffRole,
+    RoleName,
     { label: string; color: string; bg: string }
 > = {
-    veterinarian: { label: "Veterinario", color: "#43AE6D", bg: "#EBF7F1" },
-    operator: { label: "Operador", color: "#6B9FAE", bg: "#EAF3F6" },
-    coordinator: { label: "Coordinador", color: "#E8A87C", bg: "#FDF2EA" },
-    evaluator: { label: "Evaluador", color: "#7A7670", bg: "#EDE9E1" },
+    administrador: { label: ROLE_CATALOG.administrador.label, color: ROLE_CATALOG.administrador.color, bg: ROLE_CATALOG.administrador.bg },
+    veterinario: { label: ROLE_CATALOG.veterinario.label, color: ROLE_CATALOG.veterinario.color, bg: ROLE_CATALOG.veterinario.bg },
+    superadmin: { label: ROLE_CATALOG.superadmin.label, color: ROLE_CATALOG.superadmin.color, bg: ROLE_CATALOG.superadmin.bg },
 };
+
+/** Modelo de lectura de la vista `/staff`; `shelterNombre` solo para superadmin. */
+export type StaffListItem = User & { shelterNombre?: string | null };
