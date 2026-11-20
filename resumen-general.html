@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixkki — Resumen general del proyecto</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --accent-2: #a78bfa;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, var(--bg), #111827);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2.5rem 1.25rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header .logo {
+      display: inline-block;
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    header p.tagline { color: var(--muted); font-size: 1.05rem; margin-top: .4rem; }
+    .badge {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: .25rem .8rem;
+      font-size: .78rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--accent);
+    }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+      color: var(--accent);
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    p, li { color: var(--text); }
+    ul { list-style: none; display: grid; gap: .45rem; }
+    li::before { content: "▹ "; color: var(--accent-2); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: .75rem;
+    }
+    .chip {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .7rem .9rem;
+      font-size: .9rem;
+    }
+    .chip strong { display: block; color: var(--accent); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+    code {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: .1rem .4rem;
+      font-size: .85em;
+      color: var(--accent-2);
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .5rem;
+      font-size: .85rem;
+    }
+    .flow span {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .7rem;
+    }
+    .flow i { color: var(--accent); font-style: normal; }
+    footer { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">Pixkki</div>
+      <p class="tagline">Plataforma SaaS multitenant para la gestión integral de refugios de animales.</p>
+      <span class="badge">Resumen general del proyecto</span>
+    </header>
+
+    <section>
+      <h2>📌 ¿Qué es Pixkki?</h2>
+      <p>
+        Solución de software orientada a la transformación digital de centros de rescate animal.
+        Centraliza expedientes clínicos, cuarentena, espacios físicos, adopciones, donaciones,
+        inventario y reportes operativos, con trazabilidad del historial de cada animal y
+        aislamiento de datos entre organizaciones (tenants) bajo estrictos estándares de seguridad.
+      </p>
+    </section>
+
+    <section>
+      <h2>✨ Capacidades principales</h2>
+      <ul>
+        <li>Autenticación multi-tenant con verificación de correo y onboarding de nuevos refugios.</li>
+        <li>Expedientes clínicos: diagnósticos, chequeos, vacunación y control de cuarentena.</li>
+        <li>Socialización y gestión de espacios físicos (caniles, gateras, cuarentena, rehabilitación).</li>
+        <li>Portal público de adopciones: perfiles, postulaciones, entrevistas y seguimiento.</li>
+        <li>Inventario, donaciones en especie y alertas de stock mínimo.</li>
+        <li>Reportes de población, ocupación, donaciones e inteligencia de datos.</li>
+        <li>Aislamiento por <code>id_refugio</code> con políticas RLS en PostgreSQL.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🏗️ Arquitectura</h2>
+      <p>
+        <strong>Monolito modular multi-tenant</strong> con Clean Architecture, dentro de Next.js App Router.
+        La lógica de negocio se organiza en módulos autocontenidos y la dirección de dependencias es unidireccional:
+      </p>
+      <div class="flow">
+        <span>UI</span><i>→</i>
+        <span>Server Action</span><i>→</i>
+        <span>Service</span><i>→</i>
+        <span>Repository</span><i>→</i>
+        <span>Supabase</span>
+      </div>
+      <p style="margin-top:.8rem; color:var(--muted); font-size:.9rem;">
+        Factory ensambla dependencias · Zod es la única fuente de verdad para validación y tipos ·
+        Server Components por defecto · Supabase solo desde repositories.
+      </p>
+    </section>
+
+    <section>
+      <h2>🧩 Módulos de dominio</h2>
+      <div class="grid">
+        <div class="chip"><strong>Auth</strong>Acceso, MFA y recuperación</div>
+        <div class="chip"><strong>Users</strong>Gestión de usuarios</div>
+        <div class="chip"><strong>Shelters</strong>Refugios y onboarding</div>
+        <div class="chip"><strong>Animals</strong>Expedientes y clínica</div>
+        <div class="chip"><strong>Spaces</strong>Instalaciones y capacidad</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>🛠️ Stack tecnológico</h2>
+      <div class="grid">
+        <div class="chip"><strong>Framework</strong>Next.js 14 · App Router</div>
+        <div class="chip"><strong>UI</strong>React 18 · Tailwind CSS</div>
+        <div class="chip"><strong>Lenguaje</strong>TypeScript (strict)</div>
+        <div class="chip"><strong>Backend / BD</strong>Supabase · PostgreSQL</div>
+        <div class="chip"><strong>Validación</strong>Zod 4</div>
+        <div class="chip"><strong>QA</strong>Vitest · Playwright</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>📁 Estructura y flujo de trabajo</h2>
+      <ul>
+        <li><code>app/</code> rutas y layouts · <code>modules/</code> lógica de negocio · <code>components/</code> UI reutilizable · <code>lib/</code> infraestructura.</li>
+        <li><code>docs/features/</code> especificaciones · <code>docs/decisions/</code> ADRs.</li>
+        <li>Flujo: especificación → plan aprobado → implementación → verificación (typecheck, lint, build) → revisión → commit.</li>
+        <li>Commits con Conventional Commits sobre ramas <code>feature/*</code>; integración en <code>main</code> y despliegue en Vercel.</li>
+      </ul>
+    </section>
+
+    <footer>
+      Documento generado a partir de AGENTS.md, ARCHITECTURE.md y README.md · Uso académico y privado · Equipo PIXKKI
+    </footer>
+  </div>
+</body>
+</html>
