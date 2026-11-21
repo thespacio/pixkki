@@ -68,7 +68,7 @@ No incluye:
 10. **Concurrencia de stock**: El descuento se ejecuta con bloqueo de fila o decremento atómico condicional. Si dos usuarios compiten por la última unidad, solo uno completa la operación y el otro recibe un conflicto de stock.
 11. **Actualización de flags del expediente**: Al registrar el primer evento de tipo `vacunacion`, el campo `animal.vacunado` pasa a `true`; al registrar el primero de tipo `desparasitacion`, `animal.desparasitado` pasa a `true`. Los flags no se revierten al eliminar eventos, porque los registros clínicos no se eliminan.
 12. **Peso vigente del paciente**: `chequeos_medicos.peso_kg` conserva el histórico. El campo `animal.peso` se actualiza con el peso del último chequeo para que catálogo, reportes y listados consuman el valor vigente sin duplicar la fuente histórica.
-13. **Cuarentena por defecto**: Todo nuevo ingreso se crea con `en_cuarentena = true` (regla ya establecida en la Épica 1). Esta épica no permite crear un animal fuera de cuarentena ni desactivar el flag por edición directa del expediente.
+13. **Cuarentena por defecto**: Todo nuevo ingreso se crea con `en_cuarentena = true` y con `id_estado` apuntando al estado "Cuarentena" del catálogo, resuelto en el servidor por nombre normalizado. El cliente no elige el estado. Esta épica no permite crear un animal fuera de cuarentena ni desactivar el flag por edición directa del expediente.
 14. **Alerta de riesgo biológico**: Mientras `en_cuarentena = true`, el paciente muestra el badge rojo de alto contraste **"AISLAMIENTO / RIESGO BIOLÓGICO"** en listados y ficha, y el banner rojo de la ficha clínica (US08). La alerta nunca depende solo del color: incluye texto explícito para accesibilidad.
 15. **Alta médica de cuarentena**: Solo `veterinarian` o `admin` pueden registrar el alta. El alta exige observaciones clínicas y establece `en_cuarentena = false` de forma atómica junto con la creación del registro de alta.
 16. **Alta única y no repetible**: No se puede registrar un alta sobre un paciente que ya no está en cuarentena. El intento devuelve `CUARENTENA_YA_LIBERADA` sin modificar el expediente.
@@ -82,7 +82,8 @@ No incluye:
 | Elemento | Estado actual | Implicación para esta épica |
 |----------|---------------|-----------------------------|
 | `animal.en_cuarentena` | Ya existe en la tabla `animal`. | Se reutiliza; no requiere nueva columna. |
-| Default de `en_cuarentena` en la creación | El validador actual `CreateAnimalSchema` usa `enCuarentena = false` por defecto, aunque Épica 1/2 exigen `true`. | Debe corregirse a `true` en la implementación de intake antes de dar por cumplida US11; requiere alineación con Épica 1. |
+| Default de `en_cuarentena` en la creación | `CreateAnimalSchema` ya usa `enCuarentena = true` por defecto y `AnimalService.create` lo fuerza a `true` aunque el cliente envíe otro valor. | Regla cubierta; no requiere migración. |
+| Estado del catálogo al ingreso | El alta no acepta `idEstado` del cliente. `AnimalStateService.requireCuarentenaId()` resuelve "Cuarentena" por nombre normalizado y el alta falla con `409 ESTADO_CUARENTENA_NO_CONFIGURADO` si no existe. | Regla cubierta; el seed `20261120120000_seed_animal_estado_cuarentena.sql` garantiza la fila en entornos nuevos. |
 | `animal.vacunado` / `animal.desparasitado` | Ya existen como flags. | Se actualizan como estado derivado de los eventos sanitarios. |
 | `vacunacion` | Existe, pero solo modela vacunas y no tiene `id_refugio`, `tipo_evento` ni vínculo con inventario. | Requiere migración aprobada para convertirse en `evento_sanitario` (o extenderla manteniendo compatibilidad). |
 | `chequeos_medicos` | No existe. | Se crea en esta épica. |

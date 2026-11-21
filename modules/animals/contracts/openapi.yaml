@@ -42,7 +42,11 @@ components:
                 `bloqueos` y `advertencias` en `APTITUD_ADOPCION_INSUFICIENTE`.
     CreateAnimalRequest:
       type: object
-      required: [especie, procedencia, rasgosFisicos, estadoInicial, idEstado, idEspacio]
+      description: >-
+        RF1.1/RF2.4: el estado no se elige en el alta. El servidor resuelve la
+        fila "Cuarentena" del catálogo por nombre normalizado; un `idEstado`
+        enviado por el cliente se descarta antes de persistir.
+      required: [especie, procedencia, rasgosFisicos, estadoInicial, idEspacio]
       properties:
         nombre: { type: string, maxLength: 100 }
         especie: { type: string, enum: [Perro, Gato] }
@@ -53,7 +57,6 @@ components:
         procedencia: { type: string, minLength: 2, maxLength: 200 }
         rasgosFisicos: { type: string, minLength: 2, maxLength: 500 }
         estadoInicial: { type: string, minLength: 2, maxLength: 100 }
-        idEstado: { type: integer, minimum: 1 }
         idEspacio: { type: integer, minimum: 1 }
         idRefugio: { type: integer, minimum: 1 }
         color: { type: string, maxLength: 50 }
@@ -505,6 +508,7 @@ paths:
         "400": { $ref: "#/components/responses/ValidationError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { description: "ESTADO_CUARENTENA_NO_CONFIGURADO: el catálogo no tiene la fila «Cuarentena»", content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } } }
     get:
       tags: [animals]
       summary: Listar animales del refugio en sesión.

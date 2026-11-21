@@ -28,6 +28,23 @@ export class AnimalStateNotFoundError extends Error {
     }
 }
 
+/**
+ * RF1.1/RF2.4: el alta resuelve el estado "Cuarentena" desde el catálogo
+ * `animal_estado`. Si la fila no existe, no se puede crear el animal porque
+ * `animal.id_estado` es obligatorio.
+ */
+export class EstadoCuarentenaNoConfiguradoError extends Error {
+    readonly code = "ESTADO_CUARENTENA_NO_CONFIGURADO";
+    readonly statusCode = 409;
+
+    constructor() {
+        super(
+            "El catálogo de estados no tiene «Cuarentena». Un administrador debe crearlo antes de registrar animales.",
+        );
+        this.name = "EstadoCuarentenaNoConfiguradoError";
+    }
+}
+
 export class AnimalClinicalForbiddenError extends Error {
     readonly code = "ROL_SIN_PERMISO";
     readonly statusCode = 403;

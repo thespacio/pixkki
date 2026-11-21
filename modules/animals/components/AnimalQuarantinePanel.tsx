@@ -27,6 +27,11 @@ type Props = {
     refreshKey?: number;
     /** Avisa al expediente para recargar la ficha clínica y el listado. */
     onChanged?: () => void;
+    /**
+     * La ficha clínica muestra el alta desde la barra de acciones. El resumen
+     * oculta este botón para no duplicarlo.
+     */
+    showReleaseButton?: boolean;
 };
 
 function formatFecha(value: string): string {
@@ -44,6 +49,7 @@ export function AnimalQuarantinePanel({
     canRelease,
     refreshKey = 0,
     onChanged,
+    showReleaseButton = true,
 }: Props) {
     const [status, setStatus] = useState<QuarantineStatus | null>(null);
     const [loading, setLoading] = useState(true);
@@ -116,7 +122,7 @@ export function AnimalQuarantinePanel({
                         </div>
                     )}
 
-                    {status.enCuarentena && canRelease && (
+                    {status.enCuarentena && canRelease && showReleaseButton && (
                         <button
                             onClick={() => setSheetOpen(true)}
                             className="inline-flex items-center gap-2 mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition disabled:opacity-60"
@@ -165,7 +171,7 @@ export function AnimalQuarantinePanel({
                 </p>
             )}
 
-            {status?.enCuarentena && canRelease && (
+            {status?.enCuarentena && canRelease && showReleaseButton && (
                 <AnimalQuarantineBottomSheet
                     idAnimal={idAnimal}
                     open={sheetOpen}

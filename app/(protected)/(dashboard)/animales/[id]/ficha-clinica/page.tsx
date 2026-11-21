@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 import { getCurrentUser } from "@/modules/auth";
+import { Badge } from "@/components/ui/badge";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
 import { createClinicalRecordService } from "@/modules/animals/factories/create-clinical-record-service";
 import type { ClinicalRecord } from "@/modules/animals/services/clinical-record.service";
@@ -56,6 +57,22 @@ export default async function AnimalClinicalRecordPage({ params }: PageProps) {
                 <p className="text-sm text-muted-foreground mt-1">
                     {nombre} · Expediente #{ficha.animal.idAnimal}
                 </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{ficha.animal.especie}</Badge>
+                    {ficha.animal.estadoNombre && (
+                        <Badge variant="outline">{ficha.animal.estadoNombre}</Badge>
+                    )}
+                    {ficha.animal.enCuarentena && (
+                        <Badge variant="destructive">
+                            AISLAMIENTO / RIESGO BIOLÓGICO
+                        </Badge>
+                    )}
+                    {ficha.animal.disponibleAdopcion && (
+                        <Badge className="border-green-200 bg-green-100 text-green-700">
+                            En adopción
+                        </Badge>
+                    )}
+                </div>
             </div>
             <AnimalClinicalPagePanels
                 idAnimal={idAnimal}

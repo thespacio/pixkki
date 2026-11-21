@@ -50,11 +50,11 @@ No incluye:
 
 ## Reglas de negocio
 
-1. **Alta de paciente**: Campos obligatorios: `especie` (Perro/Gato), Procedencia (texto libre, 2–200 caracteres), Rasgos físicos distintivos, Estado inicial (texto descriptivo amplio), `idEstado` e `idEspacio`. La Edad estimada es opcional y se expresa en meses (`edadEstimada`, entero entre 0 y 300).
+1. **Alta de paciente**: Campos obligatorios: `especie` (Perro/Gato), Procedencia (texto libre, 2–200 caracteres), Rasgos físicos distintivos, Estado inicial (texto descriptivo amplio) e `idEspacio`. El estado del paciente **no se elige en el alta**: el servidor resuelve la fila "Cuarentena" del catálogo `animal_estado`. La Edad estimada es opcional y se expresa en meses (`edadEstimada`, entero entre 0 y 300).
 2. **Identidad única**: El sistema genera automáticamente el identificador entero `id_animal` al insertar el registro. Nunca es capturado por el usuario.
-3. **Cuarentena por defecto**: Toda inserción en `animal` establece `en_cuarentena = true`. La salida de cuarentena pertenece a la Épica 2.
+3. **Cuarentena por defecto**: Toda inserción en `animal` establece `en_cuarentena = true` y `id_estado` apunta al estado "Cuarentena". El servidor busca ese estado por nombre normalizado (sin distinguir mayúsculas, tildes ni espacios extra); si no existe, rechaza el alta con `409 ESTADO_CUARENTENA_NO_CONFIGURADO`. La salida de cuarentena pertenece a la Épica 2.
 4. **Vínculo multitenant**: El expediente se vincula de forma indisoluble al `id_refugio` del operador en sesión. Toda consulta posterior filtra por `id_refugio`; los accesos cruzados entre refugios se rechazan como no encontrados (404).
-5. **Galería multimedia**: Entre 1 y 5 imágenes por expediente. Las imágenes no son obligatorias en el alta: el expediente puede crearse sin ellas y completarse después desde la galería. Extensiones permitidas: JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. La validación se realiza en el servidor e incluye la verificación del tipo MIME real del contenido.
+5. **Galería multimedia**: Entre 1 y 5 imágenes por expediente. Las imágenes no son obligatorias en el alta: el expediente puede crearse sin ellas y completarse después desde la galería. Opcionalmente pueden seleccionarse en el formulario de alta; en ese caso se suben con `POST /api/v1/animales/{id}/imagenes` justo después de crear el expediente, y un fallo en la subida no invalida el registro. Extensiones permitidas: JPG, PNG y WEBP. Tamaño máximo 5 MB por archivo. La validación se realiza en el servidor e incluye la verificación del tipo MIME real del contenido.
 6. **Progreso de subida**: La interfaz muestra un componente interactivo con el progreso de subida de cada archivo.
 7. **Miniaturas**: Cloudinary genera los thumbnails de 300x300 píxeles mediante transformación determinista de URL, sin proceso asíncrono.
 8. **Portada única**: Máximo una imagen con `es_portada = true` por expediente. Designar una nueva portada desmarca la anterior. Si se elimina la imagen portada, la primera imagen restante se designa automáticamente.
@@ -114,7 +114,6 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
   "edadEstimada": "integer (opcional, 0–300 meses)",
   "rasgosFisicos": "string (obligatorio, 2–500 caracteres)",
   "estadoInicial": "string (obligatorio, 2–100 caracteres)",
-  "idEstado": "integer (obligatorio)",
   "idEspacio": "integer (obligatorio)",
   "idRefugio": "integer (opcional; solo superadmin)",
   "nombre": "string (opcional)",
@@ -135,6 +134,8 @@ Los endpoints siguen el patrón `/api/v1/<recurso>`. La validación de entrada s
 ```
 
 No se envían imágenes en esta petición. El alta crea el expediente y devuelve su `idAnimal` para gestionar la galería después.
+
+`idEstado` ya no forma parte del request: si se envía, se descarta. El servidor asigna "Cuarentena" y reconstruye el DTO completo antes de persistir.
 
 **Response (201):**
 
@@ -158,6 +159,7 @@ No se envían imágenes en esta petición. El alta crea el expediente y devuelve
 - `400` — Datos inválidos (procedencia o rasgos fuera de rango, edad fuera de 0–300, referencias inválidas)
 - `403` — Sin sesión activa, refugio inactivo o rol sin permiso
 - `404` — Animal no encontrado (GET por id, incluye acceso cruzado entre refugios)
+- `409` — El catálogo `animal_estado` no tiene "Cuarentena" (`ESTADO_CUARENTENA_NO_CONFIGURADO`)
 - `500` — Error interno
 
 ### RF1.2 — Multimedia del paciente
@@ -397,7 +399,7 @@ flowchart TD
 
 | US | Criterios de aceptación |
 |----|------------------------|
-| US05 | El operador registra un paciente con Especie, Procedencia (texto libre), Edad estimada opcional en meses, Rasgos físicos distintivos, Estado inicial descriptivo, estado y espacio. El sistema genera el `id_animal` entero automáticamente, asigna `en_cuarentena = true` y vincula el expediente al `id_refugio` de sesión, impidiendo accesos cruzados. |
+| US05 | El operador registra un paciente con Especie, Procedencia (texto libre), Edad estimada opcional en meses, Rasgos físicos distintivos, Estado inicial descriptivo y espacio. El estado del paciente no se elige: el servidor asigna "Cuarentena" desde el catálogo y el sistema genera el `id_animal` entero automáticamente, asigna `en_cuarentena = true` y vincula el expediente al `id_refugio` de sesión, impidiendo accesos cruzados. Si el catálogo no tiene "Cuarentena", el alta se rechaza con `409`. |
 | US06 | El expediente puede crearse sin imágenes. El usuario carga entre 1 y 5 imágenes (JPG/PNG/WEBP, ≤ 5 MB por archivo, validado en servidor) desde la ficha del animal. La UI muestra el progreso interactivo de subida por archivo. Puede eliminar imágenes y designar una como portada principal. Las miniaturas 300x300 se generan automáticamente vía Cloudinary. |
 | US07 | Solo usuarios con rol Veterinario o Administrador registran el diagnóstico de ingreso con Estado general de salud (Crítico/Delicado/Estable/Sano). Si el estado es Crítico o Delicado, las observaciones médicas son obligatorias (error 400 si faltan). La cuarentena no se modifica desde el diagnóstico. |
 | US08 | La ficha clínica muestra cronológicamente diagnósticos, constantes vitales, vacunas, pruebas de temperamento y estatus de esterilización. Presenta banner rojo en la parte superior si `en_cuarentena = true` o el estado de salud es Crítico. La consulta filtra estrictamente por el `id_refugio` activo en sesión. |

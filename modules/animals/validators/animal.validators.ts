@@ -98,6 +98,15 @@ export const CreateAnimalSchema = AnimalFieldsSchema.extend({
 
 export type CreateAnimalInput = z.infer<typeof CreateAnimalSchema>;
 
+// RF1.1/RF2.4: el alta no elige estado. El servidor resuelve la fila
+// "Cuarentena" del catálogo y reconstruye el DTO completo antes de llamar al
+// service. El request conserva el resto de reglas de CreateAnimalSchema.
+export const CreateAnimalRequestSchema = CreateAnimalSchema.omit({
+    idEstado: true,
+});
+
+export type CreateAnimalRequest = z.infer<typeof CreateAnimalRequestSchema>;
+
 // RF2.4: `enCuarentena` NO forma parte de la edición del expediente. La única
 // vía para liberar la cuarentena es el alta médica (ver
 // `AnimalQuarantineService.release`). Al omitirlo del contrato, el cliente ni

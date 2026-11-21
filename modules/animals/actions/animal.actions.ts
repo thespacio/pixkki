@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CreateAnimalSchema, UpdateAnimalSchema } from "../validators/animal.validators";
+import {
+    CreateAnimalRequestSchema,
+    CreateAnimalSchema,
+    UpdateAnimalSchema,
+} from "../validators/animal.validators";
 import { createAnimalService } from "../factories/create-animal-service";
+import { createAnimalStateService } from "../factories/create-animal-state-service";
 import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import { getCurrentUser } from "@/modules/auth";
@@ -35,7 +40,13 @@ export async function createAnimalAction(
         const user = await getCurrentUser();
         ensureCan(user.permissions, ANIMAL_PERMISSIONS.create, "registrar animales");
 
-        const data = CreateAnimalSchema.parse(dto);
+        // RF1.1/RF2.4: el cliente ya no elige el estado. Se ignora cualquier
+        // idEstado que llegue y se resuelve "Cuarentena" en el servidor.
+        const request = CreateAnimalRequestSchema.parse(dto);
+        const estadoService = await createAnimalStateService();
+        const idEstado = await estadoService.requireCuarentenaId();
+        const data = CreateAnimalSchema.parse({ ...request, idEstado });
+
         const service = await createAnimalService();
         const animal = await service.create(data, getAnimalAccess(user));
 

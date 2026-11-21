@@ -133,3 +133,43 @@ export async function getAnimalClinicalRecordAction(
         return { success: false, error: toErrorMessage(error) };
     }
 }
+
+/** Últimos diagnósticos, en orden cronológico inverso (ficha rápida). */
+export async function getAnimalDiagnosesAction(
+    idAnimal: number,
+): Promise<AnimalActionResult<AnimalDiagnosis[]>> {
+    try {
+        const user = await getCurrentUser();
+        ensureCan(user.permissions, ANIMAL_PERMISSIONS.view, "ver diagnósticos");
+
+        const service = await createAnimalDiagnosisService();
+        const diagnosticos = await service.listDiagnoses(
+            parseId(idAnimal, "Animal"),
+            getAnimalAccess(user),
+        );
+
+        return { success: true, data: diagnosticos };
+    } catch (error) {
+        return { success: false, error: toErrorMessage(error) };
+    }
+}
+
+/** Imágenes del expediente para la vista previa de la ficha rápida. */
+export async function getAnimalImagesAction(
+    idAnimal: number,
+): Promise<AnimalActionResult<AnimalImage[]>> {
+    try {
+        const user = await getCurrentUser();
+        ensureCan(user.permissions, ANIMAL_PERMISSIONS.view, "ver las fotos del expediente");
+
+        const service = await createAnimalMultimediaService();
+        const imagenes = await service.listImages(
+            parseId(idAnimal, "Animal"),
+            getAnimalAccess(user),
+        );
+
+        return { success: true, data: imagenes };
+    } catch (error) {
+        return { success: false, error: toErrorMessage(error) };
+    }
+}

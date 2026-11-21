@@ -2,7 +2,11 @@
 
 import type { NextRequest } from "next/server";
 import { createAnimalService } from "@/modules/animals/factories/create-animal-service";
-import { CreateAnimalSchema } from "@/modules/animals/validators/animal.validators";
+import { createAnimalStateService } from "@/modules/animals/factories/create-animal-state-service";
+import {
+    CreateAnimalRequestSchema,
+    CreateAnimalSchema,
+} from "@/modules/animals/validators/animal.validators";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
 import { apiSuccess, apiValidationError, handleApiError } from "@/lib/api/responses";
 import { readJsonBody } from "@/lib/api/request";
@@ -16,11 +20,19 @@ export async function POST(request: NextRequest) {
             "registrar animales",
         );
 
-        const parsed = CreateAnimalSchema.safeParse(await readJsonBody(request));
+        // RF1.1/RF2.4: la API tampoco acepta un estado elegido por el cliente.
+        // Si llega `idEstado`, se descarta y se resuelve "Cuarentena".
+        const parsed = CreateAnimalRequestSchema.safeParse(
+            await readJsonBody(request),
+        );
         if (!parsed.success) return apiValidationError(parsed.error);
 
+        const estadoService = await createAnimalStateService();
+        const idEstado = await estadoService.requireCuarentenaId();
+        const data = CreateAnimalSchema.parse({ ...parsed.data, idEstado });
+
         const service = await createAnimalService();
-        const animal = await service.create(parsed.data, getAnimalAccess(user));
+        const animal = await service.create(data, getAnimalAccess(user));
 
         return apiSuccess(animal, 201);
     } catch (error) {

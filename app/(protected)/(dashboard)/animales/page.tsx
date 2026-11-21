@@ -5,6 +5,7 @@ import { CreateAnimalModal } from "@/modules/animals/components/CreateAnimalModa
 import { AnimalsTable } from "@/modules/animals/components/AnimalsTable";
 import { createAnimalService } from "@/modules/animals/factories/create-animal-service";
 import { createAnimalStateService } from "@/modules/animals/factories/create-animal-state-service";
+import { isEstadoCuarentena } from "@/modules/animals/animal-state";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
 import { puedeRegistrarDiagnostico } from "@/modules/animals/types/animales.types";
 import type { ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
@@ -57,6 +58,12 @@ export default async function AnimalsPage() {
       : Promise.resolve<ShelterOption[]>([]),
   ]);
 
+  // RF1.1/RF2.4: el alta fija "Cuarentena". Si el catálogo no tiene esa fila,
+  // se bloquea el botón antes de abrir un formulario que fallaría al guardar.
+  const quarantineAvailable = estados.some((estado) =>
+    isEstadoCuarentena(estado.nombreEstado),
+  );
+
   return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
@@ -69,7 +76,11 @@ export default async function AnimalsPage() {
             </p>
           </div>
           {canCreate && (
-            <CreateAnimalModal estados={estados} espacios={espacios} refugios={refugios} />
+            <CreateAnimalModal
+              espacios={espacios}
+              refugios={refugios}
+              quarantineAvailable={quarantineAvailable}
+            />
           )}
         </div>
 

@@ -10,6 +10,12 @@ type Props = {
     refreshKey?: number;
     initialRecord?: ClinicalRecord;
     variant?: "panel" | "page";
+    /** Si se indica, la línea de tiempo muestra solo los primeros N eventos. */
+    maxEvents?: number;
+    showStats?: boolean;
+    showAlerts?: boolean;
+    /** Se muestra junto al botón "Ver historial completo" cuando hay más eventos. */
+    onViewAll?: () => void;
 };
 
 const ALERTA_LABEL: Record<string, string> = {
@@ -63,25 +69,32 @@ function describeEvent(event: ClinicalTimelineEvent): { titulo: string; detalle:
     }
 }
 
-export function AnimalClinicalRecord({ idAnimal, refreshKey = 0, initialRecord, variant = "panel" }: Props) {
-    const [ficha, setFicha] = useState<ClinicalRecord | null>(initialRecord ?? null);
+export function AnimalClinicalRecord({
+    idAnimal,
+    refreshKey = 0,
+    initialRecord,
+    variant = "panel",
+    maxEvents,
+    showStats = true,
+    showAlerts = true,
+    onViewAll,
+}: Props) {
+    const [fichaRemota, setFichaRemota] = useState<ClinicalRecord | null>(null);
     const [loading, setLoading] = useState(!initialRecord);
     const [error, setError] = useState<string | null>(null);
+    const ficha = initialRecord ?? fichaRemota;
 
     useEffect(() => {
-        if (initialRecord) {
-            setFicha(initialRecord);
-            setLoading(false);
-            setError(null);
-            return;
-        }
+        // Si el Server Component ya entrega la ficha, se usa como fuente de
+        // verdad y se evita una segunda consulta al montar.
+        if (initialRecord) return;
         let cancelled = false;
         async function load() {
             setLoading(true);
             setError(null);
             const result = await getAnimalClinicalRecordAction(idAnimal);
             if (cancelled) return;
-            if (result.success) setFicha(result.data);
+            if (result.success) setFichaRemota(result.data);
             else setError(result.error);
             setLoading(false);
         }
@@ -90,13 +103,21 @@ export function AnimalClinicalRecord({ idAnimal, refreshKey = 0, initialRecord, 
     }, [idAnimal, refreshKey, initialRecord]);
 
     const isPage = variant === "page";
+    const eventosVisibles =
+        ficha && maxEvents !== undefined
+            ? ficha.lineaTiempo.slice(0, maxEvents)
+            : ficha?.lineaTiempo ?? [];
+    const hayMasEventos =
+        ficha !== null &&
+        maxEvents !== undefined &&
+        ficha.lineaTiempo.length > maxEvents;
     const content = loading ? (
         <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 size={14} className="animate-spin" aria-hidden="true" />Cargando ficha clínica…</p>
     ) : error ? (
         <p role="status" className="text-xs text-red-600">{error}</p>
     ) : ficha ? (
         <>
-            {ficha.alertas.length > 0 && (
+            {showAlerts && ficha.alertas.length > 0 && (
                 <div role="status" className="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-red-800">
                     <p className="flex items-center gap-2 text-sm font-semibold"><AlertTriangle size={16} aria-hidden="true" />{bannerTitle(ficha.alertas)}</p>
                     <p className="mt-1 text-xs">Requiere atención prioritaria.</p>
@@ -107,19 +128,21 @@ export function AnimalClinicalRecord({ idAnimal, refreshKey = 0, initialRecord, 
                     </div>
                 </div>
             )}
-            <dl className={`grid gap-3 text-xs ${isPage ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Animal</dt><dd className="text-foreground">{ficha.animal.nombre ?? `${ficha.animal.especie} sin nombre`}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Identidad</dt><dd className="break-all text-foreground">{ficha.animal.uuid ?? `#${ficha.animal.idAnimal}`}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Ingreso</dt><dd className="text-foreground">{formatFecha(ficha.animal.fechaIngreso)}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Estado</dt><dd className="text-foreground">{ficha.animal.estadoNombre ?? "—"}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Espacio</dt><dd className="text-foreground">{ficha.animal.espacioNombre ?? "—"}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Último diagnóstico</dt><dd className="text-foreground">{ficha.diagnosticos[0]?.estadoGeneral ?? "—"}</dd></div>
-                <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Esterilizado</dt><dd className="text-foreground">{ficha.animal.esterilizado ? "Sí" : "No"}</dd></div>
-            </dl>
+            {showStats && (
+                <dl className={`grid gap-3 text-xs ${isPage ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Animal</dt><dd className="text-foreground">{ficha.animal.nombre ?? `${ficha.animal.especie} sin nombre`}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Identidad</dt><dd className="break-all text-foreground">{ficha.animal.uuid ?? `#${ficha.animal.idAnimal}`}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Ingreso</dt><dd className="text-foreground">{formatFecha(ficha.animal.fechaIngreso)}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Estado</dt><dd className="text-foreground">{ficha.animal.estadoNombre ?? "—"}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Espacio</dt><dd className="text-foreground">{ficha.animal.espacioNombre ?? "—"}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Último diagnóstico</dt><dd className="text-foreground">{ficha.diagnosticos[0]?.estadoGeneral ?? "—"}</dd></div>
+                    <div><dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Esterilizado</dt><dd className="text-foreground">{ficha.animal.esterilizado ? "Sí" : "No"}</dd></div>
+                </dl>
+            )}
             <h5 className="mb-2 mt-5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"><CalendarClock size={12} aria-hidden="true" />Línea de tiempo</h5>
             {ficha.lineaTiempo.length === 0 ? <p className="text-xs text-muted-foreground">Aún no hay eventos clínicos registrados.</p> : (
                 <ol className="space-y-3">
-                    {ficha.lineaTiempo.map((event, index) => {
+                    {eventosVisibles.map((event, index) => {
                         const { titulo, detalle } = describeEvent(event);
                         return (
                             <li key={`${event.tipo}-${index}`} className="border-l-2 border-border pl-3">
@@ -130,6 +153,15 @@ export function AnimalClinicalRecord({ idAnimal, refreshKey = 0, initialRecord, 
                         );
                     })}
                 </ol>
+            )}
+            {hayMasEventos && onViewAll && (
+                <button
+                    type="button"
+                    onClick={onViewAll}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary"
+                >
+                    Ver historial completo
+                </button>
             )}
         </>
     ) : null;
