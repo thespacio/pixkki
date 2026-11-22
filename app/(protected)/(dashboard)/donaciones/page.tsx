@@ -58,12 +58,20 @@ function Badge({ cfg }: { cfg: { label: string; color: string; bg: string } }) {
   );
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number }>;
+  label?: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-xl px-4 py-3 shadow-sm">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>${payload[0].value.toLocaleString()}</p>
+      <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono', monospace" }}>${payload[0]?.value?.toLocaleString() ?? "0"}</p>
     </div>
   );
 };
@@ -78,7 +86,6 @@ export default function Donations() {
     return matchSearch && matchType;
   });
 
-  const total = page.reduce((s, d) => s + d.amount, 0);
   const monthlyTotal = page.filter((d) => d.type === "monthly").reduce((s, d) => s + d.amount, 0);
   const uniqueDonors = new Set(page.map((d) => d.name)).size;
 
