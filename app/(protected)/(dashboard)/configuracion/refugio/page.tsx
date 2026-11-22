@@ -25,7 +25,7 @@ export default async function RefugioSettingsPage() {
 
     if (user.shelterId === null) {
         return (
-            <div className="p-6 md:p-8">
+            <div className="space-y-6">
                 <PageHeader
                     title="Datos del refugio"
                     description="Configuración del refugio al que perteneces."
@@ -53,7 +53,7 @@ export default async function RefugioSettingsPage() {
         shelter = result.data;
     } catch {
         return (
-            <div className="p-6 md:p-8">
+            <div className="space-y-6">
                 <PageHeader title="Datos del refugio" />
                 <EmptyState
                     icon={Building2}
@@ -70,7 +70,7 @@ export default async function RefugioSettingsPage() {
     }
 
     return (
-        <div className="mx-auto max-w-4xl p-6 md:p-8">
+        <div className="mx-auto max-w-4xl">
             <PageHeader
                 title="Datos del refugio"
                 description="Actualiza el nombre, la ubicación y los datos de contacto. Los cambios se aplican de inmediato."

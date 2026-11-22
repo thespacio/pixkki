@@ -2,6 +2,7 @@
 
 // RF3.1 / RF3.2 — traslado de ubicación y control de ocupación (US12).
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Loader2, MoveRight } from "lucide-react";
 import {
     createAnimalTransferAction,
@@ -17,6 +18,7 @@ type Props = {
     canTransfer: boolean;
     /** Solo veterinario/admin pueden incluir el alta médica. */
     canRelease: boolean;
+    enCuarentena?: boolean;
     onSaved?: () => void;
 };
 
@@ -54,7 +56,7 @@ function formatFecha(value: string): string {
     });
 }
 
-export function AnimalTransferPanel({ idAnimal, canTransfer, canRelease, onSaved }: Props) {
+export function AnimalTransferPanel({ idAnimal, canTransfer, canRelease, enCuarentena = false, onSaved }: Props) {
     const [espacios, setEspacios] = useState<SpaceWithOccupancy[]>([]);
     const [traslados, setTraslados] = useState<AnimalTransfer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -102,16 +104,10 @@ export function AnimalTransferPanel({ idAnimal, canTransfer, canRelease, onSaved
         };
     }, [loadTransfers]);
 
-    useEffect(() => {
-        if (!canTransfer) return;
-        let cancelado = false;
-        void Promise.resolve().then(async () => {
-            if (!cancelado) await loadSpaces();
-        });
-        return () => {
-            cancelado = true;
-        };
-    }, [canTransfer, loadSpaces]);
+    const espaciosDestino = espacios.filter((espacio) => {
+        if (enCuarentena && espacio.type !== 'cuarentena') return false;
+        return true;
+    });
 
     async function guardar(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -198,6 +194,20 @@ export function AnimalTransferPanel({ idAnimal, canTransfer, canRelease, onSaved
                         <label htmlFor={`destino-${idAnimal}`} className={LABEL_CLS}>
                             Espacio destino *
                         </label>
+                        {enCuarentena && (
+                            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                El paciente está en cuarentena: solo puede trasladarse a un espacio de cuarentena.
+                            </p>
+                        )}
+                        {enCuarentena && !espaciosDestino.some((e) => e.capacidadLibre > 0 && e.available) && (
+                            <p className="mb-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                                No hay espacios de cuarentena con cupo disponibles.{" "}
+                                <Link href="/espacios" className="font-medium text-primary underline-offset-2 hover:underline">
+                                    Crea o marca un espacio como tipo Cuarentena
+                                </Link>{" "}
+                                en Espacios.
+                            </p>
+                        )}
                         <select
                             id={`destino-${idAnimal}`}
                             value={form.destino}
@@ -206,11 +216,14 @@ export function AnimalTransferPanel({ idAnimal, canTransfer, canRelease, onSaved
                             className={INPUT_CLS}
                         >
                             <option value="">Selecciona un espacio</option>
-                            {espacios.map((espacio) => (
-                                <option key={espacio.id} value={espacio.id} disabled={!espacio.available}>
-                                    {espacio.name} · {espacio.type} · {espacio.estadoTexto}
-                                </option>
-                            ))}
+                            {espaciosDestino.map((espacio) => {
+                                const sinCupo = espacio.capacidadLibre <= 0 || !espacio.available;
+                                return (
+                                    <option key={espacio.id} value={espacio.id} disabled={sinCupo}>
+                                        {espacio.name} · {espacio.type} · {espacio.estadoTexto}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
                     <div>

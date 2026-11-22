@@ -45,8 +45,17 @@ function describeEvent(event: ClinicalTimelineEvent): { titulo: string; detalle:
             return { titulo: `${event.detalle.tipoEvento === "desparasitacion" ? "Desparasitación" : "Vacunación"}: ${event.detalle.tipoBiologico}`, detalle: event.detalle.observaciones ?? "" };
         case "prueba_temperamento":
             return { titulo: `Evaluación de temperamento: ${event.detalle.comportamiento ?? "—"}`, detalle: [event.detalle.nivelEnergia, event.detalle.aptoPerros, event.detalle.aptoGatos, event.detalle.aptoNinos].filter(Boolean).join(" · ") };
-        case "esterilizacion":
-            return { titulo: `Esterilización: ${event.detalle.tipoCirugia}`, detalle: event.detalle.notasPostoperatorias ?? "" };
+        case "esterilizacion": {
+            const resultado = event.detalle.exitosa ? "exitosa" : "no exitosa";
+            const insumos = event.detalle.insumos.length > 0
+                ? `Insumos: ${event.detalle.insumos.map((i) => `${i.nombreInsumo || `Lote #${i.idLoteInventario}`} (${i.cantidad})`).join(", ")}`
+                : "";
+            const detalle = [event.detalle.notasPostoperatorias, insumos].filter(Boolean).join(" · ");
+            return {
+                titulo: `Cirugía reproductiva: ${event.detalle.tipoCirugia} (${resultado})`,
+                detalle,
+            };
+        }
         case "chequeo":
             return {
                 titulo: `Chequeo médico`,

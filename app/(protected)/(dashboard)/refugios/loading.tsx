@@ -6,7 +6,7 @@ export default function RefugiosLoading() {
             role="status"
             aria-live="polite"
             aria-busy="true"
-            className="p-6 md:p-8 max-w-7xl mx-auto"
+            className="mx-auto max-w-7xl"
         >
             <span className="sr-only">Cargando refugios...</span>
 

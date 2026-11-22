@@ -345,7 +345,7 @@ type ControlPoblacionalErrorInit = {
     details?: AptitudAdopcionDetails;
 };
 
-class ControlPoblacionalError extends Error {
+export class ControlPoblacionalError extends Error {
     readonly code: string;
     readonly statusCode: number;
     readonly details?: AptitudAdopcionDetails;

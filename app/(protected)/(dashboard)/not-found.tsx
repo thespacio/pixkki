@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
  */
 export default function DashboardNotFound() {
     return (
-        <div className="p-6 md:p-8 max-w-2xl mx-auto text-center">
+        <div className="mx-auto max-w-2xl text-center">
             <SearchX
                 aria-hidden="true"
                 className="mx-auto mb-3 size-10 text-muted-foreground/60"

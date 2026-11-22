@@ -83,8 +83,8 @@ export default function Donations() {
   const uniqueDonors = new Set(page.map((d) => d.name)).size;
 
   return (
-    <div className="px-8 py-7">
-      <div className="flex items-center justify-between mb-7">
+    <div>
+      <div className="mb-7 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-foreground tracking-tight">Donations</h2>
           <p className="text-sm text-muted-foreground mt-1">Track contributions, campaigns, and donor relationships</p>

@@ -9,7 +9,7 @@ type RefugiosErrorProps = {
 
 export default function RefugiosError({ reset }: RefugiosErrorProps) {
     return (
-        <div className="p-6 md:p-8 max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
             <ErrorState
                 title="No pudimos cargar los refugios"
                 description="El listado no está disponible ahora mismo. Vuelve a intentarlo."

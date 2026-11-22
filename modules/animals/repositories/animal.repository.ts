@@ -13,14 +13,40 @@ const SELECT_WITH_RELATIONS = `
   *,
   espacio:espacio(id_espacio, nombre_espacio),
   animal_estado:animal_estado(id_estado, nombre_estado),
-  refugio:refugio(id_refugio, nombre)
+  refugio:refugio(id_refugio, nombre),
+  fotografia:fotografia(id_animal, url_archivo, url_thumbnail, es_principal, orden)
 `;
 
 type AnimalRowWithRelations = AnimalRow & {
     espacio: { id_espacio: number; nombre_espacio: string } | null;
     animal_estado: { id_estado: number; nombre_estado: string } | null;
     refugio: { id_refugio: number; nombre: string } | null;
+    fotografia:
+        | {
+              id_animal: number;
+              url_archivo: string;
+              url_thumbnail: string | null;
+              es_principal: boolean;
+              orden: number;
+          }[]
+        | null;
+    // Columnas añadidas por migración aún no reflejadas en `types/database.ts`.
+    reservado_adopcion?: boolean | null;
+    fecha_reserva?: string | null;
+    fecha_adopcion?: string | null;
 };
+
+/** Prioriza la foto marcada como portada; si no hay, usa la primera por orden. */
+function portadaDe(
+    fotos: AnimalRowWithRelations["fotografia"],
+): string | null {
+    const ordenadas = [...(fotos ?? [])].sort(
+        (a, b) =>
+            Number(b.es_principal) - Number(a.es_principal) || a.orden - b.orden,
+    );
+    const portada = ordenadas[0];
+    return portada?.url_thumbnail ?? portada?.url_archivo ?? null;
+}
 
 export class AnimalRepository {
     constructor(private readonly supabase: SupabaseClient<Database>) {}
@@ -49,9 +75,9 @@ export class AnimalRepository {
             disponibleAdopcion: row.disponible_adopcion,
             enCuarentena: row.en_cuarentena,
             esterilizado: row.esterilizado,
-            reservadoAdopcion: Boolean((row as any).reservado_adopcion),
-            fechaReserva: ((row as any).fecha_reserva as string | null) ?? null,
-            fechaAdopcion: ((row as any).fecha_adopcion as string | null) ?? null,
+            reservadoAdopcion: Boolean(row.reservado_adopcion),
+            fechaReserva: row.fecha_reserva ?? null,
+            fechaAdopcion: row.fecha_adopcion ?? null,
             deletedAt: row.deleted_at,
 
             color: row.color,
@@ -66,6 +92,7 @@ export class AnimalRepository {
             rescatistaNombre: row.rescatista_nombre,
             rescatistaContacto: row.rescatista_contacto,
             observaciones: row.observaciones,
+            imagenPortada: portadaDe(row.fotografia),
         };
     }
 
@@ -88,6 +115,24 @@ export class AnimalRepository {
             .select(SELECT_WITH_RELATIONS)
             .is("deleted_at", null)
             .order("fecha_ingreso", { ascending: false });
+
+        if (error) throw error;
+        return (data as unknown as AnimalRowWithRelations[]).map((row) => this.toDomain(row));
+    }
+
+    async findByEspacio(idEspacio: number, idRefugio?: number): Promise<Animal[]> {
+        let query = this.supabase
+            .from("animal")
+            .select(SELECT_WITH_RELATIONS)
+            .eq("id_espacio", idEspacio)
+            .is("deleted_at", null)
+            .order("nombre", { ascending: true });
+
+        if (idRefugio !== undefined) {
+            query = query.eq("id_refugio", idRefugio);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         return (data as unknown as AnimalRowWithRelations[]).map((row) => this.toDomain(row));

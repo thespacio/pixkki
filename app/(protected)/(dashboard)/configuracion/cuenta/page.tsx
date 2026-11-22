@@ -42,7 +42,7 @@ export default async function CuentaPage() {
     ];
 
     return (
-        <div className="mx-auto max-w-2xl p-6 md:p-8">
+        <div className="mx-auto max-w-2xl">
             <PageHeader
                 title="Mi cuenta"
                 description="Información de la cuenta con la que has iniciado sesión."

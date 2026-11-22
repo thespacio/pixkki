@@ -7,7 +7,7 @@ export default function DashboardLoading() {
             role="status"
             aria-live="polite"
             aria-busy="true"
-            className="p-8 max-w-7xl mx-auto animate-pulse"
+            className="mx-auto max-w-7xl animate-pulse"
         >
             <span className="sr-only">Cargando...</span>
 

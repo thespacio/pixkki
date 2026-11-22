@@ -13,6 +13,7 @@ interface NavListProps {
      * panel deslizante.
      */
     variant?: "sidebar" | "sheet";
+    collapsed?: boolean;
     onNavigate?: () => void;
 }
 
@@ -23,24 +24,30 @@ interface NavListProps {
 export function NavList({
     sections,
     variant = "sidebar",
+    collapsed = false,
     onNavigate,
 }: NavListProps) {
     const pathname = usePathname();
+    const isCollapsedSidebar = variant === "sidebar" && collapsed;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className={cn("flex flex-col", isCollapsedSidebar ? "gap-4" : "gap-6")}>
             {sections.map((section) => (
                 <div key={section.id}>
-                    <p
-                        className={cn(
-                            "mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest",
-                            variant === "sidebar"
-                                ? "text-primary"
-                                : "text-muted-foreground"
-                        )}
-                    >
-                        {section.label}
-                    </p>
+                    {!isCollapsedSidebar ? (
+                        <p
+                            className={cn(
+                                "mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest",
+                                variant === "sidebar"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            )}
+                        >
+                            {section.label}
+                        </p>
+                    ) : (
+                        <p className="sr-only">{section.label}</p>
+                    )}
                     <ul className="space-y-0.5">
                         {section.items.map((item) => {
                             const active = isPathActive(pathname, item.href);
@@ -52,12 +59,17 @@ export function NavList({
                                         href={item.href}
                                         onClick={onNavigate}
                                         aria-current={active ? "page" : undefined}
+                                        aria-label={isCollapsedSidebar ? item.label : undefined}
+                                        title={isCollapsedSidebar ? item.label : undefined}
                                         className={cn(
-                                            "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+                                            "flex min-h-11 items-center rounded-xl text-sm font-medium transition-colors",
                                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                                             variant === "sidebar"
                                                 ? "focus-visible:ring-offset-foreground"
                                                 : "focus-visible:ring-offset-background",
+                                            isCollapsedSidebar
+                                                ? "justify-center px-0"
+                                                : "gap-3 px-3",
                                             active
                                                 ? variant === "sidebar"
                                                     ? "bg-primary text-primary-foreground"
@@ -68,7 +80,11 @@ export function NavList({
                                         )}
                                     >
                                         <Icon className="size-4 shrink-0" aria-hidden="true" />
-                                        <span className="truncate">{item.label}</span>
+                                        {isCollapsedSidebar ? (
+                                            <span className="sr-only">{item.label}</span>
+                                        ) : (
+                                            <span className="truncate">{item.label}</span>
+                                        )}
                                     </Link>
                                 </li>
                             );

@@ -66,9 +66,21 @@ export async function middleware(request: NextRequest) {
         "/forgot-password",
     ];
 
-    const isPublicRoute = publicRoutes.some(route =>
-        pathname === route || pathname.startsWith(`${route}/`)
-    );
+    const isPublicAdoptionRoute =
+        pathname === "/adopciones" ||
+        pathname === "/adopciones/seguimiento" ||
+        (pathname.startsWith("/adopciones/") &&
+            !pathname.startsWith("/adopciones/solicitudes") &&
+            !pathname.startsWith("/adopciones/perfiles"));
+
+    const isPublicRefugioRoute =
+        pathname === "/refugios" ||
+        pathname.startsWith("/refugios/");
+
+    const isPublicRoute =
+        publicRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`)) ||
+        isPublicAdoptionRoute ||
+        isPublicRefugioRoute;
 
     if (!user && !isPublicRoute) {
         // Las rutas de API no redirigen a HTML: responden 401 con el

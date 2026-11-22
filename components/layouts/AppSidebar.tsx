@@ -1,108 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { useCallback, useSyncExternalStore } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
-import { logout } from "@/modules/auth/client";
-import {
-    getVisibleNavigation,
-    type NavSection,
-} from "@/modules/navigation";
+import { cn } from "@/components/ui/utils";
 import { NavList } from "@/components/layouts/NavList";
+import { getVisibleNavigation, type NavSection } from "@/modules/navigation";
 
 interface AppSidebarProps {
     shelterName: string;
-    user: {
-        fullName: string;
-        role: string;
-    };
     visibleNavIds: readonly string[];
 }
 
-function getInitials(fullName: string): string {
-    return fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((word) => word[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase();
+const STORAGE_KEY = "pixkki.sidebar.collapsed";
+
+function subscribeCollapsed(onStoreChange: () => void) {
+    if (typeof window === "undefined") return () => {};
+
+    const handleStorage = (event: StorageEvent) => {
+        if (event.key === STORAGE_KEY) onStoreChange();
+    };
+    const handleLocalChange = () => onStoreChange();
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("pixkki:sidebar-collapsed", handleLocalChange);
+    return () => {
+        window.removeEventListener("storage", handleStorage);
+        window.removeEventListener("pixkki:sidebar-collapsed", handleLocalChange);
+    };
 }
 
-export function AppSidebar({
-    shelterName,
-    user,
-    visibleNavIds,
-}: AppSidebarProps) {
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [signingOut, setSigningOut] = useState(false);
+function getCollapsedSnapshot() {
+    try {
+        return window.localStorage.getItem(STORAGE_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function getCollapsedServerSnapshot() {
+    return false;
+}
+
+export function AppSidebar({ shelterName, visibleNavIds }: AppSidebarProps) {
+    const collapsed = useSyncExternalStore(
+        subscribeCollapsed,
+        getCollapsedSnapshot,
+        getCollapsedServerSnapshot
+    );
+
+    const toggleCollapsed = useCallback(() => {
+        const next = !getCollapsedSnapshot();
+        try {
+            window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        } catch {
+            // Ignorar: preferencia no persistida.
+        }
+        window.dispatchEvent(new Event("pixkki:sidebar-collapsed"));
+    }, []);
 
     const sections: NavSection[] = getVisibleNavigation(visibleNavIds);
-
-    async function handleLogout() {
-        setSigningOut(true);
-        setError(null);
-
-        try {
-            await logout();
-            router.replace("/login");
-            router.refresh();
-        } catch {
-            setError("No se pudo cerrar la sesión. Inténtalo de nuevo.");
-            setSigningOut(false);
-        }
-    }
+    const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+    const toggleLabel = collapsed ? "Expandir barra lateral" : "Colapsar barra lateral";
 
     return (
-        <aside className="hidden w-[240px] shrink-0 flex-col border-r border-white/10 bg-foreground lg:flex">
-            <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary p-1">
+        <aside
+            data-collapsed={collapsed ? "true" : "false"}
+            className={cn(
+                "hidden shrink-0 flex-col border-r border-white/10 bg-foreground transition-[width] duration-200 ease-out lg:flex",
+                collapsed ? "w-[72px]" : "w-[240px]"
+            )}
+        >
+            <div
+                className={cn(
+                    "flex items-center border-b border-white/10 py-5",
+                    collapsed ? "justify-center px-2" : "gap-3 px-5"
+                )}
+            >
+                <div
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary p-1"
+                    title={collapsed ? shelterName : undefined}
+                >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/images/logo.png" alt="" className="size-full object-contain" />
                 </div>
-                <span className="truncate text-base font-semibold tracking-tight text-white">
-                    {shelterName}
-                </span>
+                {!collapsed ? (
+                    <span className="truncate text-base font-semibold tracking-tight text-white">
+                        {shelterName}
+                    </span>
+                ) : null}
             </div>
 
             <nav
                 aria-label="Navegación principal"
-                className="flex-1 overflow-y-auto px-3 py-4"
+                className={cn(
+                    "flex-1 overflow-y-auto py-4",
+                    collapsed ? "px-2" : "px-3"
+                )}
             >
-                <NavList sections={sections} variant="sidebar" />
+                <NavList sections={sections} variant="sidebar" collapsed={collapsed} />
             </nav>
 
-            <div className="border-t border-white/10 px-4 py-4">
-                {error ? (
-                    <p role="alert" className="mb-2 text-xs text-red-300">
-                        {error}
-                    </p>
-                ) : null}
-                <div className="flex items-center gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                        {getInitials(user.fullName)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">
-                            {user.fullName}
-                        </p>
-                        <p className="truncate text-xs capitalize text-gray-400">
-                            {user.role}
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        disabled={signingOut}
-                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-foreground disabled:opacity-50"
-                        title="Cerrar sesión"
-                    >
-                        <LogOut className="size-4" aria-hidden="true" />
-                        <span className="sr-only">Cerrar sesión</span>
-                    </button>
-                </div>
+            <div
+                className={cn(
+                    "border-t border-white/10 py-3",
+                    collapsed ? "px-2" : "px-3"
+                )}
+            >
+                <button
+                    type="button"
+                    onClick={toggleCollapsed}
+                    aria-label={toggleLabel}
+                    title={toggleLabel}
+                    className={cn(
+                        "flex min-h-11 w-full items-center rounded-xl text-sm font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-foreground",
+                        collapsed ? "justify-center px-0" : "gap-3 px-3"
+                    )}
+                >
+                    <ToggleIcon className="size-4 shrink-0" aria-hidden="true" />
+                    {!collapsed ? <span>Colapsar</span> : null}
+                </button>
             </div>
         </aside>
     );

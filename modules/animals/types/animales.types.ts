@@ -118,6 +118,8 @@ export type Animal = {
     rescatistaNombre: string | null;
     rescatistaContacto: string | null;
     observaciones: string | null;
+    /** URL de la miniatura de portada; `null` si el expediente aún no tiene fotos. */
+    imagenPortada?: string | null;
 };
 
 export class AnimalNotFoundError extends Error {

@@ -42,7 +42,7 @@ export default async function CampaignsPage() {
     ]);
 
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <CampaignsWorkspace
           campaigns={campaigns}
           adoptable={adoptable}

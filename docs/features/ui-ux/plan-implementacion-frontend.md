@@ -304,6 +304,7 @@ Cada subfase se ejecuta **solo** con su anexo aprobado (P-05) y su backend dispo
 | `/adopciones` (público) | Catálogo con filtros |
 | `/adopciones/[idAnimal]` | Perfil público |
 | `/adopciones/[idAnimal]/solicitud` | Formulario público |
+| `/adopciones/seguimiento` | Consulta pública por folio (alcance agregado; contrato G-02 pendiente) |
 | `/refugios`, `/refugios/[slug]` (público) | Directorio y página de refugio |
 | `/adopciones` (privado) | Resumen |
 | `/adopciones/solicitudes` | Bandeja por estado |

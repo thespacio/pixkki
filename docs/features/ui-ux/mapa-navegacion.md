@@ -181,6 +181,7 @@ Este mapa define la estructura objetivo, la convención de rutas, la matriz de p
 | 2 | `/adopciones` | Catálogo global con filtros (refugio, especie, sexo, tamaño, edad, temperamento, texto) | RF5.2 |
 | 3 | `/adopciones/[idAnimal]` | Perfil público del animal (fotos, descripción, compatibilidad, refugio) | RF5.2 |
 | 4 | `/adopciones/[idAnimal]/solicitud` | Formulario público de postulación | RF5.3 |
+| 2 | `/adopciones/seguimiento` | Consulta pública de estado por folio (alcance agregado, contrato propuesto G-02) | RF5.3 (ext.) |
 | 2 | `/refugios` | Directorio de refugios con adoptables | RF5.2 |
 | 3 | `/refugios/[slug]` | Página pública del refugio | RF5.2 |
 | 1 | `/aviso-privacidad` | Aviso de privacidad | RF5.3 (consentimiento) |
@@ -351,6 +352,7 @@ flowchart TD
     Public --> P2["/adopciones — Catálogo"]
     P2 --> P3["/adopciones/[id] — Perfil público"]
     P3 --> P4["/adopciones/[id]/solicitud — Postulación"]
+    Public --> P4s["/adopciones/seguimiento — Seguimiento por folio"]
     Public --> P5["/refugios — Directorio"]
     P5 --> P6["/refugios/[slug] — Página del refugio"]
     Public --> P7["/aviso-privacidad · /terminos-condiciones"]
@@ -419,7 +421,7 @@ flowchart TD
 | `/adopciones`, `/adopciones/solicitudes` | 05 | `/api/v1/adopciones/solicitudes` | ✅ | ✗ (mock) | Implementar |
 | `/adopciones/solicitudes/[id]` | 05 | `.../[id]`, `/evaluaciones`, `/estado`, `/completar` | ✅ | ✗ | Implementar |
 | `/adopciones/perfiles` | 05 | `/animales/[id]/perfil-adopcion` | ✅ | ✗ | Implementar |
-| `/` (catálogo), `/adopciones/[id]`, `/refugios/[slug]` | 05 | `/api/v1/publico/*` | ✅ | ✗ | Implementar |
+| `/`, `/adopciones` (público), `/adopciones/[id]`, `/adopciones/seguimiento`, `/refugios`, `/refugios/[slug]` | 05 | `/api/v1/publico/*` (+ seguimiento propuesto G-02) | ✅ | ✗ | Implementar; seguimiento requiere contrato backend |
 | `/inventario` y subvistas | 06 | `/api/v1/inventario/*` | ◐ solo `lotes` GET | ✗ | **Bloqueado por backend** |
 | `/donaciones` y subvistas | 06 | `/api/v1/donaciones`, `/donantes` | ✗ | ✗ (mock) | **Bloqueado por backend** |
 | `/reportes` y subvistas | 07 | `/api/v1/reportes/*` | ✗ | ✗ (mock) | **Bloqueado por backend** |

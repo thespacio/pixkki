@@ -9,7 +9,7 @@ type EventsErrorProps = {
 
 export default function EventsError({ reset }: EventsErrorProps) {
     return (
-        <div className="p-6 md:p-8 max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
             <ErrorState
                 title="No pudimos cargar los eventos"
                 description="El calendario no está disponible ahora mismo. Vuelve a intentarlo."

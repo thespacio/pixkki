@@ -8,6 +8,7 @@ import {createSpaceService} from "@/modules/spaces/factories/factories";
 import {getCurrentUser} from "@/modules/auth";
 import {isAdmin, isSuperadmin} from "@/modules/auth/authorization";
 import type {AuthenticatedUser} from "@/modules/auth/types";
+import type { SpaceWithOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 
 const NO_SHELTER_ERROR = 'El usuario no tiene un albergue asignado';
 const FORBIDDEN_ERROR = 'No tienes permisos para gestionar espacios';
@@ -49,8 +50,8 @@ export async function createSpaceAction(dto: CreateSpaceInput) {
             shelterId,
         });
 
-        /*revalidatePath(`/espacios`);
-        revalidatePath(`/refugios/${shelterId}`);*/
+        revalidatePath('/espacios');
+        revalidatePath(`/refugios/${shelterId}`);
 
         return {
             success: true,
@@ -126,6 +127,36 @@ export async function getSpacesByShelterAction(shelterId: number) {
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Error al obtener los espacios del refugio',
+        };
+    }
+}
+
+/**
+ * Obtiene espacios del refugio con ocupación calculada (RF3.1).
+ * `onlyWithCapacity` filtra espacios con capacidad libre > 0 tras calcular ocupación.
+ */
+export async function getSpacesWithOccupancyAction(
+    filters?: SpaceFilters,
+    options?: { onlyWithCapacity?: boolean }
+): Promise<{ success: true; data: SpaceWithOccupancy[] } | { success: false; error: string }> {
+    try {
+        const user = await getCurrentUser();
+
+        const scopedFilters: SpaceFilters | undefined = isSuperadmin(user)
+            ? filters
+            : { ...filters, shelterId: user.shelterId ?? -1 };
+
+        const service = await createSpaceService();
+        const result = await service.listWithOccupancy(scopedFilters);
+        const data = options?.onlyWithCapacity
+            ? result.filter((space) => space.capacidadLibre > 0)
+            : result;
+
+        return { success: true, data };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Error al obtener los espacios',
         };
     }
 }

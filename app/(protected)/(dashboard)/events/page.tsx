@@ -21,7 +21,7 @@ export default async function EventsPage() {
   const result = await getCalendarEvents();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-foreground">Eventos</h1>
         <p className="text-sm text-muted-foreground mt-1">

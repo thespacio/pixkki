@@ -15,10 +15,11 @@
 | Zona | Nivel | Elemento | Origen de datos / contrato | Comportamiento UI | Capa |
 | :--- | :---: | :--- | :--- | :--- | :--- |
 | Top Bar | C | Título "Animales" + total | `GET /api/v1/animales` | "128 pacientes · 14 en cuarentena". | SC |
-| Body | E | Tarjetas de paciente: portada, nombre/identidad, especie, badges | `GET /api/v1/animales`, `url_thumbnail` | En móvil, tarjeta apilada; badge "En cuarentena" siempre visible. | SC |
+| Body | E | Tarjetas de paciente: portada (foto real si existe, si no degradado por especie), nombre/identidad, especie, badges | `GET /api/v1/animales`, `imagenPortada` | En móvil, tarjeta apilada; badges envueltos con texto truncado; "AISLAMIENTO / RIESGO BIOLÓGICO" siempre visible. | SC |
 | Body | E | Buscador por nombre/rasgos | `GET /api/v1/animales` (`q`) | Pegado a la cabecera (Ley de Proximidad). | CC |
 | Body | C | Filtros: especie, estado de salud, en cuarentena | `GET /api/v1/animales` | Chips compactos; conservan su valor al volver de la ficha. | CC |
 | Body | E | Botón "Registrar animal" | `POST /api/v1/animales` | CTA principal; en móvil, barra inferior fija. | SC |
+| Body | E | Botón "Ficha clínica" en cada tarjeta | Router (nivel 3) | Acceso directo al expediente completo sin pasar por la ficha rápida; junto a "Ver detalle". | CC |
 | Bottom Bar | S | Leyenda de badges | Texto estático | Explica "Cuarentena" y "Crítico" con texto, no solo color (accesibilidad). | SC |
 
 ### Vista `/animales` — ficha rápida del animal (overlay)

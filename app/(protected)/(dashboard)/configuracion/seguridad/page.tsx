@@ -1,16 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Factor } from "@supabase/supabase-js";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { listFactors } from "@/modules/auth/mfa/client";
+import type { TotpFactor } from "@/modules/auth/types";
 
+import { DisableMfaDialog } from "./DisableMfaDialog";
 import EnableMfaCard from "./EnableMfaCard";
-import { DisableMfaDialog } from "@/app/(protected)/(dashboard)/configuracion/seguridad/DisableMfaDialog";
 
 export default function SecurityPage() {
-    // ✅ Tipo real en lugar de `any`
-    const [factor, setFactor] = useState<Factor | null>(null);
+    const [factor, setFactor] = useState<TotpFactor | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -20,40 +22,13 @@ export default function SecurityPage() {
 
         try {
             const factors = await listFactors();
-
-            // 🔍 DEBUG
-            console.log(
-                "🔍 [SecurityPage] factors crudos:",
-                JSON.stringify(factors, null, 2)
-            );
-
-            const verified = factors.find(f => f.status === "verified");
-
-            // 🔍 DEBUG
-            console.log("🔍 [SecurityPage] verified:", {
-                id: verified?.factorId,
-                tipoId: typeof verified?.factorId,
-                friendly_name: verified?.friendlyName,
-                status: verified?.status,
-            });
-
-            // ✅ Validación defensiva: si no trae id, no lo pasamos
-            if (verified && !verified.factorId) {
-                console.error(
-                    "❌ [SecurityPage] El factor verificado NO tiene id. Revisa listFactors().",
-                    verified
-                );
-                setFactor(null);
-                setError("Los datos del factor MFA están incompletos.");
-                return;
-            }
-
-
-            //setFactor(verified ?? null);
+            const verified = factors.find((item) => item.status === "verified") ?? null;
+            setFactor(verified);
         } catch (err) {
-            console.error("❌ [SecurityPage] Error cargando factores:", err);
             setError(
-                err instanceof Error ? err.message : "Error cargando MFA"
+                err instanceof Error
+                    ? err.message
+                    : "No se pudo cargar la configuración de seguridad."
             );
         } finally {
             setLoading(false);
@@ -61,28 +36,62 @@ export default function SecurityPage() {
     }, []);
 
     useEffect(() => {
-        load();
-    }, [load]);
+        let active = true;
 
-    if (loading) {
-        return <div className="p-6 md:p-8">Cargando...</div>;
-    }
+        (async () => {
+            try {
+                const factors = await listFactors();
+                const verified =
+                    factors.find((item) => item.status === "verified") ?? null;
+                if (active) setFactor(verified);
+            } catch (err) {
+                if (active) {
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : "No se pudo cargar la configuración de seguridad."
+                    );
+                }
+            } finally {
+                if (active) setLoading(false);
+            }
+        })();
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     return (
-        <main className="mx-auto max-w-2xl space-y-6 p-6 md:p-8">
-            <h1 className="text-3xl font-semibold">Seguridad</h1>
+        <section className="mx-auto max-w-2xl space-y-6" aria-labelledby="security-title">
+            <div className="space-y-1">
+                <h1 id="security-title" className="text-xl font-semibold text-foreground">
+                    Seguridad
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                    Administra la autenticación de dos pasos de tu cuenta.
+                </p>
+            </div>
 
-            {error && (
-                <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                    {error}
-                </div>
-            )}
+            {error ? (
+                <Alert variant="destructive" role="alert">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            ) : null}
 
-            {factor ? (
+            {loading ? (
+                <Card>
+                    <CardContent className="space-y-3 p-6">
+                        <Skeleton className="h-5 w-48" />
+                        <Skeleton className="h-4 w-full max-w-md" />
+                        <Skeleton className="h-10 w-40" />
+                    </CardContent>
+                </Card>
+            ) : factor ? (
                 <DisableMfaDialog factor={factor} onDisabled={load} />
             ) : (
                 <EnableMfaCard onEnabled={load} />
             )}
-        </main>
+        </section>
     );
 }

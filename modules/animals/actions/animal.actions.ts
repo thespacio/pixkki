@@ -91,3 +91,22 @@ export async function deleteAnimalAction(
         return { success: false, error: toErrorMessage(error) };
     }
 }
+
+export async function getAnimalsBySpaceAction(
+    spaceId: number,
+): Promise<AnimalActionResult<Animal[]>> {
+    try {
+        const user = await getCurrentUser();
+        ensureCan(user.permissions, ANIMAL_PERMISSIONS.view, "consultar animales del espacio");
+
+        if (!Number.isInteger(spaceId) || spaceId <= 0) {
+            return { success: false, error: "Identificador de espacio inválido" };
+        }
+
+        const service = await createAnimalService();
+        const animals = await service.listByEspacio(spaceId, getAnimalAccess(user));
+        return { success: true, data: animals };
+    } catch (error) {
+        return { success: false, error: toErrorMessage(error) };
+    }
+}

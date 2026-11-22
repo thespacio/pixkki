@@ -27,6 +27,11 @@ export class AnimalService {
         return this.repository.findAllByRefugio(idRefugio);
     }
 
+    async listByEspacio(idEspacio: number, access: AnimalAccess): Promise<Animal[]> {
+        const idRefugio = access.allShelters ? undefined : access.shelterId;
+        return this.repository.findByEspacio(idEspacio, idRefugio);
+    }
+
     async getById(id: number, access: AnimalAccess): Promise<Animal> {
         const animal = await this.repository.findById(id);
         if (!animal) throw new AnimalNotFoundError(id);

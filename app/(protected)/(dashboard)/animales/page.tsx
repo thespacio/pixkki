@@ -65,8 +65,8 @@ export default async function AnimalsPage() {
   );
 
   return (
-      <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Animales</h1>
             <p className="text-sm text-muted-foreground mt-1">

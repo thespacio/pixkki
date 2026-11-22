@@ -25,6 +25,7 @@ import {
     CapacidadExcedidaError,
     ConflictoConcurrenciaError,
     ConflictoOcupacionError,
+    ControlPoblacionalError,
     EspacioInactivoError,
     EspacioNoEncontradoError,
     EstadoCuarentenaNoConfiguradoError,
@@ -51,7 +52,7 @@ import {
  */
 export type AnimalActionResult<T = void> =
     | { success: true; data: T }
-    | { success: false; error: string };
+    | { success: false; error: string; code?: string; details?: unknown };
 
 // Errores de dominio cuyo mensaje ya está pensado para mostrarse al usuario.
 const USER_FACING_ERRORS = [
@@ -89,6 +90,7 @@ const USER_FACING_ERRORS = [
     NivelesInvalidosError,
     TrasladoMismoEspacioError,
     TrasladoOrigenDesactualizadoError,
+    ControlPoblacionalError,
 ];
 
 export function toErrorMessage(error: unknown): string {

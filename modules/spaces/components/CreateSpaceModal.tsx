@@ -1,48 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { Plus } from 'lucide-react';
 import { createSpaceAction } from '@/modules/spaces/actions';
-import {CreateSpaceInput} from "@/modules/spaces/types/types";
-import SpaceForm from "@/modules/spaces/components/SpacesForm";
+import type { CreateSpaceInput } from '@/modules/spaces/types/types';
+import SpaceForm from '@/modules/spaces/components/SpacesForm';
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
 
 interface Props {
-    shelterId: number;
+    onSuccess?: () => void;
 }
 
-export default function CreateSpaceModal({ shelterId }: Props) {
+export default function CreateSpaceModal({ onSuccess }: Props) {
     const [open, setOpen] = useState(false);
+    const [isPending, startTransition] = useTransition();
 
     const handleCreate = async (values: CreateSpaceInput) => {
-        const res = await createSpaceAction({ ...values});
-        if (res.success) {
+        let result: { success: boolean; error?: string } = { success: false, error: 'Error inesperado' };
+        await new Promise<void>((resolve) => {
+            startTransition(async () => {
+                result = await createSpaceAction(values);
+                resolve();
+            });
+        });
+        if (result.success) {
             setOpen(false);
+            onSuccess?.();
         }
-        return res;
+        return result;
     };
 
     return (
-        <>
-            <button
-                onClick={() => setOpen(true)}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded"
-            >
-                Crear espacio
-            </button>
-
-            {open && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-card p-6 rounded-2xl w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4">Crear espacio</h2>
-                        <SpaceForm onSubmit={handleCreate} submitLabel="Crear" />
-                        <button
-                            onClick={() => setOpen(false)}
-                            className="mt-4 text-sm text-muted-foreground"
-                        >
-                            Cancelar
-                        </button>
-                    </div>
+        <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+                <Button type="button">
+                    <Plus size={16} aria-hidden="true" />
+                    Crear espacio
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                    <SheetTitle>Nuevo espacio</SheetTitle>
+                    <SheetDescription>
+                        Registra un espacio físico del refugio. La ocupación se calculará automáticamente.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="px-4 pb-4">
+                    <SpaceForm
+                        key={open ? 'open' : 'closed'}
+                        onSubmit={handleCreate}
+                        submitLabel="Crear espacio"
+                        isPending={isPending}
+                    />
                 </div>
-            )}
-        </>
+            </SheetContent>
+        </Sheet>
     );
 }

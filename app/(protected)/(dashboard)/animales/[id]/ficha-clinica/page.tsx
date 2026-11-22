@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 import { getCurrentUser } from "@/modules/auth";
+import { isAdmin, isSuperadmin } from "@/modules/auth/authorization";
 import { Badge } from "@/components/ui/badge";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
 import { createClinicalRecordService } from "@/modules/animals/factories/create-clinical-record-service";
@@ -43,7 +44,7 @@ export default async function AnimalClinicalRecordPage({ params }: PageProps) {
     const nombre = ficha.animal.nombre ?? `${ficha.animal.especie} sin nombre`;
 
     return (
-        <div className="p-8 max-w-6xl mx-auto">
+        <div className="mx-auto max-w-6xl">
             <div className="mb-6 flex items-center gap-3">
                 <Link
                     href="/animales"
@@ -78,6 +79,8 @@ export default async function AnimalClinicalRecordPage({ params }: PageProps) {
                 idAnimal={idAnimal}
                 canOperate={puedeEjecutarOperacionClinica(user.role)}
                 canEvaluate={puedeRegistrarSocializacion(user.role)}
+                canEdit={user.permissions.includes(ANIMAL_PERMISSIONS.edit)}
+                canAuthorizeException={isAdmin(user) || isSuperadmin(user)}
                 initialRecord={ficha}
             />
         </div>

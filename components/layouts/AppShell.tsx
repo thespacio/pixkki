@@ -37,11 +37,7 @@ export function AppShell({
                 Saltar al contenido
             </a>
 
-            <AppSidebar
-                shelterName={shelterName}
-                user={user}
-                visibleNavIds={visibleNavIds}
-            />
+            <AppSidebar shelterName={shelterName} visibleNavIds={visibleNavIds} />
 
             <div className="flex min-w-0 flex-1 flex-col">
                 <AppTopbar
@@ -52,7 +48,7 @@ export function AppShell({
                 <main
                     id="contenido-principal"
                     tabIndex={-1}
-                    className="flex-1 overflow-y-auto pb-20 focus:outline-none lg:pb-0"
+                    className="flex-1 overflow-y-auto px-4 py-6 pb-24 focus:outline-none sm:px-6 lg:px-8 lg:pb-8"
                 >
                     {children}
                 </main>

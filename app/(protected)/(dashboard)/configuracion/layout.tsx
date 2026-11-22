@@ -15,10 +15,10 @@ export default function ConfiguracionLayout({
 }) {
     return (
         <div className="flex min-h-full flex-col">
-            <div className="border-b border-border px-4 pt-4 sm:px-6 md:px-8">
+            <div className="border-b border-border">
                 <ConfiguracionTabs />
             </div>
-            <div className="min-h-0 flex-1">{children}</div>
+            <div className="min-h-0 flex-1 pt-6">{children}</div>
         </div>
     );
 }

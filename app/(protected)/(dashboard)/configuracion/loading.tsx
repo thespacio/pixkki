@@ -6,7 +6,7 @@ export default function ConfiguracionLoading() {
             role="status"
             aria-live="polite"
             aria-busy="true"
-            className="p-6 md:p-8 max-w-3xl mx-auto"
+            className="mx-auto max-w-3xl"
         >
             <span className="sr-only">Cargando configuración...</span>
 

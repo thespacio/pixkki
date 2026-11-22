@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Building2, Cat, Dog, MapPin, PawPrint } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+    AlertTriangle,
+    Building2,
+    Cat,
+    Dog,
+    Eye,
+    FileHeart,
+    MapPin,
+    PawPrint,
+} from "lucide-react";
 import type { Animal } from "@/modules/animals/types/animales.types";
 import type { AnimalState } from "@/modules/animals/types/animal-state.types";
 import { AnimalDetailPanel } from "@/modules/animals/components/AnimalDetailPanel";
@@ -117,7 +128,7 @@ export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete, 
                     )}
                 </div>
             ) : (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
                     {filtrados.map((animal) => (
                         <li key={animal.idAnimal}>
                             <AnimalCard
@@ -154,6 +165,7 @@ function AnimalCard({
 }) {
     const colorClasses = getAnimalColor(animal.especie);
     const nombre = animal.nombre ?? `${animal.especie} sin nombre`;
+    const portada = animal.imagenPortada ?? null;
 
     const detalles = [
         animal.raza ?? animal.especie,
@@ -162,74 +174,121 @@ function AnimalCard({
     ].filter(Boolean);
 
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={`Ver detalle de ${nombre}`}
-            className="group relative block w-full text-left rounded-2xl border border-border bg-card overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-            <div
-                className={`relative h-36 bg-gradient-to-br ${colorClasses} flex items-center justify-center overflow-hidden`}
+        <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <button
+                type="button"
+                onClick={onClick}
+                aria-label={`Ver detalle de ${nombre}`}
+                className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
             >
-                <AnimalIcon
-                    especie={animal.especie}
-                    size={72}
-                    strokeWidth={1.2}
-                    className="transition-transform duration-500 group-hover:scale-110 opacity-90"
-                />
-
-                {animal.estadoNombre && (
-                    <span className="absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full font-medium bg-foreground/80 text-background backdrop-blur-sm">
-                        {animal.estadoNombre}
-                    </span>
-                )}
-
-                {animal.enCuarentena && (
-                    <span className="absolute top-3 left-3 inline-flex max-w-[calc(100%-5.5rem)] items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">
-                        <AlertTriangle size={11} aria-hidden="true" />
-                        <span className="truncate">AISLAMIENTO / RIESGO BIOLÓGICO</span>
-                    </span>
-                )}
-            </div>
-
-            <div className="p-4">
-                <h3 className="font-semibold text-foreground text-base truncate">{nombre}</h3>
-                <p className="text-xs text-muted-foreground truncate">{detalles.join(" · ")}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatEdad(animal.edadEstimada)}
-                </p>
-
-                <div className="mt-3 flex items-center gap-1.5 flex-wrap min-h-[24px]">
-                    {animal.disponibleAdopcion && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-green-100 text-green-700 font-medium">
-                            En adopción
-                        </span>
-                    )}
-                    {animal.esterilizado && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-medium">
-                            Esterilizado
-                        </span>
-                    )}
-                    {animal.vacunado && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-teal-100 text-teal-700 font-medium">
-                            Vacunado
-                        </span>
-                    )}
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-border space-y-1 text-xs text-muted-foreground">
-                    {showShelter && (
-                        <div className="flex items-center gap-1.5">
-                            <Building2 size={12} aria-hidden="true" />
-                            <span className="truncate">{animal.refugioNombre ?? "Sin albergue"}</span>
+                <div
+                    className={`relative h-36 overflow-hidden bg-gradient-to-br sm:h-40 ${colorClasses}`}
+                >
+                    {portada ? (
+                        <>
+                            <Image
+                                src={portada}
+                                alt={`Foto de ${nombre}`}
+                                fill
+                                unoptimized
+                                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/25" />
+                        </>
+                    ) : (
+                        <div className="flex h-full items-center justify-center">
+                            <AnimalIcon
+                                especie={animal.especie}
+                                size={72}
+                                strokeWidth={1.2}
+                                className="opacity-90 transition-transform duration-500 group-hover:scale-110"
+                            />
                         </div>
                     )}
-                    <div className="flex items-center gap-1.5">
-                        <MapPin size={12} aria-hidden="true" />
-                        <span className="truncate">{animal.espacioNombre ?? "Sin espacio"}</span>
+
+                    <div className="absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-1.5 p-2.5 sm:p-3">
+                        {animal.enCuarentena ? (
+                            <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-[9px] font-semibold leading-tight text-white shadow-sm sm:max-w-[60%] sm:text-[10px]">
+                                <AlertTriangle size={11} className="shrink-0" aria-hidden="true" />
+                                <span className="truncate">AISLAMIENTO / RIESGO BIOLÓGICO</span>
+                            </span>
+                        ) : (
+                            <span />
+                        )}
+                        {animal.estadoNombre && (
+                            <span className="max-w-full truncate rounded-full bg-foreground/80 px-2 py-1 text-[10px] font-medium leading-tight text-background backdrop-blur-sm sm:text-xs">
+                                {animal.estadoNombre}
+                            </span>
+                        )}
                     </div>
                 </div>
+
+                <div className="min-w-0 p-4">
+                    <h3 className="truncate text-base font-semibold text-foreground">
+                        {nombre}
+                    </h3>
+                    <p className="truncate text-xs text-muted-foreground">
+                        {detalles.join(" · ")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        {formatEdad(animal.edadEstimada)}
+                    </p>
+
+                    <div className="mt-3 flex min-h-[24px] flex-wrap items-center gap-1.5">
+                        {animal.disponibleAdopcion && (
+                            <span className="rounded-md bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                                En adopción
+                            </span>
+                        )}
+                        {animal.esterilizado && (
+                            <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                                Esterilizado
+                            </span>
+                        )}
+                        {animal.vacunado && (
+                            <span className="rounded-md bg-teal-100 px-2 py-0.5 text-[11px] font-medium text-teal-700">
+                                Vacunado
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="mt-3 space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                        {showShelter && (
+                            <div className="flex items-center gap-1.5">
+                                <Building2 size={12} className="shrink-0" aria-hidden="true" />
+                                <span className="truncate">
+                                    {animal.refugioNombre ?? "Sin albergue"}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            <MapPin size={12} className="shrink-0" aria-hidden="true" />
+                            <span className="truncate">
+                                {animal.espacioNombre ?? "Sin espacio"}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </button>
+
+            <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border px-4 py-3">
+                <button
+                    type="button"
+                    onClick={onClick}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary"
+                >
+                    <Eye size={14} aria-hidden="true" />
+                    Ver detalle
+                </button>
+                <Link
+                    href={`/animales/${animal.idAnimal}/ficha-clinica`}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                >
+                    <FileHeart size={14} aria-hidden="true" />
+                    Ficha clínica
+                </Link>
             </div>
-        </button>
+        </article>
     );
 }

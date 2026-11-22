@@ -1,48 +1,63 @@
 'use client';
 
+import { useTransition } from 'react';
 import { updateSpaceAction } from '@/modules/spaces/actions';
-import {Space, UpdateSpaceInput} from "@/modules/spaces/types/types";
-import SpaceForm from "@/modules/spaces/components/SpacesForm";
-
+import type { Space, UpdateSpaceInput } from '@/modules/spaces/types/types';
+import SpaceForm from '@/modules/spaces/components/SpacesForm';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 
 interface Props {
-    shelterId: number;
     space: Space;
     open: boolean;
     onClose: () => void;
 }
 
-export default function EditSpaceModal({ shelterId, space, open, onClose }: Props) {
-    if (!open) return null;
+export default function EditSpaceModal({ space, open, onClose }: Props) {
+    const [isPending, startTransition] = useTransition();
 
     const handleUpdate = async (values: UpdateSpaceInput) => {
-        const res = await updateSpaceAction(space.id , values );
-        if (res.success) {
-            onClose();
-        }
-        return res;
+        let result: { success: boolean; error?: string } = { success: false, error: 'Error inesperado' };
+        await new Promise<void>((resolve) => {
+            startTransition(async () => {
+                result = await updateSpaceAction(space.id, values);
+                resolve();
+            });
+        });
+        if (result.success) onClose();
+        return result;
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-card p-6 rounded-2xl w-full max-w-md">
-                <h2 className="text-xl font-bold mb-4">Editar espacio</h2>
-                <SpaceForm
-                    defaultValues={{
-                        name: space.name,
-                        type: space.type,
-                        capacity: space.capacity,
-                    }}
-                    onSubmit={handleUpdate}
-                    submitLabel="Guardar cambios"
-                />
-                <button
-                    onClick={onClose}
-                    className="mt-4 text-sm text-muted-foreground"
-                >
-                    Cancelar
-                </button>
-            </div>
-        </div>
+        <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+            <SheetContent side="right" className="sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                    <SheetTitle>Editar espacio</SheetTitle>
+                    <SheetDescription>
+                        Actualiza los datos del espacio {space.name}.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="px-4 pb-4">
+                    <SpaceForm
+                        key={space.id}
+                        defaultValues={{
+                            name: space.name,
+                            description: space.description ?? '',
+                            type: space.type as UpdateSpaceInput['type'],
+                            capacity: space.capacity,
+                            available: space.available,
+                        }}
+                        onSubmit={handleUpdate}
+                        submitLabel="Guardar cambios"
+                        isPending={isPending}
+                    />
+                </div>
+            </SheetContent>
+        </Sheet>
     );
 }

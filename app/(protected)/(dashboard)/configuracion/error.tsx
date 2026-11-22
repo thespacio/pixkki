@@ -9,7 +9,7 @@ type ConfiguracionErrorProps = {
 
 export default function ConfiguracionError({ reset }: ConfiguracionErrorProps) {
     return (
-        <div className="p-6 md:p-8 max-w-3xl mx-auto">
+        <div className="mx-auto max-w-3xl">
             <ErrorState
                 title="No pudimos cargar la configuración"
                 description="Los ajustes no están disponibles ahora mismo. Vuelve a intentarlo."

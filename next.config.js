@@ -16,6 +16,11 @@ const nextConfig = {
    */
   async redirects() {
     return [
+      {
+        source: "/landing",
+        destination: "/",
+        permanent: true,
+      },
       // Animales: ficha clínica antes que el comodín.
       {
         source: '/animals/:id/clinical-record',

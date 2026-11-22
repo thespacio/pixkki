@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import {
     HeartHandshake,
     History,
+    Scissors,
     ShieldPlus,
     Stethoscope,
     Syringe,
@@ -30,9 +31,11 @@ import { AnimalClinicalRecord } from "./AnimalClinicalRecord";
 import { AnimalDiagnosisPanel } from "./AnimalDiagnosisPanel";
 import { AnimalQuarantineBottomSheet } from "./AnimalQuarantineBottomSheet";
 import { AnimalQuarantinePanel } from "./AnimalQuarantinePanel";
+import { AnimalAdoptionAptitudeBlock } from "./AnimalAdoptionAptitudeBlock";
 import { AnimalRehabilitationPanel } from "./AnimalRehabilitationPanel";
 import { AnimalSanitaryEventPanel } from "./AnimalSanitaryEventPanel";
 import { AnimalSanitaryEventSheet } from "./AnimalSanitaryEventSheet";
+import { AnimalSurgeryPanel } from "./AnimalSurgeryPanel";
 import { AnimalTemperamentPanel } from "./AnimalTemperamentPanel";
 import { AnimalTransferPanel } from "./AnimalTransferPanel";
 import type { ClinicalRecord } from "../services/clinical-record.service";
@@ -43,6 +46,10 @@ type Props = {
     canOperate: boolean;
     /** Evaluador/veterinario/admin: puede registrar temperamento y rehabilitación. */
     canEvaluate: boolean;
+    /** Permiso `animals.edit`: publicar/despublicar adopción. */
+    canEdit: boolean;
+    /** Admin/Superadmin: autorizar excepción de aptitud. */
+    canAuthorizeException: boolean;
     initialRecord: ClinicalRecord;
 };
 
@@ -72,6 +79,8 @@ export function AnimalClinicalPagePanels({
     idAnimal,
     canOperate,
     canEvaluate,
+    canEdit,
+    canAuthorizeException,
     initialRecord,
 }: Props) {
     const router = useRouter();
@@ -97,6 +106,10 @@ export function AnimalClinicalPagePanels({
                     <TabsTrigger value="socializacion">
                         <HeartHandshake size={15} aria-hidden="true" />
                         Socialización
+                    </TabsTrigger>
+                    <TabsTrigger value="cirugias">
+                        <Scissors size={15} aria-hidden="true" />
+                        Cirugías
                     </TabsTrigger>
                 </TabsList>
 
@@ -172,6 +185,14 @@ export function AnimalClinicalPagePanels({
                         </div>
                     </section>
 
+                    <AnimalAdoptionAptitudeBlock
+                        idAnimal={idAnimal}
+                        canEdit={canEdit}
+                        canAuthorizeException={canAuthorizeException}
+                        refreshKey={refreshKey}
+                        onChanged={refresh}
+                    />
+
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                         <PanelCard
                             title="Chequeos médicos"
@@ -220,6 +241,7 @@ export function AnimalClinicalPagePanels({
                                 idAnimal={idAnimal}
                                 canTransfer
                                 canRelease={canOperate}
+                                enCuarentena={initialRecord.animal.enCuarentena}
                                 onSaved={refresh}
                             />
                         </PanelCard>
@@ -250,6 +272,16 @@ export function AnimalClinicalPagePanels({
                             />
                         </PanelCard>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="cirugias" className="space-y-6">
+                    <AnimalSurgeryPanel
+                        idAnimal={idAnimal}
+                        canOperate={canOperate}
+                        esterilizado={initialRecord.animal.esterilizado}
+                        refreshKey={refreshKey}
+                        onChanged={refresh}
+                    />
                 </TabsContent>
             </Tabs>
 

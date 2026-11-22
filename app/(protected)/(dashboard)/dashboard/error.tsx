@@ -9,7 +9,7 @@ type DashboardErrorProps = {
 
 export default function DashboardError({ reset }: DashboardErrorProps) {
     return (
-        <div className="p-6 md:p-8 max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
             <ErrorState
                 title="No pudimos cargar el panel"
                 description="Los indicadores no están disponibles ahora mismo. Vuelve a intentarlo."

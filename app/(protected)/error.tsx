@@ -13,7 +13,7 @@ type ProtectedErrorProps = {
  */
 export default function ProtectedError({ reset }: ProtectedErrorProps) {
     return (
-        <div className="p-6 md:p-8 max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
             <ErrorState
                 title="No pudimos cargar esta sección"
                 description="Puede ser un problema temporal de conexión. Vuelve a intentarlo."
