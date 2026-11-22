@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useState} from 'react'
 
 import {AuthError} from "@/modules/auth/errors";
-import {requiresMfa} from "@/modules/auth/mfa/service";
 import {login, verifyMfa} from "@/modules/auth/login/service";
 import {getAuthFlagsAction} from "@/modules/auth/action";
-
-const logo = '/images/logo.png'
 
 export default function Login() {
   type LoginStep = "credentials" | "mfa";
@@ -36,6 +33,34 @@ export default function Login() {
 
   const [mfaChallenge, setMfaChallenge] =
       useState<MfaChallenge | null>(null);
+
+  const redirectToNextGate = async () => {
+    const flags = await getAuthFlagsAction();
+
+    // Si la acción no devuelve resultado (p. ej. una redirección del
+    // middleware), se entra al panel: el layout protegido aplica las
+    // compuertas de contraseña, términos y onboarding.
+    if (!flags) {
+      router.replace("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    const next =
+        flags.success && flags.data
+            ? flags.data.requiresPasswordChange
+                ? "/change-password"
+                : !flags.data.termsAccepted
+                ? "/accept-terms"
+                : flags.data.requiresOnboarding &&
+                  flags.data.shelterId !== null
+                ? "/onboarding"
+                : "/dashboard"
+            : "/dashboard";
+
+    router.replace(next);
+    router.refresh();
+  };
 
   const handleSubmit = async (
       e: React.FormEvent
@@ -77,20 +102,7 @@ export default function Login() {
             console.log(
                 "Login completado."
             );
-            const flags = await getAuthFlagsAction();
-            const next =
-                flags.success && flags.data
-                    ? flags.data.requiresPasswordChange
-                        ? "/change-password"
-                        : !flags.data.termsAccepted
-                        ? "/accept-terms"
-                        : flags.data.requiresOnboarding &&
-                          flags.data.shelterId !== null
-                        ? "/onboarding"
-                        : "/dashboard"
-                    : "/dashboard";
-            router.replace(next);
-            router.refresh();
+            await redirectToNextGate();
             return;
         }
       }
@@ -115,20 +127,7 @@ export default function Login() {
         console.log(
             "MFA verificado correctamente."
         );
-        const flags = await getAuthFlagsAction();
-        const next =
-            flags.success && flags.data
-                ? flags.data.requiresPasswordChange
-                    ? "/change-password"
-                    : !flags.data.termsAccepted
-                    ? "/accept-terms"
-                    : flags.data.requiresOnboarding &&
-                      flags.data.shelterId !== null
-                    ? "/onboarding"
-                    : "/dashboard"
-                : "/dashboard";
-        router.replace(next);
-        router.refresh();
+        await redirectToNextGate();
       }
     }
 
@@ -137,16 +136,12 @@ export default function Login() {
           "Error durante login:",
           error
       );
-      if (
-          error instanceof AuthError
-      ) {
-        setError(
-            error.message
-        );
+      if (error instanceof AuthError) {
+        setError(error.message);
+      } else if (error instanceof Error && error.message) {
+        setError(error.message);
       } else {
-        setError(
-            "Ha ocurrido un error inesperado."
-        );
+        setError("Ha ocurrido un error inesperado.");
       }
     }
     finally {

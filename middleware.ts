@@ -102,7 +102,14 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (user && authPages.includes(pathname)) {
+    // Las Server Actions son POST a la página actual con la cabecera
+    // `next-action`. Redirigirlas (p. ej. desde /login ya autenticado) rompe
+    // el vínculo acción/página: Next no encuentra la acción y el cliente
+    // recibe `undefined` en lugar del resultado.
+    const isServerAction =
+        request.method === "POST" && request.headers.has("next-action");
+
+    if (user && !isServerAction && authPages.includes(pathname)) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
