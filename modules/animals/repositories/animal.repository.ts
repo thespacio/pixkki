@@ -3,6 +3,7 @@ import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import {Database} from "@/types/database";
 import {Animal} from "@/modules/animals/types/animales.types";
+import { CapacidadExcedidaError } from "../errors";
 
 type AnimalRow = Database["public"]["Tables"]["animal"]["Row"];
 type AnimalInsert = Database["public"]["Tables"]["animal"]["Insert"];
@@ -35,6 +36,26 @@ type AnimalRowWithRelations = AnimalRow & {
     fecha_reserva?: string | null;
     fecha_adopcion?: string | null;
 };
+
+/**
+ * La restricción de capacidad vive en la base de datos para ser atómica. Aquí
+ * se traduce su error a un error de dominio; el mensaje de Supabase se conserva
+ * como `cause` para los logs, nunca se muestra al cliente.
+ */
+function traducirErrorEscritura(error: unknown): unknown {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23514" &&
+        "message" in error &&
+        typeof error.message === "string" &&
+        error.message.includes("CAPACIDAD_EXCEDIDA")
+    ) {
+        return new CapacidadExcedidaError();
+    }
+    return error;
+}
 
 /** Prioriza la foto marcada como portada; si no hay, usa la primera por orden. */
 function portadaDe(
@@ -190,7 +211,7 @@ export class AnimalRepository {
             .select(SELECT_WITH_RELATIONS)
             .single();
 
-        if (error) throw error;
+        if (error) throw traducirErrorEscritura(error);
         return this.toDomain(data as unknown as AnimalRowWithRelations);
     }
 
@@ -233,7 +254,7 @@ export class AnimalRepository {
             .select(SELECT_WITH_RELATIONS)
             .single();
 
-        if (error) throw error;
+        if (error) throw traducirErrorEscritura(error);
         return this.toDomain(data as unknown as AnimalRowWithRelations);
     }
 

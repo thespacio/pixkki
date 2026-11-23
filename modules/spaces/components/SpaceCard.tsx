@@ -47,6 +47,9 @@ export default function SpaceCard({ space, canManage }: Props) {
     const sinCupo = space.capacidadLibre === 0;
     const noDisponible = !space.available;
     const hasAnimals = space.ocupacion > 0;
+    // Estado heredado de antes de la restricción atómica: no se corrige solo,
+    // hay que trasladar animales a otro espacio.
+    const sobrecupo = space.ocupacion > space.capacity;
 
     const handleDelete = () => {
         setError(undefined);
@@ -78,6 +81,7 @@ export default function SpaceCard({ space, canManage }: Props) {
                         <p className="text-sm text-muted-foreground">{typeLabel(space.type)}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        {sobrecupo && <Badge variant="destructive">Sobrecupo</Badge>}
                         {space.type === 'cuarentena' && <Badge variant="outline">Cuarentena</Badge>}
                         {noDisponible && <Badge variant="secondary">No disponible</Badge>}
                         {sinCupo && !noDisponible && <Badge variant="outline">Sin cupo</Badge>}
@@ -100,16 +104,18 @@ export default function SpaceCard({ space, canManage }: Props) {
                         aria-valuenow={space.ocupacion}
                     >
                         <div
-                            className={`h-full rounded-full transition-all ${sinCupo ? 'bg-amber-500' : 'bg-primary'}`}
+                            className={`h-full rounded-full transition-all ${sobrecupo ? 'bg-destructive' : sinCupo ? 'bg-amber-500' : 'bg-primary'}`}
                             style={{ width: `${ocupacionPct}%` }}
                         />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {noDisponible
-                            ? 'Espacio no disponible'
-                            : sinCupo
-                              ? 'Sin cupo'
-                              : `${space.capacidadLibre} ${space.capacidadLibre === 1 ? 'plaza libre' : 'plazas libres'}`}
+                        {sobrecupo
+                            ? `Sobrecupo: ${space.ocupacion} animales para ${space.capacity} plazas. Traslada animales a otro espacio.`
+                            : noDisponible
+                              ? 'Espacio no disponible'
+                              : sinCupo
+                                ? 'Sin cupo'
+                                : `${space.capacidadLibre} ${space.capacidadLibre === 1 ? 'plaza libre' : 'plazas libres'}`}
                     </p>
                 </div>
 

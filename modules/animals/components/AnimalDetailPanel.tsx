@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { deleteAnimalAction, updateAnimalAction } from "../actions/animal.actions";
 import type { Animal } from "@/modules/animals/types/animales.types";
-import type { Space } from "@/modules/spaces/types/types";
+import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import { AnimalDiagnosisSheet } from "./AnimalDiagnosisSheet";
 import { AnimalEditSheet } from "./AnimalEditSheet";
 import { AnimalGallery } from "./AnimalGallery";
@@ -26,8 +26,8 @@ type Props = {
     canDelete: boolean;
     canDiagnose: boolean;
     onClose: () => void;
-    /** Espacios donde puede reubicarse el animal (los del albergue propio). */
-    espacios?: Space[];
+    /** Espacios con ocupación calculada donde puede reubicarse el animal. */
+    espacios?: SpaceWithOptionalOccupancy[];
 };
 
 /**
@@ -184,6 +184,7 @@ export function AnimalDetailPanel({
                 {editOpen && (
                     <AnimalEditSheet
                         animal={animalActual}
+                        enCuarentena={enCuarentena}
                         espacios={espacios}
                         open={editOpen}
                         onClose={() => setEditOpen(false)}

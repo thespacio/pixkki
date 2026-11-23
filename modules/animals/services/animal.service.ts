@@ -2,7 +2,13 @@ import type { AnimalRepository } from "../repositories/animal.repository";
 import type { CreateAnimalDTO } from "../dtos/create-animal.dto";
 import type { UpdateAnimalDTO } from "../dtos/update-animal.dto";
 import type { AnimalAccess } from "../access";
-import { GatekeeperAdopcionRequeridoError } from "../errors";
+import type { SpaceOccupancyPort } from "@/modules/spaces/ports/space-occupancy.port";
+import {
+    AnimalEnCuarentenaError,
+    CapacidadExcedidaError,
+    EspacioInactivoError,
+    GatekeeperAdopcionRequeridoError,
+} from "../errors";
 import {
     Animal,
     AnimalMicrochipDuplicateError,
@@ -14,7 +20,35 @@ import {
 
 
 export class AnimalService {
-    constructor(private readonly repository: AnimalRepository) {}
+    constructor(
+        private readonly repository: AnimalRepository,
+        /** Puerto de ocupación de `spaces`. Opcional para no romper creadores antiguos. */
+        private readonly espacios?: SpaceOccupancyPort,
+    ) {}
+
+    /**
+     * RF3.1/RF2.4: valida cupo, disponibilidad y tipo antes de asignar un espacio.
+     * La restricción definitiva y a prueba de concurrencia está en la base de
+     * datos; esta comprobación previa da un mensaje claro y evita viajes inútiles.
+     */
+    private async assertEspacioDestino(
+        idEspacio: number,
+        idRefugio: number,
+        enCuarentena: boolean,
+    ): Promise<void> {
+        if (!this.espacios) return;
+
+        const destinos = await this.espacios.listWithOccupancy({
+            shelterId: idRefugio,
+        });
+        const destino = destinos.find((espacio) => espacio.id === idEspacio);
+        if (!destino) throw new AnimalSpaceMismatchError();
+        if (!destino.available) throw new EspacioInactivoError();
+        if (destino.capacidadLibre <= 0) throw new CapacidadExcedidaError();
+        if (enCuarentena && destino.type !== "cuarentena") {
+            throw new AnimalEnCuarentenaError();
+        }
+    }
 
     /** Animales visibles para el usuario: todos si es superadmin, solo los de su albergue si no. */
     async listVisible(access: AnimalAccess): Promise<Animal[]> {
@@ -59,6 +93,9 @@ export class AnimalService {
             idRefugio,
         );
         if (!espacioOk) throw new AnimalSpaceMismatchError();
+        // Todo ingreso nace en cuarentena: solo un espacio designado para
+        // cuarentena, con cupo y disponible, puede recibirlo.
+        await this.assertEspacioDestino(dto.idEspacio, idRefugio, true);
 
         // Regla de negocio: el estado debe existir
         const estadoOk = await this.repository.estadoExists(dto.idEstado);
@@ -95,6 +132,15 @@ export class AnimalService {
                 animal.idRefugio,
             );
             if (!espacioOk) throw new AnimalSpaceMismatchError();
+            // Conservar el espacio actual no es un movimiento: no se valida
+            // cupo (el animal ya ocupa esa plaza) ni se bloquean otras ediciones.
+            if (dto.idEspacio !== animal.idEspacio) {
+                await this.assertEspacioDestino(
+                    dto.idEspacio,
+                    animal.idRefugio,
+                    animal.enCuarentena,
+                );
+            }
         }
 
         if (dto.idEstado !== undefined) {

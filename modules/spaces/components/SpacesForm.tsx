@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -35,6 +36,7 @@ export default function SpaceForm({
         register,
         handleSubmit,
         setError,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm<SpaceFormValues, unknown, CreateSpaceInput>({
         resolver: zodResolver(CreateSpaceSchema),
@@ -48,6 +50,7 @@ export default function SpaceForm({
     });
 
     const busy = isPending || isSubmitting;
+    const [esCuarentena, setEsCuarentena] = useState(defaultValues?.type === 'cuarentena');
 
     async function handleFormSubmit(values: CreateSpaceInput) {
         const result = await onSubmit({
@@ -81,7 +84,10 @@ export default function SpaceForm({
                 </label>
                 <select
                     id="space-type"
-                    {...register('type')}
+                    {...register('type', {
+                        onChange: (event) =>
+                            setEsCuarentena(event.target.value === 'cuarentena'),
+                    })}
                     disabled={busy}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     aria-invalid={!!errors.type}
@@ -93,8 +99,25 @@ export default function SpaceForm({
                     ))}
                 </select>
                 {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
+                <label className="mt-2 flex items-center gap-2 text-sm">
+                    <input
+                        type="checkbox"
+                        checked={esCuarentena}
+                        disabled={busy}
+                        onChange={(event) => {
+                            setEsCuarentena(event.target.checked);
+                            setValue(
+                                'type',
+                                event.target.checked ? 'cuarentena' : 'canil',
+                                { shouldValidate: true },
+                            );
+                        }}
+                        className="size-4 rounded border-input accent-primary"
+                    />
+                    Espacio de cuarentena
+                </label>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Los espacios de tipo &quot;Cuarentena&quot; son los únicos destinos válidos para animales en cuarentena.
+                    Marca esta casilla (o elige el tipo &quot;Cuarentena&quot;) para que los animales en aislamiento puedan alojarse aquí. Es el único destino permitido mientras estén en cuarentena.
                 </p>
             </div>
 

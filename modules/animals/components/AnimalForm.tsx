@@ -9,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Space } from "@/modules/spaces/types/types";
+import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import {
     SITUACIONES_RESCATE,
     TAMANOS,
@@ -25,7 +25,7 @@ import {
 import type { ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
 
 type Props = {
-    espacios: Space[];
+    espacios: SpaceWithOptionalOccupancy[];
     /**
      * Albergues entre los que se puede elegir. Solo lo recibe el superadmin; si
      * está vacío, el animal se asocia automáticamente al albergue del usuario y
@@ -44,6 +44,8 @@ type Props = {
     onCancel: () => void;
     /** En edición: oculta el estado del paciente y los campos con flujo propio. */
     mode?: "create" | "edit";
+    /** RF2.4: mientras esté en cuarentena, solo puede alojarse en cuarentena. */
+    enCuarentena?: boolean;
 };
 
 const INPUT_CLS =
@@ -114,6 +116,7 @@ export function AnimalForm({
     saving,
     onCancel,
     mode = "create",
+    enCuarentena = false,
 }: Props) {
     const uid = useId();
     const id = (name: string) => `${uid}-${name}`;
@@ -150,9 +153,25 @@ export function AnimalForm({
     // sus espacios. Sin selector (usuario no superadmin) ya llegan filtrados.
     // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch es API esperada
     const idRefugio = watch("idRefugio");
-    const espaciosDisponibles = chooseShelter
-        ? espacios.filter((e) => String(e.shelterId) === idRefugio)
-        : espacios;
+
+    // RF1.1/RF2.4/RF3.1: todo ingreso nace en cuarentena, y un paciente que ya
+    // está en cuarentena solo puede alojarse en un espacio designado para ello.
+    // Se ocultan los espacios sin cupo; el actual siempre se ofrece en edición
+    // para no dejar un select vacío cuando el espacio está lleno.
+    const requiereCuarentena = !isEdit || enCuarentena;
+    const idEspacioActual = initialValues.idEspacio;
+    const espaciosDisponibles = espacios.filter((espacio) => {
+        if (chooseShelter && String(espacio.shelterId) !== idRefugio) return false;
+        if (isEdit && idEspacioActual !== "" && String(espacio.id) === idEspacioActual) {
+            return true;
+        }
+        // Sin datos de ocupación se asume capacidad completa (consumidores
+        // antiguos); el servidor sigue siendo la fuente de verdad del cupo.
+        const capacidadLibre =
+            espacio.capacidadLibre ?? espacio.capacity - (espacio.ocupacion ?? 0);
+        if (!espacio.available || capacidadLibre <= 0) return false;
+        return !requiereCuarentena || espacio.type === "cuarentena";
+    });
 
     async function submit(values: CreateAnimalFormValues) {
         await onSubmit(values);
@@ -203,8 +222,12 @@ export function AnimalForm({
                             chooseShelter && idRefugio === ""
                                 ? "Primero elige un albergue"
                                 : espaciosDisponibles.length === 0
-                                  ? "Este albergue no tiene espacios registrados"
-                                  : undefined
+                                  ? requiereCuarentena
+                                      ? "No hay espacios de cuarentena con cupo. Designa uno en la página Espacios (Tipo: Cuarentena)."
+                                      : "No hay espacios disponibles con cupo en este albergue"
+                                  : requiereCuarentena
+                                    ? "Solo espacios de cuarentena con cupo"
+                                    : undefined
                         }
                     >
                         <select
@@ -217,6 +240,10 @@ export function AnimalForm({
                             {espaciosDisponibles.map((e) => (
                                 <option key={e.id} value={e.id}>
                                     {e.name}
+                                    {e.type === "cuarentena" ? " (cuarentena)" : ""}
+                                    {!isEdit && e.capacidadLibre !== undefined && e.capacidadLibre > 0
+                                        ? ` · ${e.capacidadLibre} plazas libres`
+                                        : ""}
                                 </option>
                             ))}
                         </select>

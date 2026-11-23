@@ -7,6 +7,14 @@ export type SpaceWithOccupancy = Space & {
     estadoTexto: string;
 };
 
+/**
+ * Espacio con ocupación opcional. Permite que los formularios que necesitan
+ * cupo acepten tanto espacios con ocupación calculada como `Space` simple
+ * (consumidores antiguos y tests que aún no calculan ocupación).
+ */
+export type SpaceWithOptionalOccupancy = Space &
+    Partial<Pick<SpaceWithOccupancy, "ocupacion" | "capacidadLibre" | "estadoTexto">>;
+
 export type SpaceOccupancyInfo = {
     idEspacio: number;
     disponible: boolean;

@@ -19,7 +19,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import type { Animal } from "@/modules/animals/types/animales.types";
-import type { Space } from "@/modules/spaces/types/types";
+import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import { updateAnimalAction } from "../actions/animal.actions";
 import {
     toAnimalFormDefaults,
@@ -30,7 +30,8 @@ import { AnimalForm } from "./AnimalForm";
 
 type Props = {
     animal: Animal;
-    espacios: Space[];
+    enCuarentena: boolean;
+    espacios: SpaceWithOptionalOccupancy[];
     open: boolean;
     onClose: () => void;
     /** Animal devuelto por el servidor, para actualizar la ficha sin recargar. */
@@ -39,6 +40,7 @@ type Props = {
 
 export function AnimalEditSheet({
     animal,
+    enCuarentena,
     espacios,
     open,
     onClose,
@@ -100,6 +102,7 @@ export function AnimalEditSheet({
 
                     <AnimalForm
                         mode="edit"
+                        enCuarentena={enCuarentena}
                         espacios={espacios}
                         defaultValues={toAnimalFormDefaults(animal)}
                         onSubmit={handleSubmit}

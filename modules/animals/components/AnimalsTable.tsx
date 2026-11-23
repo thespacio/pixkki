@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Animal } from "@/modules/animals/types/animales.types";
 import type { AnimalState } from "@/modules/animals/types/animal-state.types";
-import type { Space } from "@/modules/spaces/types/types";
+import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import { AnimalDetailPanel } from "@/modules/animals/components/AnimalDetailPanel";
 import { AnimalFilterBar, type ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
 import {
@@ -34,8 +34,8 @@ type Props = {
     canDelete: boolean;
     /** Solo veterinario/admin pueden registrar diagnósticos. */
     canDiagnose?: boolean;
-    /** Espacios disponibles para reubicar al animal desde la edición. */
-    espacios?: Space[];
+    /** Espacios con ocupación calculada, para reubicar al animal desde la edición. */
+    espacios?: SpaceWithOptionalOccupancy[];
 };
 
 function AnimalIcon({

@@ -9,7 +9,7 @@ import {
     toCreateAnimalInput,
     type CreateAnimalFormValues,
 } from "../validators/animal.validators";
-import { Space } from "@/modules/spaces/types/types";
+import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import { AnimalState } from "@/modules/animals/types/animal-state.types";
 import {
     MAX_IMAGENES_POR_ANIMAL,
@@ -27,7 +27,7 @@ type Props = {
      * para no romper consumidores/tests antiguos; el formulario la ignora.
      */
     estados?: AnimalState[];
-    espacios: Space[];
+    espacios: SpaceWithOptionalOccupancy[];
     /** Solo superadmin: albergues entre los que elegir. Vacío = se usa el albergue del usuario. */
     refugios?: ShelterOption[];
     /**

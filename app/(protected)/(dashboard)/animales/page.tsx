@@ -9,7 +9,7 @@ import { isEstadoCuarentena } from "@/modules/animals/animal-state";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
 import { puedeRegistrarDiagnostico } from "@/modules/animals/types/animales.types";
 import type { ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
-import { createSpaceService } from "@/modules/spaces/factories/factories";
+import { createSpaceOccupancyService } from "@/modules/spaces/factories/create-space-occupancy-service";
 import { createShelterService } from "@/modules/shelters";
 import { getCurrentUser } from "@/modules/auth";
 
@@ -34,7 +34,7 @@ export default async function AnimalsPage() {
   const [animalService, estadoService, spaceService, shelterService] = await Promise.all([
     createAnimalService(),
     createAnimalStateService(),
-    createSpaceService(),
+    createSpaceOccupancyService(),
     createShelterService(),
   ]);
 
@@ -43,11 +43,12 @@ export default async function AnimalsPage() {
   const [animales, estados, espacios, refugios] = await Promise.all([
     animalService.listVisible(access),
     estadoService.listAll(),
-    // El superadmin elige albergue en el formulario, así que necesita los espacios
-    // de todos; el resto solo los de su propio albergue.
+    // El formulario solo ofrece espacios conocupación calculada: así puede
+    // ocultar los que están llenos y exigir espacios de cuarentena al dar altas.
+    // El superadmin ve todos; el resto, solo los de su albergue.
     access.allShelters
-      ? spaceService.getSpaces()
-      : spaceService.getSpacesByShelter(access.shelterId),
+      ? spaceService.listWithOccupancy()
+      : spaceService.listWithOccupancy({ shelterId: access.shelterId }),
     // Solo el superadmin puede asociar animales a cualquier albergue activo.
     access.allShelters
       ? shelterService
