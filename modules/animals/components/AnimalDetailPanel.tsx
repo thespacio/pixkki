@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { X } from "lucide-react";
+import { X, PencilLine } from "lucide-react";
 import {
     Sheet,
     SheetContent,
@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/sheet";
 import { deleteAnimalAction, updateAnimalAction } from "../actions/animal.actions";
 import type { Animal } from "@/modules/animals/types/animales.types";
+import type { Space } from "@/modules/spaces/types/types";
 import { AnimalDiagnosisSheet } from "./AnimalDiagnosisSheet";
+import { AnimalEditSheet } from "./AnimalEditSheet";
 import { AnimalGallery } from "./AnimalGallery";
 import { AnimalQuickActions } from "./AnimalQuickActions";
 import { AnimalQuickDetails } from "./AnimalQuickDetails";
@@ -24,6 +26,8 @@ type Props = {
     canDelete: boolean;
     canDiagnose: boolean;
     onClose: () => void;
+    /** Espacios donde puede reubicarse el animal (los del albergue propio). */
+    espacios?: Space[];
 };
 
 /**
@@ -39,6 +43,7 @@ export function AnimalDetailPanel({
     canDelete,
     canDiagnose,
     onClose,
+    espacios = [],
 }: Props) {
     const [pending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{
@@ -53,8 +58,17 @@ export function AnimalDetailPanel({
     const [releaseOpen, setReleaseOpen] = useState(false);
     const [diagnosisOpen, setDiagnosisOpen] = useState(false);
     const [galleryOpen, setGalleryOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
     const closeRef = useRef<HTMLButtonElement>(null);
     const onCloseRef = useRef(onClose);
+
+    // Espejo local del expediente: se aplica solo mientras la lista no entregue
+    // un `animal` nuevo. Así el panel se refresca al instante tras guardar y
+    // vuelve a la fuente del servidor en la siguiente revalidación.
+    const [saved, setSaved] = useState<{ base: Animal; value: Animal } | null>(
+        null,
+    );
+    const animalActual = saved?.base === animal ? saved.value : animal;
 
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -77,18 +91,18 @@ export function AnimalDetailPanel({
         // RF2.4: un paciente en cuarentena no puede ofrecerse en adopción.
         // Sí puede retirarse de adopción si quedó marcado por datos previos.
         // El servidor aplica la misma regla, esta guarda solo evita el viaje.
-        if (enCuarentena && !animal.disponibleAdopcion) return;
+        if (enCuarentena && !animalActual.disponibleAdopcion) return;
         setFeedback(null);
         startTransition(async () => {
             const result = await updateAnimalAction({
-                id: animal.idAnimal,
-                disponibleAdopcion: !animal.disponibleAdopcion,
+                id: animalActual.idAnimal,
+                disponibleAdopcion: !animalActual.disponibleAdopcion,
             });
             setFeedback(
                 result.success
                     ? {
                           type: "ok",
-                          msg: animal.disponibleAdopcion
+                          msg: animalActual.disponibleAdopcion
                               ? "Marcado como no disponible"
                               : "Marcado como disponible para adopción",
                       }
@@ -98,10 +112,10 @@ export function AnimalDetailPanel({
     }
 
     function darDeBaja() {
-        if (!confirm(`¿Dar de baja a ${animal.nombre ?? animal.especie}?`)) return;
+        if (!confirm(`¿Dar de baja a ${animalActual.nombre ?? animalActual.especie}?`)) return;
         setFeedback(null);
         startTransition(async () => {
-            const result = await deleteAnimalAction(animal.idAnimal);
+            const result = await deleteAnimalAction(animalActual.idAnimal);
             if (result.success) onClose();
             else setFeedback({ type: "error", msg: result.error });
         });
@@ -119,16 +133,28 @@ export function AnimalDetailPanel({
                 className="bg-background w-full max-w-md h-full overflow-y-auto shadow-xl px-6 pb-6 pt-6"
                 onClick={(event) => event.stopPropagation()}
             >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between gap-3">
                     <h3 className="font-semibold text-foreground">Ficha rápida</h3>
-                    <button
-                        ref={closeRef}
-                        onClick={onClose}
-                        className="rounded text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label="Cerrar"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {canEdit && (
+                            <button
+                                type="button"
+                                onClick={() => setEditOpen(true)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-secondary"
+                            >
+                                <PencilLine size={13} aria-hidden="true" />
+                                Editar datos
+                            </button>
+                        )}
+                        <button
+                            ref={closeRef}
+                            onClick={onClose}
+                            className="rounded text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            aria-label="Cerrar"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {feedback && (
@@ -145,7 +171,7 @@ export function AnimalDetailPanel({
                 )}
 
                 <AnimalQuickSummary
-                    animal={animal}
+                    animal={animalActual}
                     enCuarentena={enCuarentena}
                     canRelease={canDiagnose}
                     canDiagnose={canDiagnose}
@@ -155,14 +181,26 @@ export function AnimalDetailPanel({
                     onOpenGallery={() => setGalleryOpen(true)}
                 />
 
+                {editOpen && (
+                    <AnimalEditSheet
+                        animal={animalActual}
+                        espacios={espacios}
+                        open={editOpen}
+                        onClose={() => setEditOpen(false)}
+                        onSaved={(updated) =>
+                            setSaved({ base: animal, value: updated })
+                        }
+                    />
+                )}
+
                 <AnimalQuickDetails
-                    animal={animal}
+                    animal={animalActual}
                     enCuarentena={enCuarentena}
                 />
 
                 <AnimalQuickActions
-                    idAnimal={animal.idAnimal}
-                    disponibleAdopcion={animal.disponibleAdopcion}
+                    idAnimal={animalActual.idAnimal}
+                    disponibleAdopcion={animalActual.disponibleAdopcion}
                     enCuarentena={enCuarentena}
                     canEdit={canEdit}
                     canDelete={canDelete}

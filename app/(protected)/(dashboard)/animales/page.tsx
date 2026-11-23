@@ -88,6 +88,7 @@ export default async function AnimalsPage() {
           animales={animales}
           estados={estados}
           refugios={refugios}
+          espacios={espacios}
           canEdit={canEdit}
           canDelete={canDelete}
           canDiagnose={puedeRegistrarDiagnostico(user.role)}

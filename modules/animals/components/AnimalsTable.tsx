@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { Animal } from "@/modules/animals/types/animales.types";
 import type { AnimalState } from "@/modules/animals/types/animal-state.types";
+import type { Space } from "@/modules/spaces/types/types";
 import { AnimalDetailPanel } from "@/modules/animals/components/AnimalDetailPanel";
 import { AnimalFilterBar, type ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
 import {
@@ -33,6 +34,8 @@ type Props = {
     canDelete: boolean;
     /** Solo veterinario/admin pueden registrar diagnósticos. */
     canDiagnose?: boolean;
+    /** Espacios disponibles para reubicar al animal desde la edición. */
+    espacios?: Space[];
 };
 
 function AnimalIcon({
@@ -84,7 +87,7 @@ function getAnimalColor(especie: string) {
     return "from-slate-100 to-gray-100 text-slate-600";
 }
 
-export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete, canDiagnose = false }: Props) {
+export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete, canDiagnose = false, espacios = [] }: Props) {
     const [filters, setFilters] = useState<AnimalFilters>(EMPTY_FILTERS);
     // Se guarda el id (no el objeto) para que el panel refleje los datos nuevos
     // cuando la página se vuelve a cargar tras editar, y se cierre si el animal se da de baja.
@@ -148,6 +151,7 @@ export function AnimalsTable({ animales, estados, refugios, canEdit, canDelete, 
                     canDelete={canDelete}
                     canDiagnose={canDiagnose}
                     onClose={() => setSelectedId(null)}
+                    espacios={espacios}
                 />
             )}
         </>

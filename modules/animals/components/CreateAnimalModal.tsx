@@ -5,7 +5,10 @@ import { CheckCircle2, ImagePlus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimalForm } from "./AnimalForm";
 import { createAnimalAction } from "../actions/animal.actions";
-import type { CreateAnimalInput } from "../validators/animal.validators";
+import {
+    toCreateAnimalInput,
+    type CreateAnimalFormValues,
+} from "../validators/animal.validators";
 import { Space } from "@/modules/spaces/types/types";
 import { AnimalState } from "@/modules/animals/types/animal-state.types";
 import {
@@ -153,11 +156,11 @@ export function CreateAnimalModal({
         setPhotos((prev) => prev.filter((_, i) => i !== index));
     }
 
-    async function handleSubmit(data: CreateAnimalInput) {
+    async function handleSubmit(values: CreateAnimalFormValues) {
         setSaving(true);
         setError(null);
         try {
-            const result = await createAnimalAction(data);
+            const result = await createAnimalAction(toCreateAnimalInput(values));
             if (!result.success) {
                 setError(result.error);
                 return;

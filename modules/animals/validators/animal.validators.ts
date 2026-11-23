@@ -6,6 +6,7 @@ import {
     SITUACIONES_RESCATE,
     TAMANOS,
     TEMPERAMENTOS,
+    type Animal,
 } from "@/modules/animals/types/animales.types";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +45,7 @@ export const isoDateNotFuture = z
 // `.default()` dentro de `.partial()` SE APLICA aunque el campo no venga, lo que
 // pisaría datos existentes en cada update. Por eso los defaults no viven acá.
 const AnimalFieldsSchema = z.object({
-    nombre: z.string().trim().min(1).max(100).optional(),
+    nombre: z.string().trim().min(1, "El nombre no puede estar vacío").max(100, "El nombre debe tener como máximo 100 caracteres").optional(),
     especie: z.enum(["Perro", "Gato"]),
     raza: z.string().trim().max(80).optional(),
     sexo: z.enum(["M", "H"]).optional(),
@@ -107,14 +108,40 @@ export const CreateAnimalRequestSchema = CreateAnimalSchema.omit({
 
 export type CreateAnimalRequest = z.infer<typeof CreateAnimalRequestSchema>;
 
+// Edición del expediente: los campos opcionales se pueden vaciar. Un `null`
+// limpia la columna; `undefined` (campo ausente) conserva el valor actual.
+// Se derivan del mismo schema base para no duplicar reglas de validación.
+const ClearableAnimalFieldsShape = {
+    nombre: AnimalFieldsSchema.shape.nombre.nullable(),
+    raza: AnimalFieldsSchema.shape.raza.nullable(),
+    sexo: AnimalFieldsSchema.shape.sexo.nullable(),
+    edadEstimada: AnimalFieldsSchema.shape.edadEstimada.nullable(),
+    peso: AnimalFieldsSchema.shape.peso.nullable(),
+    color: AnimalFieldsSchema.shape.color.nullable(),
+    tamano: AnimalFieldsSchema.shape.tamano.nullable(),
+    microchip: AnimalFieldsSchema.shape.microchip.nullable(),
+    temperamento: AnimalFieldsSchema.shape.temperamento.nullable(),
+    lugarRescate: AnimalFieldsSchema.shape.lugarRescate.nullable(),
+    fechaRescate: AnimalFieldsSchema.shape.fechaRescate.nullable(),
+    situacionRescate: AnimalFieldsSchema.shape.situacionRescate.nullable(),
+    rescatistaNombre: AnimalFieldsSchema.shape.rescatistaNombre.nullable(),
+    rescatistaContacto: AnimalFieldsSchema.shape.rescatistaContacto.nullable(),
+    observaciones: AnimalFieldsSchema.shape.observaciones.nullable(),
+};
+
 // RF2.4: `enCuarentena` NO forma parte de la edición del expediente. La única
 // vía para liberar la cuarentena es el alta médica (ver
 // `AnimalQuarantineService.release`). Al omitirlo del contrato, el cliente ni
 // siquiera puede expresar el cambio; si un cliente antiguo lo envía, Zod lo
 // descarta.
+//
+// `idRefugio` tampoco forma parte de la edición: mover un animal de albergue es
+// una operación multitenant distinta y no se resuelve desde el expediente.
 export const UpdateAnimalSchema = AnimalFieldsSchema.extend(
     AnimalFlagsSchema.omit({ enCuarentena: true }).shape,
 )
+    .extend(ClearableAnimalFieldsShape)
+    .omit({ idRefugio: true })
     .partial()
     .extend({
         id: z.number().int().positive(),
@@ -373,6 +400,114 @@ export function toFormValues(
         rescatistaNombre: input?.rescatistaNombre ?? "",
         rescatistaContacto: input?.rescatistaContacto ?? "",
         observaciones: input?.observaciones ?? "",
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Edición del expediente: dominio → formulario → DTO parcial
+// ---------------------------------------------------------------------------
+//
+// `AnimalForm` es presentacional: recibe y devuelve valores de formulario.
+// Estas funciones traducen entre el `Animal` persistido y el contrato de
+// actualización, sin duplicar reglas ni schemas.
+
+/** Fecha ISO completa → `YYYY-MM-DD` para `<input type="date">`. */
+function toDateInputValue(value: string | null): string | undefined {
+    if (!value) return undefined;
+    const match = /^(\d{4}-\d{2}-\d{2})/.exec(value);
+    return match ? match[1] : undefined;
+}
+
+/**
+ * Valores iniciales del formulario de edición.
+ *
+ * Solo incluye campos editables: cuarentena, disponibilidad de adopción,
+ * albergue, estado clínico, `activo` y `esterilizado` quedan fuera porque se
+ * gestionan con operaciones dedicadas.
+ */
+export function toAnimalFormDefaults(
+    animal: Animal,
+): Partial<CreateAnimalInput> {
+    return {
+        nombre: animal.nombre ?? undefined,
+        // El schema de formulario solo admite estas dos especies.
+        especie: animal.especie === "Gato" ? "Gato" : "Perro",
+        raza: animal.raza ?? undefined,
+        sexo: animal.sexo === "M" || animal.sexo === "H" ? animal.sexo : undefined,
+        edadEstimada: animal.edadEstimada ?? undefined,
+        peso: animal.peso ?? undefined,
+        procedencia: animal.procedencia,
+        rasgosFisicos: animal.rasgosFisicos,
+        estadoInicial: animal.estadoInicial,
+        idEstado: animal.idEstado,
+        idEspacio: animal.idEspacio,
+        color: animal.color ?? undefined,
+        tamano: TAMANOS.find((tamano) => tamano === animal.tamano),
+        microchip: animal.microchip ?? undefined,
+        temperamento: TEMPERAMENTOS.find(
+            (temperamento) => temperamento === animal.temperamento,
+        ),
+        vacunado: animal.vacunado,
+        desparasitado: animal.desparasitado,
+        lugarRescate: animal.lugarRescate ?? undefined,
+        fechaRescate: toDateInputValue(animal.fechaRescate),
+        situacionRescate: SITUACIONES_RESCATE.find(
+            (situacion) => situacion === animal.situacionRescate,
+        ),
+        rescatistaNombre: animal.rescatistaNombre ?? undefined,
+        rescatistaContacto: animal.rescatistaContacto ?? undefined,
+        observaciones: animal.observaciones ?? undefined,
+    };
+}
+
+const textOrNull = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+};
+
+/**
+ * Formulario → DTO parcial de actualización.
+ *
+ * Un campo vacío viaja como `null` para borrarlo; el servicio/repositorio
+ * distinguen `null` (limpiar) de `undefined` (no tocar). Los campos con flujo
+ * dedicado (`enCuarentena`, `disponibleAdopcion`, `idEstado`, `idRefugio`,
+ * `esterilizado`, `activo`) no se envían nunca.
+ */
+export function toUpdateAnimalInput(
+    values: CreateAnimalFormValues,
+    idAnimal: number,
+): UpdateAnimalInput {
+    return {
+        id: idAnimal,
+        nombre: textOrNull(values.nombre),
+        especie: values.especie,
+        raza: textOrNull(values.raza),
+        sexo: values.sexo === "" ? null : values.sexo,
+        edadEstimada:
+            values.edadEstimada === "" ? null : Number(values.edadEstimada),
+        peso: values.peso === "" ? null : Number(values.peso),
+        procedencia: values.procedencia.trim(),
+        rasgosFisicos: values.rasgosFisicos.trim(),
+        estadoInicial: values.estadoInicial.trim(),
+        idEspacio: Number(values.idEspacio),
+        color: textOrNull(values.color),
+        tamano: TAMANOS.find((tamano) => tamano === values.tamano) ?? null,
+        microchip: textOrNull(values.microchip),
+        temperamento:
+            TEMPERAMENTOS.find(
+                (temperamento) => temperamento === values.temperamento,
+            ) ?? null,
+        vacunado: values.vacunado,
+        desparasitado: values.desparasitado,
+        lugarRescate: textOrNull(values.lugarRescate),
+        fechaRescate: values.fechaRescate === "" ? null : values.fechaRescate,
+        situacionRescate:
+            SITUACIONES_RESCATE.find(
+                (situacion) => situacion === values.situacionRescate,
+            ) ?? null,
+        rescatistaNombre: textOrNull(values.rescatistaNombre),
+        rescatistaContacto: textOrNull(values.rescatistaContacto),
+        observaciones: textOrNull(values.observaciones),
     };
 }
 

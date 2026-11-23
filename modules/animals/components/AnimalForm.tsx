@@ -20,7 +20,6 @@ import {
     CreateAnimalFormValues,
     CreateAnimalInput,
     hoyLocalISO,
-    toCreateAnimalInput,
     toFormValues,
 } from "@/modules/animals/validators/animal.validators";
 import type { ShelterOption } from "@/modules/animals/components/AnimalFilterBar";
@@ -34,10 +33,17 @@ type Props = {
      */
     refugios?: ShelterOption[];
     defaultValues?: Partial<CreateAnimalInput>;
-    onSubmit: (data: CreateAnimalInput) => Promise<void>;
+    /**
+     * Presentacional: entrega los valores del formulario y quien lo usa decide
+     * si los convierte a alta (`toCreateAnimalInput`) o a edición
+     * (`toUpdateAnimalInput`).
+     */
+    onSubmit: (values: CreateAnimalFormValues) => Promise<void>;
     submitLabel: string;
     saving: boolean;
     onCancel: () => void;
+    /** En edición: oculta el estado del paciente y los campos con flujo propio. */
+    mode?: "create" | "edit";
 };
 
 const INPUT_CLS =
@@ -107,15 +113,20 @@ export function AnimalForm({
     submitLabel,
     saving,
     onCancel,
+    mode = "create",
 }: Props) {
     const uid = useId();
     const id = (name: string) => `${uid}-${name}`;
-    const chooseShelter = refugios.length > 0;
+    const isEdit = mode === "edit";
+    // En edición el albergue no se mueve: solo se ofrecen espacios del propio.
+    const chooseShelter = !isEdit && refugios.length > 0;
 
     const schema = useMemo(
         () => createAnimalFormSchema({ requireShelter: chooseShelter }),
         [chooseShelter],
     );
+
+    const initialValues = toFormValues(defaultValues);
 
     const {
         register,
@@ -125,22 +136,26 @@ export function AnimalForm({
         formState: { errors },
     } = useForm<CreateAnimalFormValues>({
         resolver: zodResolver(schema),
-        // El estado del paciente ya no se elige. Se mantiene un valor oculto
-        // para conservar el contrato del formulario; el servidor lo descarta y
-        // resuelve "Cuarentena" desde el catálogo.
-        defaultValues: { ...toFormValues(defaultValues), idEstado: "1" },
+        // El estado del paciente ya no se elige en el alta. Se mantiene un
+        // valor oculto para conservar el contrato del formulario; el servidor
+        // lo descarta y resuelve "Cuarentena" desde el catálogo. En edición se
+        // conserva el actual, que tampoco se envía en el DTO parcial.
+        defaultValues: {
+            ...initialValues,
+            idEstado: isEdit ? initialValues.idEstado : "1",
+        },
     });
 
     // Un espacio pertenece a un solo albergue: al elegir albergue solo se ofrecen
     // sus espacios. Sin selector (usuario no superadmin) ya llegan filtrados.
+    // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch es API esperada
     const idRefugio = watch("idRefugio");
     const espaciosDisponibles = chooseShelter
         ? espacios.filter((e) => String(e.shelterId) === idRefugio)
         : espacios;
 
     async function submit(values: CreateAnimalFormValues) {
-        const input = toCreateAnimalInput(values);
-        await onSubmit(input);
+        await onSubmit(values);
     }
 
     return (
@@ -148,8 +163,12 @@ export function AnimalForm({
             <input type="hidden" {...register("idEstado")} />
 
             <Section
-                title="Datos del ingreso"
-                description="Lo mínimo para abrir el expediente. El resto es opcional."
+                title={isEdit ? "Datos del expediente" : "Datos del ingreso"}
+                description={
+                    isEdit
+                        ? "Puedes corregir la información registrada. Los campos vacíos se guardan sin valor."
+                        : "Lo mínimo para abrir el expediente. El resto es opcional."
+                }
             >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {chooseShelter && (
@@ -275,22 +294,27 @@ export function AnimalForm({
                     />
                 </Field>
 
-                <Field
-                    id={id("estadoPaciente")}
-                    label="Estado del paciente"
-                    hint="Se asigna automáticamente y no se puede cambiar."
-                >
-                    <input
+                {!isEdit && (
+                    <Field
                         id={id("estadoPaciente")}
-                        value="Cuarentena"
-                        readOnly
-                        aria-readonly="true"
-                        className={`${INPUT_CLS} cursor-not-allowed bg-secondary/50 text-foreground`}
-                    />
-                </Field>
+                        label="Estado del paciente"
+                        hint="Se asigna automáticamente y no se puede cambiar."
+                    >
+                        <input
+                            id={id("estadoPaciente")}
+                            value="Cuarentena"
+                            readOnly
+                            aria-readonly="true"
+                            className={`${INPUT_CLS} cursor-not-allowed bg-secondary/50 text-foreground`}
+                        />
+                    </Field>
+                )}
             </Section>
 
-            <Collapsible className="rounded-2xl border border-border">
+            <Collapsible
+                className="rounded-2xl border border-border"
+                defaultOpen={isEdit}
+            >
                 <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
                     <span>
                         <span className="block text-xs font-bold uppercase tracking-widest text-primary">
@@ -535,19 +559,22 @@ export function AnimalForm({
                                 />
                                 Desparasitado
                             </label>
-                            <label className={CHECK_CLS}>
-                                <input
-                                    type="checkbox"
-                                    {...register("esterilizado")}
-                                    className="w-4 h-4 rounded accent-primary"
-                                />
-                                Esterilizado
-                            </label>
+                            {!isEdit && (
+                                <label className={CHECK_CLS}>
+                                    <input
+                                        type="checkbox"
+                                        {...register("esterilizado")}
+                                        className="w-4 h-4 rounded accent-primary"
+                                    />
+                                    Esterilizado
+                                </label>
+                            )}
                         </div>
 
                         <p className="text-[11px] text-muted-foreground">
-                            La disponibilidad de adopción se gestiona desde la ficha
-                            clínica, no desde el alta.
+                            {isEdit
+                                ? "La esterilización, la cuarentena y la disponibilidad de adopción se gestionan con sus flujos clínicos; no se editan aquí."
+                                : "La disponibilidad de adopción se gestiona desde la ficha clínica, no desde el alta."}
                         </p>
                     </Section>
 
