@@ -353,6 +353,17 @@ Los directorios se crean cuando existe una responsabilidad real que justificarlo
 5. Los schemas Zod viven en `validators/` o `schemas.ts` (no ambos).
 6. Los DTOs se derivan de Zod y viven en `dtos/` cuando sea necesario separarlos de `types/`.
 
+## 7.3 Propósito de los módulos con IA
+
+Dos módulos usan generación asistida por IA con propósitos distintos. No se fusionan: comparten únicamente el transporte (`lib/ai/gemini.ts`, ver ADR-0001).
+
+| Módulo | Propósito | IA |
+|--------|-----------|----|
+| `campaigns` | Difusión: campañas de adopción para redes y landing, con 1 a 10 animales, título, contenido, hashtags y llamado a la acción. Ciclo: borrador → publicada → archivada. | Redacta **publicaciones**. Prompt, lista blanca y validación propias. |
+| `adoptions` | Ficha pública y ciclo de adopción: perfil por animal, catálogo, postulaciones, evaluaciones, reserva y cierre. | Redactará **la descripción pública del perfil** (US26, Fase 2). Borrador siempre revisado por una persona antes de guardarse. |
+
+Regla: si el texto se publica en redes pertenece a `campaigns`; si vive en el perfil del animal pertenece a `adoptions`. El proveedor de IA es infraestructura compartida, no un dominio. Los esquemas Zod de salida son propios de cada módulo y no se duplican entre capas.
+
 ---
 
 # 8. Estructura interna de un módulo

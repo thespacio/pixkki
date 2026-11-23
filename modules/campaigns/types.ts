@@ -163,21 +163,9 @@ export class CampaignRateLimitError extends Error {
     }
 }
 
-/** Fallos de la IA que el usuario puede entender y, a veces, resolver. */
-export class AiServiceError extends Error {
-    constructor(
-        message: string,
-        public readonly kind:
-            | "not_configured"
-            | "invalid_key"
-            | "quota"
-            | "model_unavailable"
-            | "blocked"
-            | "rejected"
-            | "bad_response"
-            | "unavailable",
-    ) {
-        super(message);
-        this.name = "AiServiceError";
-    }
-}
+/**
+ * Los errores del proveedor de IA son infraestructura compartida (ADR-0001) y
+ * viven en `lib/ai/gemini.ts`. Se reexportan aquí para conservar la API pública
+ * existente de este módulo; es la misma clase, no una copia.
+ */
+export { AiServiceError } from "@/lib/ai/gemini";
