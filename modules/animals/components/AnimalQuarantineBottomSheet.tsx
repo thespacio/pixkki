@@ -82,7 +82,7 @@ export function AnimalQuarantineBottomSheet({
                 onClick={onClose}
                 aria-hidden="true"
             />
-            <div className="w-full max-w-md sm:max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+            <div className="relative z-10 w-full max-w-md sm:max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
                 <div className="p-6">
                     <div className="flex items-start gap-3">
                         <ShieldAlert size={24} className="text-red-600 shrink-0" aria-hidden="true" />
