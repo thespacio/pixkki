@@ -84,3 +84,40 @@ export function PublishedCampaigns({ campaigns }: { campaigns: PublicCampaign[] 
         </section>
     );
 }
+
+/**
+ * Skeleton del bloque anterior. Se renderiza en el servidor mientras resuelve
+ * `getPublishedCampaigns()` y replica su geometría para evitar layout shift.
+ */
+export function PublishedCampaignsSkeleton() {
+    return (
+        <section aria-labelledby="campanas-cargando" className="max-w-6xl mx-auto px-8 py-20">
+            <h2 id="campanas-cargando" className="sr-only">Cargando campañas de adopción</h2>
+            <div aria-hidden="true">
+                <div className="text-center mb-12">
+                    <div className="mx-auto mb-4 h-6 w-28 animate-pulse rounded-full bg-secondary" />
+                    <div className="mx-auto mb-3 h-8 w-72 max-w-full animate-pulse rounded-lg bg-secondary" />
+                    <div className="mx-auto h-4 w-96 max-w-full animate-pulse rounded bg-secondary" />
+                </div>
+
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }, (_, index) => (
+                        <li key={index} className="h-full rounded-2xl border border-border bg-card p-6">
+                            <div className="mb-4 flex flex-wrap gap-1.5">
+                                <div className="h-6 w-20 animate-pulse rounded-full bg-secondary" />
+                                <div className="h-6 w-16 animate-pulse rounded-full bg-secondary" />
+                            </div>
+                            <div className="mb-2 h-5 w-3/4 animate-pulse rounded bg-secondary" />
+                            <div className="space-y-2">
+                                <div className="h-3 w-full animate-pulse rounded bg-secondary" />
+                                <div className="h-3 w-full animate-pulse rounded bg-secondary" />
+                                <div className="h-3 w-2/3 animate-pulse rounded bg-secondary" />
+                            </div>
+                            <div className="mt-4 h-4 w-1/2 animate-pulse rounded bg-secondary" />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </section>
+    );
+}
