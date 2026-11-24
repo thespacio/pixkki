@@ -1,8 +1,20 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { PawPrint, Search, FileText, HeartHandshake, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { PublicShell } from "@/components/layouts/PublicShell";
+import { HomeHeroSlider } from "@/components/landing/home-hero-slider";
+import {
+    PublishedCampaigns,
+    PublishedCampaignsSkeleton,
+} from "@/components/landing/PublishedCampaigns";
 import { createPublicCatalogService } from "@/modules/adoptions/factories/create-public-catalog-service";
 import { PublicAnimalCard } from "@/modules/adoptions/components/public-animal-card";
+import { getPublishedCampaigns } from "@/modules/campaigns/public";
+
+async function CampaignsSection() {
+    const campaigns = await getPublishedCampaigns();
+    return <PublishedCampaigns campaigns={campaigns} />;
+}
 
 export default async function HomePage() {
     let destacados: Array<Record<string, unknown>> = [];
@@ -17,39 +29,9 @@ export default async function HomePage() {
 
     return (
         <PublicShell>
-            <section className="border-b border-border bg-gradient-to-b from-primary/5 to-background">
-                <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-24">
-                    <div className="space-y-6">
-                        <p className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                            Plataforma para refugios y adoptantes
-                        </p>
-                        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-                            Conecta animales con familias, con claridad y confianza
-                        </h1>
-                        <p className="max-w-xl text-base text-muted-foreground">
-                            Pixkki ayuda a refugios a gestionar adopciones de forma transparente y a adoptantes a encontrar perfiles confiables, con información clara y seguimiento.
-                        </p>
-                        <div className="flex flex-col gap-3 sm:flex-row">
-                            <Link href="/adopciones" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:opacity-90">
-                                Ver animales en adopción
-                            </Link>
-                            <Link href="/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border px-6 text-sm font-medium text-foreground hover:bg-secondary">
-                                Soy refugio / Iniciar sesión
-                            </Link>
-                        </div>
-                    </div>
-                    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-2xl bg-secondary p-4"><PawPrint className="mb-2 text-primary" size={20} /><p className="font-medium">Perfiles claros</p><p className="text-sm text-muted-foreground">Información pública segura del animal y su refugio.</p></div>
-                            <div className="rounded-2xl bg-secondary p-4"><Search className="mb-2 text-primary" size={20} /><p className="font-medium">Búsqueda simple</p><p className="text-sm text-muted-foreground">Filtra por especie, tamaño, sexo y más.</p></div>
-                            <div className="rounded-2xl bg-secondary p-4"><FileText className="mb-2 text-primary" size={20} /><p className="font-medium">Solicitud sin cuenta</p><p className="text-sm text-muted-foreground">Postúlate con un formulario claro y consentimiento informado.</p></div>
-                            <div className="rounded-2xl bg-secondary p-4"><HeartHandshake className="mb-2 text-primary" size={20} /><p className="font-medium">Acompañamiento</p><p className="text-sm text-muted-foreground">El refugio revisa tu solicitud y te contacta.</p></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <HomeHeroSlider />
 
-            <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <section id="como-funciona" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
                 <div className="mb-8 max-w-2xl">
                     <h2 className="text-2xl font-bold tracking-tight text-foreground">Cómo funciona</h2>
                     <p className="text-muted-foreground">Un proceso simple para adoptar con responsabilidad.</p>
@@ -67,6 +49,10 @@ export default async function HomePage() {
                     ))}
                 </div>
             </section>
+
+            <Suspense fallback={<PublishedCampaignsSkeleton />}>
+                <CampaignsSection />
+            </Suspense>
 
             <section className="border-y border-border bg-card/30">
                 <div className="mx-auto max-w-7xl space-y-6 px-4 py-16 sm:px-6 lg:px-8">

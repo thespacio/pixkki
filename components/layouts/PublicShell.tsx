@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface PublicShellProps {
@@ -17,8 +18,14 @@ export function PublicShell({ children }: PublicShellProps) {
             <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                     <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-                            P
+                        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary p-1">
+                            <Image
+                                src="/images/logo.png"
+                                alt=""
+                                width={36}
+                                height={36}
+                                className="size-full object-contain"
+                            />
                         </span>
                         <span className="text-lg tracking-tight">Pixkki</span>
                     </Link>

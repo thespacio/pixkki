@@ -6,6 +6,16 @@ const nextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.build.json',
   },
+  // Fotos del slider de la home, servidas por images.unsplash.com.
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/photo-**',
+      },
+    ],
+  },
   /**
    * Rutas canónicas en español (F2 del plan UI/UX).
    *
