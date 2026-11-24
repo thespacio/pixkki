@@ -1,75 +1,79 @@
 "use client";
 
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
+    PolarAngleAxis,
+    RadialBar,
+    RadialBarChart,
     ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
 } from "recharts";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { OccupancyPoint } from "../_data/mock";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
-    data: OccupancyPoint[];
+    porcentaje: number | null;
+    capacidadTotal: number;
 };
 
-function OccupancyTooltip({
-    active,
-    payload,
-    label,
-}: {
-    active?: boolean;
-    payload?: Array<{ value?: number }>;
-    label?: string;
-}) {
-    if (!active || !payload?.length) return null;
+const formatoEntero = new Intl.NumberFormat("es-MX");
 
-    return (
-        <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="font-mono text-sm font-semibold text-foreground">
-                {payload[0].value}% ocupación
-            </p>
-        </div>
-    );
-}
+/** RF7.2/RF7.5: el porcentaje llega calculado; aquí solo se visualiza. */
+export function OccupancyChart({ porcentaje, capacidadTotal }: Props) {
+    const noCalculable = porcentaje === null;
+    const dato = [{ nombre: "Ocupación", valor: porcentaje ?? 0 }];
 
-export function OccupancyChart({ data }: Props) {
     return (
         <Card className="border-border/80">
-            <CardHeader className="space-y-1 pb-2">
-                <CardTitle className="text-base">Ocupación semanal</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                    Porcentaje de capacidad usado en las últimas 8 semanas
-                </p>
+            <CardHeader>
+                <CardTitle className="text-base">Ocupación del refugio</CardTitle>
+                <CardDescription className="text-xs">
+                    {formatoEntero.format(capacidadTotal)} plazas en espacios disponibles
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-36 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }} barSize={14}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis
-                                dataKey="week"
-                                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <YAxis
-                                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                                axisLine={false}
-                                tickLine={false}
-                                domain={[50, 100]}
-                                width={40}
-                            />
-                            <Tooltip content={<OccupancyTooltip />} cursor={{ fill: "var(--muted)" }} />
-                            <Bar dataKey="rate" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                {noCalculable ? (
+                    <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
+                        <p className="text-2xl font-semibold text-foreground">No calculable</p>
+                        <p className="max-w-xs text-xs text-muted-foreground">
+                            No hay espacios disponibles para calcular la ocupación.
+                        </p>
+                    </div>
+                ) : (
+                    <div
+                        className="relative h-56 w-full"
+                        role="img"
+                        aria-label={`Ocupación del refugio: ${porcentaje} por ciento`}
+                    >
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RadialBarChart
+                                data={dato}
+                                innerRadius="72%"
+                                outerRadius="100%"
+                                startAngle={90}
+                                endAngle={-270}
+                                barSize={18}
+                            >
+                                <PolarAngleAxis
+                                    type="number"
+                                    domain={[0, 100]}
+                                    tick={false}
+                                    axisLine={false}
+                                />
+                                <RadialBar
+                                    dataKey="valor"
+                                    background
+                                    cornerRadius={9}
+                                    fill="var(--chart-1)"
+                                />
+                            </RadialBarChart>
+                        </ResponsiveContainer>
+                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="font-mono text-3xl font-semibold text-foreground">
+                                {porcentaje}%
+                            </span>
+                            <span className="text-xs text-muted-foreground">ocupado</span>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

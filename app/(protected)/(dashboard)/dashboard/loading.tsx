@@ -6,24 +6,24 @@ export default function DashboardLoading() {
             role="status"
             aria-live="polite"
             aria-busy="true"
-            className="mx-auto max-w-7xl"
+            className="space-y-6"
         >
-            <span className="sr-only">Cargando panel...</span>
+            <span className="sr-only">Cargando resumen del panel...</span>
 
-            <div className="mb-8 space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-72" />
+            <div className="space-y-2">
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-4 w-96 max-w-full" />
             </div>
 
-            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, index) => (
-                    <Skeleton key={index} className="h-28 w-full rounded-xl" />
+                    <Skeleton key={index} className="h-32 w-full rounded-xl" />
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                <Skeleton className="h-72 w-full rounded-xl" />
-                <Skeleton className="h-72 w-full rounded-xl" />
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Skeleton className="h-80 w-full rounded-xl" />
+                <Skeleton className="h-80 w-full rounded-xl" />
             </div>
         </div>
     );

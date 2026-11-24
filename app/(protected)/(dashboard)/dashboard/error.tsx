@@ -12,7 +12,7 @@ export default function DashboardError({ reset }: DashboardErrorProps) {
         <div className="mx-auto max-w-5xl">
             <ErrorState
                 title="No pudimos cargar el panel"
-                description="Los indicadores no están disponibles ahora mismo. Vuelve a intentarlo."
+                description="El resumen operativo no está disponible ahora mismo. Vuelve a intentarlo."
                 reset={reset}
             />
         </div>

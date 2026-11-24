@@ -2336,6 +2336,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reporte_resumen: {
+        Args: { p_desde?: string; p_hasta?: string; p_id_refugio?: number }
+        Returns: Json
+      }
     }
     Enums: {
       bloque_tipo:
