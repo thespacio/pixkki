@@ -217,6 +217,8 @@ Este mapa define la estructura objetivo, la convención de rutas, la matriz de p
 | Extensión | Campañas | `/campanas` | `campaigns.view` | Fuera de 00–08 |
 | Extensión | Eventos | `/eventos` | `events.view` | Fuera de 00–08 |
 
+> **Ocultamiento para superadmin (decisión aprobada):** las secciones completas «Operación» y «Extensión» no se muestran cuando `isSuperadmin = true`. Se implementa con la flag `hiddenForSuperadmin` en cada ancla de `navigation.config.ts`, aplicada por `isNavItemVisible()`; como `getVisibleNavigation()` descarta secciones vacías, no hace falta tocar los componentes de sidebar, topbar ni navegación móvil. Es **solo ocultamiento de UI**: no cambia permisos RBAC ni bloquea las rutas, que siguen accesibles por URL directa. Las demás secciones (Administración) se conservan.
+
 ### 5.5 Subvistas (nivel 2 y 3)
 
 Las subvistas se presentan como **pestañas dentro del ancla**, no como nuevos niveles de sidebar.

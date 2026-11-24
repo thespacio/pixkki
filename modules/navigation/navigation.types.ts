@@ -25,6 +25,8 @@ export interface NavItem {
     readonly permission?: string;
     /** Solo visible para superadmin (gestión global de refugios). */
     readonly superadminOnly?: boolean;
+    /** Oculto para superadmin (secciones de operación diaria y extensión). */
+    readonly hiddenForSuperadmin?: boolean;
 }
 
 export interface NavSection {

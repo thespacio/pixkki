@@ -23,6 +23,7 @@ import type { NavSection } from "./navigation.types";
  *   la página, no como nuevos ítems del sidebar.
  * - El permiso es un string del catálogo RBAC; si no está sembrado, el ítem no
  *   se muestra (fail-closed).
+ * - `hiddenForSuperadmin` oculta el ancla al superadmin (Operación y Extensión).
  *
  * Las rutas son canónicas en español (fase F2). Las rutas inglesas legadas se
  * mantienen como redirects 308 temporales en `next.config.js`.
@@ -39,6 +40,7 @@ export const navigationSections: readonly NavSection[] = [
                 icon: Home,
                 // El panel es la pantalla de aterrizaje: basta con tener sesión.
                 // No depende de `reports.view`, que aún no está sembrado.
+                hiddenForSuperadmin: true,
             },
             {
                 id: "animals",
@@ -46,6 +48,7 @@ export const navigationSections: readonly NavSection[] = [
                 href: "/animales",
                 icon: PawPrint,
                 permission: "animals.view",
+                hiddenForSuperadmin: true,
             },
             {
                 id: "adoptions",
@@ -53,6 +56,7 @@ export const navigationSections: readonly NavSection[] = [
                 href: "/adopciones",
                 icon: Heart,
                 permission: "adoptions.view",
+                hiddenForSuperadmin: true,
             },
             {
                 id: "spaces",
@@ -60,6 +64,7 @@ export const navigationSections: readonly NavSection[] = [
                 href: "/espacios",
                 icon: Boxes,
                 permission: "spaces.view",
+                hiddenForSuperadmin: true,
             },
         ],
     },
@@ -99,6 +104,7 @@ export const navigationSections: readonly NavSection[] = [
                 href: "/campaigns",
                 icon: Megaphone,
                 permission: "campaigns.view",
+                hiddenForSuperadmin: true,
             },
             {
                 id: "events",
@@ -106,6 +112,7 @@ export const navigationSections: readonly NavSection[] = [
                 href: "/events",
                 icon: CalendarDays,
                 permission: "events.view",
+                hiddenForSuperadmin: true,
             },
         ],
     },

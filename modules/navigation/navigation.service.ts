@@ -9,6 +9,10 @@ import type { NavAccess, NavItem, NavSection } from "./navigation.types";
  * usuario no puede usar.
  */
 export function isNavItemVisible(item: NavItem, access: NavAccess): boolean {
+    if (access.isSuperadmin && item.hiddenForSuperadmin) {
+        return false;
+    }
+
     if (item.superadminOnly && !access.isSuperadmin) {
         return false;
     }
