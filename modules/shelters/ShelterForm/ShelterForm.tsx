@@ -1,6 +1,6 @@
 'use client';
 
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -52,12 +52,18 @@ export function ShelterForm({
     const alertRef = useRef<HTMLDivElement>(null);
     const rootError = form.formState.errors.root?.message;
 
-    // Antes un formulario inválido no mostraba nada: ahora se lista qué falta y se baja hasta el aviso.
+    // Antes un formulario inválido no mostraba nada: ahora se lista qué falta.
     function handleInvalid(errors: Record<string, unknown>) {
         const labels = Object.keys(errors).map((key) => FIELD_LABELS[key] ?? key);
         setInvalidFields([...new Set(labels)]);
-        requestAnimationFrame(() => alertRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
     }
+
+    // El aviso se renderiza después de actualizar `invalidFields`; el ref se lee
+    // en el efecto, nunca desde una función pasada durante el render.
+    useEffect(() => {
+        if (invalidFields.length === 0) return;
+        alertRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, [invalidFields]);
 
     // Al elegir un punto en el mapa se guardan dirección y coordenadas, y se completan
     // ciudad y estado con lo que Google reconoce (la persona puede corregirlos después).

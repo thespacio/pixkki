@@ -58,6 +58,56 @@ const TIPO_META: Record<BloqueType, { label: string; icon: React.ElementType; co
   donacion: { label: 'Donación',            icon: Heart,  color: '#ef4444' },
 }
 
+type PerfilLeido =
+  | { estado: 'sin_sesion' }
+  | { estado: 'error'; mensaje: string }
+  | { estado: 'listo'; idPerfil: number; visiblePublico: boolean; bloques: Bloque[] }
+
+/** Solo lee datos: no toca estado, para poder llamarlo desde un efecto sin cascadas. */
+async function leerPerfil(
+  supabase: ReturnType<typeof getSupabaseBrowserClient>,
+): Promise<PerfilLeido> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return { estado: 'sin_sesion' }
+
+  const { data: usuarioData, error: uErr } = await supabase
+    .from('usuario')
+    .select('id_refugio')
+    .eq('correo', user.email)
+    .single()
+
+  if (uErr || !usuarioData) {
+    return { estado: 'error', mensaje: 'No se encontró tu usuario en la base de datos.' }
+  }
+
+  if (usuarioData.id_refugio === null) {
+    return { estado: 'error', mensaje: 'Tu usuario no está asociado a un albergue.' }
+  }
+
+  const { data: perfilData, error: pErr } = await supabase
+    .from('albergue_perfil')
+    .select('id_perfil, visible_publico')
+    .eq('id_refugio', usuarioData.id_refugio)
+    .single()
+
+  if (pErr || !perfilData) {
+    return { estado: 'error', mensaje: 'Tu albergue no tiene perfil configurado. Contacta al super administrador.' }
+  }
+
+  const { data: bloquesData } = await supabase
+    .from('albergue_bloque')
+    .select('*')
+    .eq('id_perfil', perfilData.id_perfil)
+    .order('orden')
+
+  return {
+    estado: 'listo',
+    idPerfil: perfilData.id_perfil,
+    visiblePublico: perfilData.visible_publico,
+    bloques: (bloquesData as Bloque[]) ?? [],
+  }
+}
+
 export default function MiAlberguePage() {
   const supabase = getSupabaseBrowserClient()
 
@@ -71,50 +121,25 @@ export default function MiAlberguePage() {
   const [togglingVisible, setTogglingVisible] = useState(false)
   const [errorMsg, setErrorMsg]             = useState<string | null>(null)
 
-  const cargar = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user?.email) return
-
-    const { data: usuarioData, error: uErr } = await supabase
-      .from('usuario')
-      .select('id_refugio')
-      .eq('correo', user.email)
-      .single()
-
-    if (uErr || !usuarioData) {
-      setErrorMsg('No se encontró tu usuario en la base de datos.')
+  const aplicarPerfil = useCallback((resultado: PerfilLeido) => {
+    if (resultado.estado === 'sin_sesion') return
+    if (resultado.estado === 'error') {
+      setErrorMsg(resultado.mensaje)
       return
     }
+    setIdPerfil(resultado.idPerfil)
+    setVisible(resultado.visiblePublico)
+    setBloques(resultado.bloques)
+  }, [])
 
-    if (usuarioData.id_refugio === null) {
-      setErrorMsg('Tu usuario no está asociado a un albergue.')
-      return
-    }
-
-    const { data: perfilData, error: pErr } = await supabase
-      .from('albergue_perfil')
-      .select('id_perfil, visible_publico')
-      .eq('id_refugio', usuarioData.id_refugio)
-      .single()
-
-    if (pErr || !perfilData) {
-      setErrorMsg('Tu albergue no tiene perfil configurado. Contacta al super administrador.')
-      return
-    }
-
-    setIdPerfil(perfilData.id_perfil)
-    setVisible(perfilData.visible_publico)
-
-    const { data: bloquesData } = await supabase
-      .from('albergue_bloque')
-      .select('*')
-      .eq('id_perfil', perfilData.id_perfil)
-      .order('orden')
-
-    setBloques((bloquesData as Bloque[]) ?? [])
-  }, [supabase])
-
-  useEffect(() => { cargar() }, [cargar])
+  useEffect(() => {
+    let activo = true
+    void (async () => {
+      const resultado = await leerPerfil(supabase)
+      if (activo) aplicarPerfil(resultado)
+    })()
+    return () => { activo = false }
+  }, [supabase, aplicarPerfil])
 
   async function toggleVisiblePublico() {
     if (!idPerfil) return
@@ -197,7 +222,7 @@ export default function MiAlberguePage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-    cargar()
+    aplicarPerfil(await leerPerfil(supabase))
   }
 
   if (errorMsg) {
