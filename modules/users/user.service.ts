@@ -30,8 +30,8 @@ export class UserService {
      * Crea un miembro del personal (staff) en el refugio actual (F-USERS-01).
      * El `shelterId` llega en el DTO: lo inyecta la Action desde el contexto
      * autenticado, nunca desde el cliente.
-     * La contraseña temporal se genera en el servidor (RF0.4 regla 6) y se
-     * devuelve una única vez para que el administrador la comparta.
+     * La contraseña temporal la define el administrador en el formulario, se
+     * valida con Zod y se envía tal cual a Supabase Auth.
      */
     async createStaff(
         input: CreateStaffDTO,
@@ -56,7 +56,7 @@ export class UserService {
             // 4. Crear usuario en Supabase Auth con contraseña temporal. Si el
             //    correo quedó huérfano en Auth tras un borrado, se reaprovecha
             //    la cuenta existente sin tocar la de otro usuario.
-            const tempPassword = this.generateTempPassword();
+            const tempPassword = parsed.password;
             const authUser = await this.createOrReuseAuthUser(
                 parsed.email,
                 tempPassword,
@@ -272,17 +272,5 @@ export class UserService {
             );
         }
         return id;
-    }
-
-    /**
-     * Genera una contraseña temporal segura de 12 caracteres.
-     * Se devuelve una única vez al usuario para que pueda iniciar sesión
-     * y debe cambiarla inmediatamente (F-AUTH-03 / F-USERS-01).
-     */
-    private generateTempPassword(): string {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-        const array = new Uint32Array(12);
-        crypto.getRandomValues(array);
-        return Array.from(array, (n) => chars[n % chars.length]).join('');
     }
 }
