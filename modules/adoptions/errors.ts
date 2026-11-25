@@ -190,6 +190,36 @@ export class PerfilSinFotografiaError extends AdoptionError {
     }
 }
 
+/**
+ * El gatekeeper se aplicó pero la publicación del perfil falló. No es una
+ * transacción única (dos RPC), por lo que la UI debe saber que el animal ya
+ * quedó habilitado y que solo falta corregir el perfil.
+ */
+export class PublicacionIncompletaError extends AdoptionError {
+    constructor(causa: string, bloqueos: string[] = []) {
+        super({
+            code: "PUBLICACION_INCOMPLETA",
+            statusCode: 409,
+            message: `El animal quedó habilitado para adopción, pero no se pudo publicar el perfil: ${causa}`,
+            name: "PublicacionIncompletaError",
+            details: bloqueos.length > 0 ? { bloqueos } : undefined,
+        });
+    }
+}
+
+/** Errores del gatekeeper de `animals` traducidos al envelope de adopciones. */
+export class FalloGatekeeperAdopcionError extends AdoptionError {
+    constructor(codigo: string, mensaje: string, bloqueos: string[] = []) {
+        super({
+            code: codigo,
+            statusCode: 409,
+            message: mensaje,
+            name: "FalloGatekeeperAdopcionError",
+            details: bloqueos.length > 0 ? { bloqueos } : undefined,
+        });
+    }
+}
+
 export class PerfilYaPublicadoError extends AdoptionError {
     constructor() {
         super({

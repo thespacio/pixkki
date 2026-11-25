@@ -7,7 +7,6 @@ import {
     UpdateShelterInput, ShelterQueryParams, ShelterListItem
 } from './types';
 import {
-    ShelterNotFoundError,
     ShelterBusinessError,
     ShelterAuthorizationError
 } from './errors';
@@ -306,8 +305,7 @@ export class ShelterService {
         }
 
         // Regla de negocio: Solo correos institucionales o Gmail/Outlook
-        const allowedDomains = ['gmail.com', 'outlook.com', 'hotmail.com'];
-        // Aquí podrías tener una lista de dominios permitidos según tu negocio
+        // Aqu? podr?as tener una lista de dominios permitidos seg?n tu negocio.
     }
 
     /**

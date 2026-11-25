@@ -1,6 +1,5 @@
 
 import { UnableToSendResetEmailError } from "./errors";
-import {createClient} from "@supabase/supabase-js";
 import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
 
 export interface ForgotPasswordRepository {

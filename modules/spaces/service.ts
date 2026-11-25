@@ -1,7 +1,7 @@
 
 import { ZodError } from 'zod';
 import {SpaceRepository, SpaceRepositoryError} from "@/modules/spaces/repositories/repository";
-import {CreateSpaceData, CreateSpaceInput, Space, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces/types/types";
+import {CreateSpaceData, Space, SpaceFilters, UpdateSpaceInput} from "@/modules/spaces/types/types";
 import {CreateSpaceSchema, SpaceFiltersSchema, UpdateSpaceSchema} from "@/modules/spaces/schemas";
 import type {
     SpaceOccupancyInfo,

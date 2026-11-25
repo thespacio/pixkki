@@ -48,6 +48,8 @@ type Props = {
     canEvaluate: boolean;
     /** Permiso `animals.edit`: publicar/despublicar adopción. */
     canEdit: boolean;
+    /** Permiso `adoptions.publish`: publicar el perfil en el catálogo. */
+    canPublishProfile: boolean;
     /** Admin/Superadmin: autorizar excepción de aptitud. */
     canAuthorizeException: boolean;
     initialRecord: ClinicalRecord;
@@ -80,6 +82,7 @@ export function AnimalClinicalPagePanels({
     canOperate,
     canEvaluate,
     canEdit,
+    canPublishProfile,
     canAuthorizeException,
     initialRecord,
 }: Props) {
@@ -187,7 +190,9 @@ export function AnimalClinicalPagePanels({
 
                     <AnimalAdoptionAptitudeBlock
                         idAnimal={idAnimal}
+                        nombre={initialRecord.animal.nombre}
                         canEdit={canEdit}
+                        canPublishProfile={canPublishProfile}
                         canAuthorizeException={canAuthorizeException}
                         refreshKey={refreshKey}
                         onChanged={refresh}

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { getCurrentUser } from "@/modules/auth";
 import ChangePasswordForm from "./ChangePasswordForm";
 
@@ -7,7 +9,17 @@ import ChangePasswordForm from "./ChangePasswordForm";
  * para mostrar el stepper y decidir el siguiente paso tras el éxito.
  */
 export default async function ChangePasswordPage() {
-    const user = await getCurrentUser();
+    let user;
+    try {
+        user = await getCurrentUser();
+    } catch (error) {
+        const statusCode =
+            error instanceof Error && "statusCode" in error && typeof error.statusCode === "number"
+                ? error.statusCode
+                : undefined;
+        if (statusCode === 401 || statusCode === 403) redirect("/login");
+        throw error;
+    }
 
     return (
         <ChangePasswordForm

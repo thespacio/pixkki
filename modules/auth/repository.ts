@@ -285,7 +285,10 @@ export class AuthRepository {
             .single();
 
         if (error) {
-            throw new Error(`Error al buscar rol: ${error.message}`);
+            throw new AuthError(
+                "No fue posible obtener el rol del usuario.",
+                500
+            );
         }
 
         return data.nombre_rol as UserRole;
@@ -323,7 +326,10 @@ export class AuthRepository {
             .returns<PermissionRow[]>();
 
         if (error) {
-            throw new Error(`Error al buscar permisos: ${error.message}`);
+            throw new AuthError(
+                "No fue posible obtener los permisos del usuario.",
+                500
+            );
         }
 
         return data.map((permission) => permission.permiso.nombre_permiso);
@@ -341,7 +347,10 @@ export class AuthRepository {
             .eq("id_usuario", idUsuario);
 
         if (error) {
-            throw new Error(`Error al actualizar último login: ${error.message}`);
+            throw new AuthError(
+                "No fue posible actualizar el último acceso.",
+                500
+            );
         }
     }
 
@@ -354,7 +363,10 @@ export class AuthRepository {
         const { error } = await this.supabase.auth.signOut();
 
         if (error) {
-            throw new Error(`Error al cerrar sesión: ${error.message}`);
+            throw new AuthError(
+                "No fue posible cerrar la sesión.",
+                500
+            );
         }
     }
 
@@ -369,7 +381,10 @@ export class AuthRepository {
             .single();
 
         if (error) {
-            throw new Error(`Error al verificar estado del usuario: ${error.message}`);
+            throw new AuthError(
+                "No fue posible verificar el estado del usuario.",
+                500
+            );
         }
 
         return data?.activo ?? false;
@@ -384,7 +399,10 @@ export class AuthRepository {
         });
 
         if (error) {
-            throw error;
+            throw new AuthError(
+                "No fue posible actualizar la contraseña.",
+                error.status ?? 500
+            );
         }
     }
 

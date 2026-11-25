@@ -4,7 +4,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { PawPrint, ArrowRight, BarChart2, Heart, Stethoscope, DollarSign, CheckCircle, Star, ChevronRight, HandCoins } from "lucide-react";
 import { useRouter } from "next/navigation";
 const logo = "/images/logo.png";
@@ -98,6 +97,7 @@ export default function Landing({ campaignsSection }: { campaignsSection?: React
             <div className="flex items-center gap-2.5">
               {/*Logo*/}
               <div className="w-10 h-10 px-1 py-1 rounded-md flex items-center justify-center" style={{ backgroundColor: "#43AE6D" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={logo} alt="Logo" />
               </div>
               <span className="text-xl font-semibold tracking-tight text-foreground">Pixkki</span>
@@ -163,6 +163,7 @@ export default function Landing({ campaignsSection }: { campaignsSection?: React
             {/* Hero image collage */}
             <div className="relative h-[480px]">
               <div className="absolute top-0 right-0 w-72 h-52 rounded-2xl overflow-hidden shadow-lg" style={{ backgroundColor: "#EBF7F1" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="https://images.unsplash.com/photo-1655306963086-a34411c0915b?w=580&h=420&fit=crop&auto=format"
                     alt="A dog and cat resting together"
@@ -170,6 +171,7 @@ export default function Landing({ campaignsSection }: { campaignsSection?: React
                 />
               </div>
               <div className="absolute bottom-0 left-0 w-64 h-48 rounded-2xl overflow-hidden shadow-lg" style={{ backgroundColor: "#FDF2EA" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="https://images.unsplash.com/photo-1594004844563-536a03a6e532?w=520&h=390&fit=crop&auto=format"
                     alt="Person holding a rescued dog"
@@ -177,6 +179,7 @@ export default function Landing({ campaignsSection }: { campaignsSection?: React
                 />
               </div>
               <div className="absolute top-48 left-8 w-52 h-44 rounded-2xl overflow-hidden shadow-lg" style={{ backgroundColor: "#EAF3F6" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="https://images.unsplash.com/photo-1553688738-a278b9f063e0?w=420&h=360&fit=crop&auto=format"
                     alt="Puppy at shelter"
@@ -281,7 +284,7 @@ export default function Landing({ campaignsSection }: { campaignsSection?: React
                     { label: "Monthly Adoptions", value: "41", color: "#E8A87C", bg: "#FDF2EA" },
                     { label: "Donations Dec", value: "$11.2k", color: "#6B9FAE", bg: "#EAF3F6" },
                     { label: "Occupancy", value: "78%", color: "#D8C4A5", bg: "#F6F1E9" },
-                  ].map(({ label, value, color, bg }) => (
+                  ].map(({ label, value, color }) => (
                       <div key={label} className="bg-card border border-border rounded-xl p-3">
                         <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
                         <p className="text-lg font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono', monospace", color }}>{value}</p>

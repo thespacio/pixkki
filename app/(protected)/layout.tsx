@@ -26,7 +26,21 @@ export default async function Layout({
 }: {
     children: ReactNode;
 }) {
-    const user = await getCurrentUser();
+    let user;
+    try {
+        user = await getCurrentUser();
+    } catch (error) {
+        // Si la sesión ya no es válida (usuario/refugio inactivo, sesión expirada),
+        // se envía a login en vez de romper el layout protegido.
+        const statusCode =
+            error instanceof Error && "statusCode" in error && typeof error.statusCode === "number"
+                ? error.statusCode
+                : undefined;
+        if (statusCode === 401 || statusCode === 403) {
+            redirect("/login");
+        }
+        throw error;
+    }
 
     if (user.requiresPasswordChange) {
         redirect("/change-password");

@@ -10,6 +10,8 @@ import { createProfileService } from "../factories/create-profile-service";
 import { createAdoptionStateService } from "../factories/create-adoption-service";
 import { ADOPTION_PERMISSIONS } from "../access";
 import { RolSinPermisoError } from "../errors";
+import { PublicarAnimalEnAdopcionesSchema } from "../validators/public-profile.validators";
+import { publicarAnimalEnAdopciones } from "@/modules/use-cases/publicar-animal-en-adopciones";
 import {
     toAdoptionErrorResult,
     type AdoptionActionResult,
@@ -229,9 +231,41 @@ export async function upsertPerfilAdopcionAction(
         ensurePermission(user.permissions, ADOPTION_PERMISSIONS.publish);
         const service = await createProfileService();
         const data = await service.upsert(idAnimal, body, user);
-        revalidatePath("/adopciones");
-        revalidatePath("/adopciones/perfiles");
-        revalidatePath("/adopciones/solicitudes");
+        revalidateAdoptionPaths(idAnimal);
+        return { success: true, data };
+    } catch (error) {
+        return toAdoptionErrorResult(error);
+    }
+}
+
+/** Revalida tanto el backoffice como el catálogo público tras publicar/despublicar. */
+function revalidateAdoptionPaths(idAnimal: number): void {
+    revalidatePath("/adopciones");
+    revalidatePath("/adopciones/perfiles");
+    revalidatePath("/adopciones/solicitudes");
+    revalidatePath(`/adopciones/${idAnimal}`);
+    revalidatePath("/adopciones/[idAnimal]", "page");
+    revalidatePath("/refugios/[id]", "page");
+    revalidatePath("/animales");
+    revalidatePath(`/animales/${idAnimal}/ficha-clinica`);
+}
+
+/**
+ * Flujo unificado: habilita al paciente (gatekeeper) y publica su perfil
+ * público. Ambos pasos son necesarios para aparecer en el catálogo.
+ */
+export async function publicarAnimalEnAdopcionesAction(
+    idAnimal: number,
+    body: unknown,
+): Promise<AdoptionActionResult<unknown>> {
+    try {
+        if (!Number.isInteger(idAnimal) || idAnimal <= 0) {
+            throw new RolSinPermisoError();
+        }
+        const input = PublicarAnimalEnAdopcionesSchema.parse(body);
+        const user = await getCurrentUser();
+        const data = await publicarAnimalEnAdopciones(idAnimal, input, user);
+        revalidateAdoptionPaths(idAnimal);
         return { success: true, data };
     } catch (error) {
         return toAdoptionErrorResult(error);

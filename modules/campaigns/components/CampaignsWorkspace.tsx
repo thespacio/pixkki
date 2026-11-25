@@ -10,7 +10,6 @@ import {
     setCampaignStatusAction,
 } from "@/modules/campaigns/actions/campaign.actions";
 import {
-    CAMPAIGN_STATUSES,
     type AdoptableAnimal,
     type Campaign,
     type CampaignStatus,

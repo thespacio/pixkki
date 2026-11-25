@@ -26,9 +26,14 @@ export default async function CampaignsPage() {
   const service = await createCampaignService();
   const shelterService = access.allShelters ? await createShelterService() : null;
 
+  let campaigns: Awaited<ReturnType<typeof service.list>>;
+  let adoptable: Awaited<ReturnType<typeof service.listAdoptable>>;
+  let shelters: ShelterOption[] = [];
+  let missingTable = false;
+
   try {
     // Consultas independientes: se piden a la vez.
-    const [campaigns, adoptable, shelters] = await Promise.all([
+    [campaigns, adoptable, shelters] = await Promise.all([
       service.list(access),
       service.listAdoptable(access),
       // Solo el superadmin elige albergue; el resto trabaja con el suyo.
@@ -40,35 +45,40 @@ export default async function CampaignsPage() {
             )
         : Promise.resolve<ShelterOption[]>([]),
     ]);
-
-    return (
-      <div className="mx-auto max-w-7xl">
-        <CampaignsWorkspace
-          campaigns={campaigns}
-          adoptable={adoptable}
-          shelters={shelters}
-          canCreate={user.permissions.includes(CAMPAIGN_PERMISSIONS.create)}
-          canEdit={user.permissions.includes(CAMPAIGN_PERMISSIONS.edit)}
-          canDelete={user.permissions.includes(CAMPAIGN_PERMISSIONS.delete)}
-          aiConfigured={Boolean(process.env.GEMINI_API_KEY?.trim())}
-        />
-      </div>
-    );
   } catch (error) {
     // Sin la migración no existen las tablas: se explica qué hacer en vez de mostrar un error técnico.
     if (isMissingTableError(error)) {
-      return (
-        <div className="p-8 max-w-2xl mx-auto py-24 text-center">
-          <Database size={40} className="mx-auto mb-3 text-muted-foreground opacity-50" aria-hidden="true" />
-          <h1 className="text-lg font-semibold text-foreground">Falta preparar la base de datos</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Las campañas necesitan tablas nuevas. Ejecuta el archivo{" "}
-            <code>database/migrations/20261025_campanas.sql</code> en el SQL Editor de Supabase y
-            recarga esta página.
-          </p>
-        </div>
-      );
+      missingTable = true;
+    } else {
+      throw error;
     }
-    throw error;
   }
+
+  if (missingTable) {
+    return (
+      <div className="p-8 max-w-2xl mx-auto py-24 text-center">
+        <Database size={40} className="mx-auto mb-3 text-muted-foreground opacity-50" aria-hidden="true" />
+        <h1 className="text-lg font-semibold text-foreground">Falta preparar la base de datos</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Las campañas necesitan tablas nuevas. Ejecuta el archivo{" "}
+          <code>database/migrations/20261025_campanas.sql</code> en el SQL Editor de Supabase y
+          recarga esta página.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl">
+      <CampaignsWorkspace
+        campaigns={campaigns!}
+        adoptable={adoptable!}
+        shelters={shelters}
+        canCreate={user.permissions.includes(CAMPAIGN_PERMISSIONS.create)}
+        canEdit={user.permissions.includes(CAMPAIGN_PERMISSIONS.edit)}
+        canDelete={user.permissions.includes(CAMPAIGN_PERMISSIONS.delete)}
+        aiConfigured={Boolean(process.env.GEMINI_API_KEY?.trim())}
+      />
+    </div>
+  );
 }

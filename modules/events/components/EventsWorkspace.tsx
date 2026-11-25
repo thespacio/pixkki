@@ -20,6 +20,7 @@ export function EventsWorkspace({ events }: { events: CalendarEvent[] }) {
 
     useEffect(() => {
         const today = new Date();
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- inicialización post-mount para evitar desajuste SSR/cliente
         setNow(today);
         setCursor({ year: today.getFullYear(), month: today.getMonth() });
         setSelectedDay(dayKey(today));

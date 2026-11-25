@@ -175,11 +175,11 @@ export class ShelterRepository {
      */
     async create(shelterData: Omit<Shelter, 'id' | 'fecha_registro' | 'activo' | 'nombre_admin'>): Promise<Shelter> {
         try {
-            const insertData: ShelterInsert = {
+            const insertData = {
                 ...mapShelterToRow(shelterData),
                 fecha_registro: new Date().toISOString(),
-                activo: true
-            };
+                activo: true,
+            } as ShelterInsert;
 
             const { data, error } = await this.supabase
                 .from('refugio')

@@ -6,8 +6,7 @@ import {
     changePasswordSchema,
     ResetPasswordSchema,
 } from "@/modules/auth/schemas";
-import {ForgotPasswordInput} from "@/modules/auth/forgot-password/schemas";
-import {redirect} from "next/navigation";
+
 
 export async function sendPasswordResetAction(email: string) {
     try {
@@ -181,7 +180,7 @@ export async function getAuthFlagsAction() {
                 role: user.role,
             },
         };
-    } catch (error) {
+    } catch {
         return {
             success: false,
             message: "No se pudo obtener la sesión del usuario.",

@@ -154,7 +154,7 @@ cp .env.example .env.local
 | `GEMINI_MODEL` | Modelo de Gemini a usar (opcional; por defecto `gemini-3.6-flash`) | `gemini-3.8-flash` |
 | `GOOGLE_CALENDAR_API_KEY` | Clave de la Google Calendar API para la sección Eventos (solo servidor, nunca `NEXT_PUBLIC_`) | `AIza...` |
 | `GOOGLE_CALENDAR_ID` | ID del calendario público con los eventos (Configuración del calendario → Integrar calendario) | `abc123@group.calendar.google.com` |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Clave de Google Maps para elegir la ubicación del albergue. Va al navegador: **restríngela por dominio (HTTP referrer)** y solo a Maps JavaScript API + Geocoding API | `AIza...` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Clave de Google Maps para elegir y autocompletar la ubicación del albergue. Va al navegador: **restríngela por dominio (HTTP referrer)** y solo a Maps JavaScript API + Geocoding API + Places API (New) | `AIza...` |
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Map ID de Google Maps (opcional; por defecto `DEMO_MAP_ID`, suficiente para desarrollo) | `a1b2c3d4e5f6` |
 | `NEXT_PUBLIC_APP_URL` | URL base de la aplicación | `http://localhost:3000` |
 | `EMAIL_PROVIDER_API_KEY` | Clave del proveedor de correo | `re_xxxx` |
@@ -301,6 +301,29 @@ Entornos:
 | Producción | `main` | `https://pixkki.app` |
 | Staging | `develop` | `https://staging.pixkki.app` |
 | Preview | `feature/*` | Generada por Vercel por PR |
+
+## Seeders de datos demo
+
+Los seeders crean 2 refugios, su personal (superadmin, administradores y veterinarios) y 10 animales ficticios. Están pensados para validar flujos en el entorno configurado en `.env.local`.
+
+- `supabase/seed.sql`: versión idempotente para `supabase db reset` en local.
+- `scripts/seed-production.mjs`: versión ejecutable con service role; es **dry-run por defecto**.
+
+Variables adicionales requeridas en `.env.local`:
+
+```text
+SEED_DEMO_PASSWORD=<contraseña temporal>
+PIXKKI_SEED_CONFIRM=PRODUCCION
+```
+
+Comandos:
+
+```bash
+npm run seed:production:dry   # solo lectura
+npm run seed:production       # aplica los cambios
+```
+
+Los registros llevan prefijo `DEMO` y correos `*.pixkki.test`. El seed nunca sobrescribe ni elimina datos existentes; consulta [docs/features/datos-iniciales-seeders.md](docs/features/datos-iniciales-seeders.md) antes de ejecutarlo en producción.
 
 ## Equipo
 

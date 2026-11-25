@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/types/database";
+import type { Database } from "@/types/database";
 import {
     AnimalNoDisponibleError,
     AnimalYaReservadoError,
@@ -14,28 +14,7 @@ import {
 } from "../errors";
 import type { CreateSolicitudPublicaDTO, ListSolicitudesQueryDTO } from "../dtos/application.dto";
 
-type RpcEnvelope = {
-    ok: boolean;
-    code?: string;
-    message?: string;
-    data?: Record<string, unknown>;
-};
-
-function parseEnvelope(value: Json | null): RpcEnvelope {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-        throw new ErrorInternoAdopcionesError();
-    }
-    const e = value as Record<string, unknown>;
-    return {
-        ok: e.ok === true,
-        code: typeof e.code === "string" ? e.code : undefined,
-        message: typeof e.message === "string" ? e.message : undefined,
-        data:
-            typeof e.data === "object" && e.data !== null && !Array.isArray(e.data)
-                ? (e.data as Record<string, unknown>)
-                : undefined,
-    };
-}
+import { parseEnvelope } from "./rpc-envelope";
 
 function throwSolicitudCode(code: string | undefined, message?: string): never {
     switch (code) {
@@ -88,8 +67,9 @@ export class AdoptionApplicationRepository {
         return envelope.data ?? {};
     }
 
-    private scope(query: any, idRefugio: number | null) {
-        return idRefugio === null ? query : query.eq("id_refugio", idRefugio);
+    private scope<T>(query: T, idRefugio: number | null): T {
+        if (idRefugio === null) return query;
+        return (query as T & { eq: (column: string, value: number) => T }).eq("id_refugio", idRefugio);
     }
 
     async list(query: ListSolicitudesQueryDTO, idRefugio: number | null) {
@@ -116,10 +96,11 @@ export class AdoptionApplicationRepository {
         let items = data ?? [];
         if (query.q) {
             const term = query.q.toLowerCase();
-            items = items.filter((s: any) => {
-                const a = s.adoptante ?? {};
-                const an = s.animal ?? {};
-                return [a.nombre_completo, a.correo, a.telefono, an.nombre, String(s.id_solicitud)]
+            items = items.filter((s) => {
+                const row = s as Record<string, unknown>;
+                const a = (row.adoptante ?? {}) as Record<string, unknown>;
+                const an = (row.animal ?? {}) as Record<string, unknown>;
+                return [a.nombre_completo, a.correo, a.telefono, an.nombre, String(row.id_solicitud)]
                     .filter(Boolean)
                     .some((v) => String(v).toLowerCase().includes(term));
             });

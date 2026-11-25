@@ -9,7 +9,17 @@ import AcceptTermsForm from "./AcceptTermsForm";
  * el siguiente paso de la compuerta post-login.
  */
 export default async function AcceptTermsPage() {
-    const user = await getCurrentUser();
+    let user;
+    try {
+        user = await getCurrentUser();
+    } catch (error) {
+        const statusCode =
+            error instanceof Error && "statusCode" in error && typeof error.statusCode === "number"
+                ? error.statusCode
+                : undefined;
+        if (statusCode === 401 || statusCode === 403) redirect("/login");
+        throw error;
+    }
 
     // Si ya aceptó los términos y no hay otras compuertas pendientes, ir al panel.
     if (user.termsAccepted && !user.requiresOnboarding && !user.requiresPasswordChange) {

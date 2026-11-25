@@ -21,6 +21,39 @@ export type GeocoderResult = {
 };
 export type GeocoderResponse = { results: GeocoderResult[] };
 
+// Places API (New) devuelve `longText`/`shortText`, no `long_name`/`short_name`.
+export type PlacesAddressComponent = { longText: string; shortText: string; types: string[] };
+
+export type GooglePlace = {
+    formattedAddress?: string | null;
+    location?: { lat(): number; lng(): number } | null;
+    addressComponents?: PlacesAddressComponent[] | null;
+    fetchFields(request: { fields: string[] }): Promise<void>;
+};
+
+export type PlacePrediction = {
+    placeId: string;
+    text?: { text: string } | null;
+    mainText?: { text: string } | null;
+    secondaryText?: { text: string } | null;
+};
+
+export type AddressSuggestion = {
+    placeId: string;
+    primary: string;
+    secondary: string;
+};
+
+export type PlacesLibrary = {
+    AutocompleteSuggestion: {
+        fetchAutocompleteSuggestions(request: Record<string, unknown>): Promise<{
+            suggestions: Array<{ placePrediction?: PlacePrediction | null }>;
+        }>;
+    };
+    AutocompleteSessionToken: new () => unknown;
+    Place: new (options: { id: string }) => GooglePlace;
+};
+
 export type GoogleMapsApi = {
     maps: {
         importLibrary(name: string): Promise<unknown>;
@@ -29,6 +62,7 @@ export type GoogleMapsApi = {
         marker: {
             AdvancedMarkerElement: new (options: Record<string, unknown>) => MarkerInstance;
         };
+        places: PlacesLibrary;
     };
 };
 
@@ -57,9 +91,21 @@ declare global {
 // ---------------------------------------------------------------------------
 let loading: Promise<GoogleMapsApi> | null = null;
 
+function isPlacesLibrary(value: unknown): value is PlacesLibrary {
+    if (typeof value !== "object" || value === null) return false;
+    if (!("AutocompleteSuggestion" in value) || !("AutocompleteSessionToken" in value) || !("Place" in value)) {
+        return false;
+    }
+    return (
+        typeof value.AutocompleteSuggestion === "function" &&
+        typeof value.AutocompleteSessionToken === "function" &&
+        typeof value.Place === "function"
+    );
+}
+
 export function loadGoogleMaps(apiKey: string): Promise<GoogleMapsApi> {
     if (typeof window === "undefined") return Promise.reject(new Error("Solo disponible en el navegador."));
-    if (window.google?.maps?.importLibrary) return Promise.resolve(window.google);
+    if (window.google?.maps?.importLibrary && window.google.maps.places) return Promise.resolve(window.google);
     if (loading) return loading;
 
     loading = new Promise<GoogleMapsApi>((resolve, reject) => {
@@ -69,6 +115,12 @@ export function loadGoogleMaps(apiKey: string): Promise<GoogleMapsApi> {
                 await window.google!.maps.importLibrary("maps");
                 await window.google!.maps.importLibrary("marker");
                 await window.google!.maps.importLibrary("geocoding");
+                const places = await window.google!.maps.importLibrary("places");
+                if (!isPlacesLibrary(places)) {
+                    reject(new Error("No se pudo cargar el autocompletado de Google Maps."));
+                    return;
+                }
+                window.google!.maps.places = places;
                 resolve(window.google!);
             } catch (error) {
                 reject(error);
@@ -153,6 +205,75 @@ export function toPickedLocation(result: GeocoderResult): PickedLocation {
 /** 6 decimales ≈ 11 cm: es lo que guarda la base (numeric(9,6)). */
 export function roundCoordinate(value: number): number {
     return Math.round(value * 1e6) / 1e6;
+}
+
+// ---------------------------------------------------------------------------
+// Autocompletado de direcciones (Places API - New)
+// ---------------------------------------------------------------------------
+export const MIN_AUTOCOMPLETE_LENGTH = 3;
+
+export async function fetchAddressSuggestions(
+    api: GoogleMapsApi,
+    input: string,
+    sessionToken: unknown,
+): Promise<AddressSuggestion[]> {
+    const text = input.trim();
+    if (text.length < MIN_AUTOCOMPLETE_LENGTH) return [];
+
+    const { suggestions } = await api.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: text,
+        includedRegionCodes: ["mx"],
+        language: "es",
+        sessionToken,
+    });
+
+    return suggestions.flatMap((suggestion) => {
+        const prediction = suggestion.placePrediction;
+        if (!prediction?.placeId) return [];
+        const primary = prediction.mainText?.text ?? prediction.text?.text ?? "";
+        if (!primary) return [];
+        return [{ placeId: prediction.placeId, primary, secondary: prediction.secondaryText?.text ?? "" }];
+    });
+}
+
+/** Convierte un `Place` de Places API (New) al formato que usa el formulario. */
+export function placeToPickedLocation(place: GooglePlace, fallbackAddress = ""): PickedLocation {
+    const location = place.location;
+    if (!location) throw new Error("La dirección elegida no tiene coordenadas.");
+
+    const find = (...types: string[]) =>
+        place.addressComponents?.find((component) => types.some((type) => component.types.includes(type)))?.longText;
+
+    return {
+        direccion: (place.formattedAddress?.trim() || fallbackAddress).slice(0, 300),
+        latitud: roundCoordinate(location.lat()),
+        longitud: roundCoordinate(location.lng()),
+        // Mismo orden de preferencia que usa Google: localidad > municipio > subdivisión.
+        ciudad: find("locality", "administrative_area_level_2") ?? null,
+        estado: matchMexicanState(find("administrative_area_level_1")),
+        calle: find("route") ?? null,
+        numero: find("street_number") ?? null,
+        colonia: find("sublocality_level_1", "sublocality", "neighborhood") ?? null,
+        codigoPostal: find("postal_code") ?? null,
+    };
+}
+
+export async function resolvePlaceSuggestion(
+    api: GoogleMapsApi,
+    suggestion: AddressSuggestion,
+): Promise<PickedLocation> {
+    const place = new api.maps.places.Place({ id: suggestion.placeId });
+    await place.fetchFields({ fields: ["formattedAddress", "location", "addressComponents"] });
+    const fallback = [suggestion.primary, suggestion.secondary].filter(Boolean).join(", ");
+    return placeToPickedLocation(place, fallback);
+}
+
+export function placesErrorMessage(error: unknown): string {
+    const message = error instanceof Error ? error.message : "";
+    if (/denied|permission|not authorized|api key|billing/i.test(message)) {
+        return "El autocompletado de direcciones no está disponible. Activa Places API (New) y permite esa API en la clave de Google Maps; mientras tanto puedes escribir la dirección y usar Buscar.";
+    }
+    return "No se pudieron obtener sugerencias de direcciones. Escribe la dirección completa y usa el botón Buscar.";
 }
 
 export function googleMapsLink(latitud: number, longitud: number): string {

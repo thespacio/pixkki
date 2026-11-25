@@ -1,14 +1,5 @@
 'use client';
 
-import {Shelter, UpdateShelterInput} from "@/modules/shelters/types";
-import {useState} from "react";
-import {FieldValues, useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {CreateShelterSchema, UpdateShelterSchema} from "@/modules/shelters/schemas";
-import {updateShelterAction} from "@/modules/shelters/actions";
-import {useRouter} from "next/navigation";
-
-
 //hooks: manejan el estado y la lógica del formulario
 
 

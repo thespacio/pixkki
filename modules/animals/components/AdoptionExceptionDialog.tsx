@@ -77,7 +77,7 @@ export function AdoptionExceptionDialog({
                         Autorizar excepción de aptitud
                     </DialogTitle>
                     <DialogDescription>
-                        Esta acción publicará al paciente con criterios omitidos. La excepción quedará registrada en auditoría.
+                        Esta acción habilitará la aptitud del paciente con criterios omitidos. La excepción quedará registrada en auditoría; después publica el perfil en Adopciones para que aparezca en el catálogo.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -142,7 +142,7 @@ export function AdoptionExceptionDialog({
                         disabled={saving || !motivoValido || criteriosIncumplidos.length === 0}
                     >
                         {saving ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : null}
-                        Autorizar excepción y publicar
+                        Autorizar excepción y habilitar
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -42,31 +42,7 @@ export class PublicCatalogRepository {
         const { data, error, count } = await q.range(from, to);
         if (error) throw error;
 
-        const items = (data ?? []).map((row: any) => ({
-            id_animal: row.id_animal,
-            nombre: row.nombre,
-            especie: row.especie,
-            raza: row.raza,
-            sexo: row.sexo,
-            edad_estimada: row.edad_estimada,
-            tamano: row.tamano,
-            color: row.color,
-            temperamento: row.temperamento,
-            vacunado: row.vacunado,
-            desparasitado: row.desparasitado,
-            esterilizado: row.esterilizado,
-            compatibilidad: row.compatibilidad ?? null,
-            foto_principal: row.foto_principal ?? null,
-            refugio: {
-                slug: row.refugio?.slug ?? null,
-                nombre: row.refugio?.nombre ?? null,
-                ciudad: row.refugio?.ciudad ?? null,
-                estado: row.refugio?.estado ?? null,
-            },
-            fecha_publicacion: row.fecha_publicacion,
-        }));
-
-        return { items, page: query.page, pageSize: query.pageSize, total: count ?? 0 };
+        return { items: data ?? [], page: query.page, pageSize: query.pageSize, total: count ?? 0 };
     }
 
     async getAnimal(idAnimal: number) {
@@ -78,27 +54,7 @@ export class PublicCatalogRepository {
         if (error) throw error;
         if (!data) throw new PerfilNoEncontradoError();
 
-        const row = data as any;
-        return {
-            id_animal: row.id_animal,
-            nombre: row.nombre,
-            especie: row.especie,
-            raza: row.raza,
-            sexo: row.sexo,
-            edad_estimada: row.edad_estimada,
-            tamano: row.tamano,
-            color: row.color,
-            temperamento: row.temperamento,
-            vacunado: row.vacunado,
-            desparasitado: row.desparasitado,
-            esterilizado: row.esterilizado,
-            rasgos_fisicos: row.rasgos_fisicos,
-            descripcion_publica: row.descripcion_publica,
-            compatibilidad: row.compatibilidad ?? null,
-            fotos: row.fotos ?? [],
-            refugio: row.refugio ?? null,
-            fecha_publicacion: row.fecha_publicacion,
-        };
+        return data;
     }
 
     async listRefugios() {

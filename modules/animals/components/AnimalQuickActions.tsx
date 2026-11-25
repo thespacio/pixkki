@@ -19,7 +19,6 @@ type Props = {
     canEdit: boolean;
     canDelete: boolean;
     pending: boolean;
-    onToggleDisponible: () => void;
     onDelete: () => void;
 };
 
@@ -30,7 +29,6 @@ export function AnimalQuickActions({
     canEdit,
     canDelete,
     pending,
-    onToggleDisponible,
     onDelete,
 }: Props) {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -53,11 +51,6 @@ export function AnimalQuickActions({
         };
     }, [menuOpen]);
 
-    const locked = pending || (enCuarentena && !disponibleAdopcion);
-    const toggleLabel = disponibleAdopcion
-        ? "Marcar como no disponible"
-        : "Marcar disponible para adopción";
-
     return (
         <div className="sticky bottom-0 mt-8 -mx-6 border-t border-border bg-background/95 px-6 pb-5 pt-4 backdrop-blur">
             <div className="flex items-center gap-2">
@@ -69,7 +62,7 @@ export function AnimalQuickActions({
                     Ver ficha clínica completa
                 </Link>
 
-                {(canEdit || canDelete) && (
+                {canDelete && (
                     <div className="relative" ref={menuRef}>
                         <button
                             type="button"
@@ -90,25 +83,6 @@ export function AnimalQuickActions({
                                 role="menu"
                                 className="absolute bottom-full right-0 z-10 mb-2 w-60 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-lg"
                             >
-                                {canEdit && (
-                                    <button
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => {
-                                            setMenuOpen(false);
-                                            onToggleDisponible();
-                                        }}
-                                        disabled={locked}
-                                        title={
-                                            enCuarentena && !disponibleAdopcion
-                                                ? "El paciente está en cuarentena"
-                                                : undefined
-                                        }
-                                        className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {toggleLabel}
-                                    </button>
-                                )}
                                 {canDelete && (
                                     <button
                                         type="button"

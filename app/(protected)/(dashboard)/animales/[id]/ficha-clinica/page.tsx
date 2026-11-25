@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/modules/auth";
 import { isAdmin, isSuperadmin } from "@/modules/auth/authorization";
 import { Badge } from "@/components/ui/badge";
 import { ANIMAL_PERMISSIONS, getAnimalAccess } from "@/modules/animals/access";
+import { ADOPTION_PERMISSIONS } from "@/modules/adoptions/access";
 import { createClinicalRecordService } from "@/modules/animals/factories/create-clinical-record-service";
 import type { ClinicalRecord } from "@/modules/animals/services/clinical-record.service";
 import { AnimalClinicalPagePanels } from "@/modules/animals/components/AnimalClinicalPagePanels";
@@ -80,6 +81,7 @@ export default async function AnimalClinicalRecordPage({ params }: PageProps) {
                 canOperate={puedeEjecutarOperacionClinica(user.role)}
                 canEvaluate={puedeRegistrarSocializacion(user.role)}
                 canEdit={user.permissions.includes(ANIMAL_PERMISSIONS.edit)}
+                canPublishProfile={user.permissions.includes(ADOPTION_PERMISSIONS.publish)}
                 canAuthorizeException={isAdmin(user) || isSuperadmin(user)}
                 initialRecord={ficha}
             />

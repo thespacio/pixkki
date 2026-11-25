@@ -57,9 +57,15 @@ export function SuggestionPanel({ adoptable, shelters, onClose, onSaved }: Props
 
     const busy = generating || (batch?.drafts.some((d) => d.saving) ?? false);
     const busyRef = useRef(busy);
-    busyRef.current = busy;
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+
+    useEffect(() => {
+        busyRef.current = busy;
+    }, [busy]);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     // Escape cierra el panel, salvo mientras se genera o se guarda algo.
     useEffect(() => {

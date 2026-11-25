@@ -60,7 +60,7 @@ export default async function AdopcionesPage({ searchParams }: Props) {
         >
             <div className="px-4 py-6 sm:px-6 lg:px-8">
                 {canView ? (
-                    <InternalAdoptionsSummary />
+                    <InternalAdoptionsSummary user={user} />
                 ) : (
                     <div className="rounded-2xl border border-border bg-card p-6">
                         <h1 className="text-xl font-semibold text-foreground">Adopciones</h1>

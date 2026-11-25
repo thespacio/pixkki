@@ -6,8 +6,9 @@ import type { CreateEvaluacionDTO } from "../dtos/evaluation.dto";
 export class AdoptionEvaluationRepository {
     constructor(private readonly supabase: SupabaseClient<Database>) {}
 
-    private scope(query: any, idRefugio: number | null) {
-        return idRefugio === null ? query : query.eq("id_refugio", idRefugio);
+    private scope<T>(query: T, idRefugio: number | null): T {
+        if (idRefugio === null) return query;
+        return (query as T & { eq: (column: string, value: number) => T }).eq("id_refugio", idRefugio);
     }
 
     private async getSolicitud(idSolicitud: number, idRefugio: number | null) {
@@ -44,7 +45,7 @@ export class AdoptionEvaluationRepository {
             .select("*")
             .single();
         if (error) {
-            if ((error as any).code === "23514") throw new DatosInvalidosError(error.message);
+            if ((error as { code?: string }).code === "23514") throw new DatosInvalidosError(error.message);
             throw error;
         }
         return data;

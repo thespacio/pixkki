@@ -35,7 +35,7 @@ export default function AuthShell(
                 <div className={"pb-3"}>
                     {/*Back Button*/}
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => router.push('/')}
                         className="flex items-center gap-2 text-sm cursor-pointer text-muted-foreground hover:text-foreground transition-colors mb-12"
                     >
                         <ArrowLeft size={14} />
@@ -60,6 +60,7 @@ export default function AuthShell(
             lg:flex
             lg:flex-1
             " style={{ backgroundColor: "#2E2E2E" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="https://images.unsplash.com/photo-1642625932641-3a52ad27e268?w=900&h=1100&fit=crop&auto=format"
                     alt="Dog and cat looking out the window"

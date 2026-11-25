@@ -6,7 +6,7 @@ import {
     CreateShelterInput,
     UpdateShelterInput
 } from './types';
-import { ShelterRow, ShelterInsert, ShelterUpdate } from './repository';
+import { ShelterRow, ShelterUpdate } from './repository';
 
 /**
  * Mapea una fila de Supabase (ShelterRow) a una entidad de dominio (Shelter)
@@ -56,44 +56,47 @@ function slugifyShelterName(name: string): string {
 }
 
 /**
- * Mapea una entidad de dominio o datos de entrada a ShelterInsert
- * (para operaciones de creación en Supabase)
+ * Mapea datos de dominio/entrada a la forma de fila de Supabase.
+ *
+ * Devuelve solo los campos presentes en `data` para que las actualizaciones
+ * parciales no sobreescriban columnas con valores vacíos. En creación, el
+ * llamador debe proporcionar los campos obligatorios del refugio.
  */
 export function mapShelterToRow(
-    data: Partial<Omit<Shelter, 'id' | 'fecha_registro'>> | CreateShelterInput | UpdateShelterInput
-): ShelterInsert {
-    const row: ShelterInsert = { ciudad: "", correo_contacto: "", estado: "", nombre: "" } as ShelterInsert;
+    data: Partial<Omit<Shelter, "id" | "fecha_registro">> | CreateShelterInput | UpdateShelterInput
+): ShelterUpdate {
+    const row: ShelterUpdate = {};
 
-    if ('nombre_albergue' in data && data.nombre_albergue !== undefined) {
+    if ("nombre_albergue" in data && data.nombre_albergue !== undefined) {
         row.nombre = data.nombre_albergue;
         row.slug = slugifyShelterName(data.nombre_albergue);
     }
 
-    if ('ciudad' in data && data.ciudad !== undefined) {
+    if ("ciudad" in data && data.ciudad !== undefined) {
         row.ciudad = data.ciudad;
     }
 
-    if ('estado' in data && data.estado !== undefined) {
+    if ("estado" in data && data.estado !== undefined) {
         row.estado = data.estado;
     }
 
-    if ('correo_contacto' in data && data.correo_contacto !== undefined) {
+    if ("correo_contacto" in data && data.correo_contacto !== undefined) {
         row.correo_contacto = data.correo_contacto;
     }
 
-    if ('telefono' in data && data.telefono !== undefined) {
+    if ("telefono" in data && data.telefono !== undefined) {
         row.telefono = data.telefono;
     }
 
-    if ('activo' in data && data.activo !== undefined) {
+    if ("activo" in data && data.activo !== undefined) {
         row.activo = data.activo;
     }
 
     // Ubicación: solo se toca si el dato viene en la petición (así no se manda nada a una base
     // sin migrar). Latitud y longitud van siempre juntas: o las dos con valor o las dos en null.
-    const lat = 'latitud' in data ? data.latitud : undefined;
-    const lng = 'longitud' in data ? data.longitud : undefined;
-    if (typeof lat === 'number' && typeof lng === 'number') {
+    const lat = "latitud" in data ? data.latitud : undefined;
+    const lng = "longitud" in data ? data.longitud : undefined;
+    if (typeof lat === "number" && typeof lng === "number") {
         row.latitud = lat;
         row.longitud = lng;
     } else if (lat === null && lng === null) {
@@ -101,13 +104,14 @@ export function mapShelterToRow(
         row.longitud = null;
     }
 
-    if ('direccion' in data && data.direccion !== undefined) {
+    if ("direccion" in data && data.direccion !== undefined) {
         row.direccion = data.direccion?.trim() || null;
     }
 
     // Desglose de la dirección (columnas que ya existían en `refugio`): vacío = null.
-    for (const key of ['calle', 'numero', 'colonia', 'codigo_postal'] as const) {
-        const value = key in data ? (data as Record<string, string | null | undefined>)[key] : undefined;
+    for (const key of ["calle", "numero", "colonia", "codigo_postal"] as const) {
+        const value =
+            key in data ? (data as Record<string, string | null | undefined>)[key] : undefined;
         if (value !== undefined) row[key] = value?.trim() || null;
     }
 

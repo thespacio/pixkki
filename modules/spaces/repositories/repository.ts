@@ -2,7 +2,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
     CreateSpaceData,
-    CreateSpaceInput,
     Space,
     SpaceFilters,
     SpaceInsert,

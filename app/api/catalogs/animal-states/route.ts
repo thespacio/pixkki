@@ -12,7 +12,7 @@ export async function GET() {
                 'Content-Type': 'application/json',
             },
         });
-    } catch (error) {
+    } catch {
         return new Response(JSON.stringify({ error: 'Error al obtener los estados' }), {
             status: 500,
             headers: {

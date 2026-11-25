@@ -94,6 +94,7 @@ export default function AsistenteIA() {
         if (!contenido) return;
 
         const mensajeUsuario: Mensaje = {
+            // eslint-disable-next-line react-hooks/purity -- se ejecuta en un handler de evento, no durante render
             id: `usuario-${Date.now()}`,
             rol: "usuario",
             contenido,
@@ -114,6 +115,7 @@ export default function AsistenteIA() {
             };
             setMensajes((prev) => [...prev, mensajeIA]);
             setEscribiendo(false);
+        // eslint-disable-next-line react-hooks/purity -- se ejecuta en callback de timeout, no durante render
         }, 800 + Math.random() * 600);
     };
 

@@ -63,6 +63,7 @@ export default async function HomePage() {
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center px-1 py-1"
                          style={{ backgroundColor: '#43AE6D' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={logo} alt="Pixkki" />
                     </div>
                     <span className="text-base font-bold text-gray-900">Pixkki</span>
@@ -175,10 +176,16 @@ export default async function HomePage() {
                                         <div className="h-48 flex items-center justify-center overflow-hidden relative"
                                              style={{ backgroundColor: primary }}>
                                             {a.portada_url ? (
-                                                <img src={a.portada_url} alt={refugio.nombre}
-                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <>
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={a.portada_url} alt={refugio.nombre}
+                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                </>
                                             ) : a.logo_url ? (
-                                                <img src={a.logo_url} alt={refugio.nombre} className="h-20 object-contain" />
+                                                <>
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={a.logo_url} alt={refugio.nombre} className="h-20 object-contain" />
+                                                </>
                                             ) : (
                                                 <span className="text-6xl font-bold text-white/30">{refugio.nombre[0]}</span>
                                             )}
@@ -229,6 +236,7 @@ export default async function HomePage() {
                 <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md flex items-center justify-center px-0.5 py-0.5"
                          style={{ backgroundColor: '#43AE6D' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={logo} alt="Pixkki" />
                     </div>
                     <span className="font-semibold text-gray-600">Pixkki</span>

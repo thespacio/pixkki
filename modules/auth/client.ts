@@ -1,8 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import {AuthError} from "@/modules/auth/errors";
-import { AuthError as SupabaseAuthError } from "@supabase/supabase-js";
-import {createSupabaseAdminClient} from "@/lib/supabase/admin-client";
-import {createAuthService} from "@/modules/auth/index";
 
 
 export interface LoginRequest {

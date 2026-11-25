@@ -17,11 +17,14 @@ interface ChangePasswordFormProps {
 }
 
 export default function ChangePasswordForm({
-    requiresPasswordChange = false,
-    requiresOnboarding = false,
-    termsAccepted = false,
+    requiresPasswordChange: _requiresPasswordChange = false,
+    requiresOnboarding: _requiresOnboarding = false,
+    termsAccepted: _termsAccepted = false,
 }: ChangePasswordFormProps = {}) {
     const router = useRouter();
+    void _requiresPasswordChange;
+    void _requiresOnboarding;
+    void _termsAccepted;
 
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");

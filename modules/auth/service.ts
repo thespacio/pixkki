@@ -1,9 +1,10 @@
 import {AuthRepository, AuthUser} from './repository';
 import {AuthenticatedUser, UserRole} from './types';
-import {EmailNotVerifiedError, InactiveUserError} from './errors';
+import {EmailNotVerifiedError, InactiveShelterError, InactiveUserError} from './errors';
 import {AuthAdminRepository} from "@/modules/auth/admin-repository";
 import {ResetPasswordDTO} from "@/modules/auth/schemas";
 import {TERMINOS_VERSION} from "@/modules/auth/constants";
+import {isSuperadminRole} from "@/modules/auth/authorization";
 
 export class AuthService {
     constructor(
@@ -38,14 +39,22 @@ export class AuthService {
             throw new InactiveUserError();
         }
 
-        // 4. Obtener rol y permisos del usuario. Son consultas independientes entre
-        //    sí (las dos solo necesitan context.rol): en paralelo cuesta un viaje a
-        //    la base de datos en vez de dos.
+        // 4. Obtener rol, permisos y aceptación de términos. Son consultas
+        //    independientes entre sí (solo dependen de context.rol / idUsuario).
         const [roleName, permissions, termsAccepted] = await Promise.all([
             this.repository.findRoleNameById(context.rol) as Promise<UserRole>,
             this.repository.findPermissionsByRole(context.rol),
             this.repository.hasAcceptedTerms(context.idUsuario, TERMINOS_VERSION),
         ]);
+
+        // 5. F-SHELTER-03 / RF0.3: el refugio del usuario debe estar activo.
+        //    El superadmin opera a nivel global y está exento.
+        if (!isSuperadminRole(roleName) && context.idRefugio !== null) {
+            const shelterActive = await this.repository.isShelterActive(context.idRefugio);
+            if (!shelterActive) {
+                throw new InactiveShelterError();
+            }
+        }
 
         // 6. Construir objeto de usuario autenticado
         return {

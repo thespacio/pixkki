@@ -1,7 +1,6 @@
 // modules/shelters/schemas.ts
 
 import { z } from 'zod';
-import {CreateShelterInput} from "@/modules/shelters/types";
 
 // ===== ESQUEMAS BASE =====
 // Validación de campos individuales para reutilización

@@ -25,9 +25,15 @@ export function EditCampaignModal({ campaign, onClose, onSaved }: Props) {
     const [error, setError] = useState<string | null>(null);
 
     const savingRef = useRef(saving);
-    savingRef.current = saving;
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+
+    useEffect(() => {
+        savingRef.current = saving;
+    }, [saving]);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {

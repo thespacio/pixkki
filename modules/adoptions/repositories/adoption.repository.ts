@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/types/database";
+import type { Database } from "@/types/database";
 import {
     AdopcionYaCompletadaError,
     AnimalNoDisponibleError,
@@ -16,33 +16,7 @@ import {
     UltimaEvaluacionNoAprobadaError,
 } from "../errors";
 
-type RpcEnvelope = {
-    ok: boolean;
-    code?: string;
-    message?: string;
-    details?: Record<string, unknown>;
-    data?: Record<string, unknown>;
-};
-
-function parseEnvelope(value: Json | null): RpcEnvelope {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-        throw new ErrorInternoAdopcionesError();
-    }
-    const e = value as Record<string, unknown>;
-    return {
-        ok: e.ok === true,
-        code: typeof e.code === "string" ? e.code : undefined,
-        message: typeof e.message === "string" ? e.message : undefined,
-        details:
-            typeof e.details === "object" && e.details !== null && !Array.isArray(e.details)
-                ? (e.details as Record<string, unknown>)
-                : undefined,
-        data:
-            typeof e.data === "object" && e.data !== null && !Array.isArray(e.data)
-                ? (e.data as Record<string, unknown>)
-                : undefined,
-    };
-}
+import { parseEnvelope } from "./rpc-envelope";
 
 function throwStateCode(code: string | undefined, message?: string): never {
     switch (code) {

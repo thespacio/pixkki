@@ -17,12 +17,15 @@ import {
     getAnimalAdoptionAptitudeAction,
     setAnimalAdoptionAvailabilityAction,
 } from "../actions/animal-poblacional.actions";
+import { PublicarAdopcionDialog } from "@/modules/adoptions/components/publicar-adopcion-dialog";
 import type { AdoptionAptitude, AdoptionCriterion } from "../repositories/animal-adoption.repository";
 import { AdoptionExceptionDialog } from "./AdoptionExceptionDialog";
 
 type Props = {
     idAnimal: number;
+    nombre?: string | null;
     canEdit: boolean;
+    canPublishProfile: boolean;
     canAuthorizeException: boolean;
     refreshKey?: number;
     onChanged?: () => void;
@@ -69,7 +72,9 @@ function criterioEstadoLabel(criterio: AdoptionCriterion): string {
 
 export function AnimalAdoptionAptitudeBlock({
     idAnimal,
+    nombre,
     canEdit,
+    canPublishProfile,
     canAuthorizeException,
     refreshKey = 0,
     onChanged,
@@ -158,7 +163,9 @@ export function AnimalAdoptionAptitudeBlock({
             return;
         }
 
-        setActionSuccess("El paciente fue publicado para adopción.");
+        setActionSuccess(
+            "Aptitud habilitada. Para que aparezca en el catálogo publica también el perfil en Adopciones.",
+        );
         await load();
         onChanged?.();
     }
@@ -188,7 +195,12 @@ export function AnimalAdoptionAptitudeBlock({
     const global = aptitud ? estadoGlobal(aptitud) : null;
     const bloqueosOmitibles = aptitud?.criterios.filter((c) => !c.cumple && c.omitible) ?? [];
     const hayBloqueosNoOmitibles = aptitud?.criterios.some((c) => !c.cumple && !c.omitible) ?? false;
-    const mostrarPublicar = Boolean(aptitud && canEdit && !aptitud.disponibleAdopcion);
+    const mostrarPublicarUnificado = Boolean(
+        aptitud && canEdit && canPublishProfile && !aptitud.disponibleAdopcion,
+    );
+    const mostrarPublicar = Boolean(
+        aptitud && canEdit && !canPublishProfile && !aptitud.disponibleAdopcion,
+    );
     const puedeDespublicar = Boolean(aptitud && canEdit && aptitud.disponibleAdopcion);
     const mostrarExcepcion = Boolean(
         aptitud &&
@@ -215,7 +227,8 @@ export function AnimalAdoptionAptitudeBlock({
                         )}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        Gatekeeper de publicación basado en criterios clínicos y de comportamiento.
+                        Gatekeeper basado en criterios clínicos y de comportamiento. Publicar habilita
+                        la aptitud y el perfil público; ambos son necesarios para el catálogo.
                     </p>
                 </div>
 
@@ -225,6 +238,19 @@ export function AnimalAdoptionAptitudeBlock({
                             {saving ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : null}
                             Despublicar
                         </Button>
+                    )}
+                    {mostrarPublicarUnificado && (
+                        <PublicarAdopcionDialog
+                            idAnimal={idAnimal}
+                            nombre={nombre ?? `Animal #${idAnimal}`}
+                            permitirExcepcion={canAuthorizeException}
+                            triggerLabel="Publicar para adopción"
+                            size="sm"
+                            onChanged={() => {
+                                void load();
+                                onChanged?.();
+                            }}
+                        />
                     )}
                     {mostrarPublicar && (
                         <Button

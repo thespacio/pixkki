@@ -2,14 +2,20 @@ import { AdoptionApplicationRepository } from "../repositories/application.repos
 import { PublicCatalogRepository } from "../repositories/public-catalog.repository";
 import {
     CatalogQuerySchema,
-    type CatalogQuery,
+    PublicCatalogResponseSchema,
+    PublicAnimalDetailSchema,
 } from "../validators/catalog.validators";
+import type {
+    PublicCatalogResponseDTO,
+    PublicAnimalDetailDTO,
+} from "../dtos/public-catalog.dto";
 import {
     CreateSolicitudPublicaBodySchema,
     type CreateSolicitudPublicaBody,
 } from "../validators/application.validators";
 import {
     DemasiadasSolicitudesError,
+    FiltrosInvalidosError,
     MayoriaDeEdadNoDeclaradaError,
     PrivacidadNoAceptadaError,
     SolicitudInvalidaError,
@@ -22,19 +28,17 @@ export class PublicCatalogService {
         private readonly applicationRepository: AdoptionApplicationRepository,
     ) {}
 
-    async listCatalog(query: unknown) {
+    async listCatalog(query: unknown): Promise<PublicCatalogResponseDTO> {
         const parsed = CatalogQuerySchema.safeParse(query);
-        if (!parsed.success) {
-            const err: any = new Error(parsed.error.issues[0]?.message ?? "Filtros inválidos.");
-            err.code = "FILTROS_INVALIDOS";
-            err.statusCode = 400;
-            throw err;
-        }
-        return this.catalogRepository.list(parsed.data as CatalogQuery);
+        if (!parsed.success) throw new FiltrosInvalidosError();
+
+        const result = await this.catalogRepository.list(parsed.data);
+        return PublicCatalogResponseSchema.parse(result);
     }
 
-    async getAnimal(idAnimal: number) {
-        return this.catalogRepository.getAnimal(idAnimal);
+    async getAnimal(idAnimal: number): Promise<PublicAnimalDetailDTO> {
+        const animal = await this.catalogRepository.getAnimal(idAnimal);
+        return PublicAnimalDetailSchema.parse(animal);
     }
 
     async listRefugios() {
@@ -45,15 +49,12 @@ export class PublicCatalogService {
         return this.catalogRepository.getRefugio(slug);
     }
 
-    async listByRefugio(slug: string, query: unknown) {
+    async listByRefugio(slug: string, query: unknown): Promise<PublicCatalogResponseDTO> {
         const parsed = CatalogQuerySchema.safeParse(query);
-        if (!parsed.success) {
-            const err: any = new Error(parsed.error.issues[0]?.message ?? "Filtros inválidos.");
-            err.code = "FILTROS_INVALIDOS";
-            err.statusCode = 400;
-            throw err;
-        }
-        return this.catalogRepository.listByRefugio(slug, parsed.data as CatalogQuery);
+        if (!parsed.success) throw new FiltrosInvalidosError();
+
+        const result = await this.catalogRepository.listByRefugio(slug, parsed.data);
+        return PublicCatalogResponseSchema.parse(result);
     }
 
     async submitApplication(idAnimal: number, body: unknown, ip: string) {

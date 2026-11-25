@@ -1,5 +1,3 @@
-import type { Database } from "@/types/database";
-
 export interface CreateUserInput {
     correo: string;
     password: string;
@@ -35,10 +33,6 @@ export interface AuthenticatedUser {
     requiresPasswordChange: boolean;
     requiresOnboarding: boolean;
     termsAccepted: boolean;
-}
-
-interface AccountStatus {
-    requiresMFA: boolean;
 }
 
 export interface TotpEnrollment {

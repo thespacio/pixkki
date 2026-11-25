@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {getSupabaseBrowserClient} from "@/lib/supabase/browser-client";
-import {resetPasswordAction, sendPasswordResetAction} from "@/modules/auth/action";
+import {resetPasswordAction} from "@/modules/auth/action";
 import {Button} from "@/components/ui/button";
 import {ArrowLeft, Eye, EyeOff} from "lucide-react";
 import {useRouter} from "next/navigation";

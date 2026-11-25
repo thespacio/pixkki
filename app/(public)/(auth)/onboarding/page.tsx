@@ -12,7 +12,17 @@ import OnboardingWizard from "./OnboardingWizard";
  * onboarding como completado y el usuario pasa al panel.
  */
 export default async function OnboardingPage() {
-    const user = await getCurrentUser();
+    let user;
+    try {
+        user = await getCurrentUser();
+    } catch (error) {
+        const statusCode =
+            error instanceof Error && "statusCode" in error && typeof error.statusCode === "number"
+                ? error.statusCode
+                : undefined;
+        if (statusCode === 401 || statusCode === 403) redirect("/login");
+        throw error;
+    }
 
     // El superadmin (sin refugio) y quienes ya completaron el wizard no
     // tienen nada que hacer aquí.

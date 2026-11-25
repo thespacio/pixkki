@@ -9,7 +9,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { deleteAnimalAction, updateAnimalAction } from "../actions/animal.actions";
+import { deleteAnimalAction } from "../actions/animal.actions";
 import type { Animal } from "@/modules/animals/types/animales.types";
 import type { SpaceWithOptionalOccupancy } from "@/modules/spaces/ports/space-occupancy.port";
 import { AnimalDiagnosisSheet } from "./AnimalDiagnosisSheet";
@@ -85,30 +85,6 @@ export function AnimalDetailPanel({
 
     function refresh() {
         setRefreshKey((value) => value + 1);
-    }
-
-    function toggleDisponible() {
-        // RF2.4: un paciente en cuarentena no puede ofrecerse en adopción.
-        // Sí puede retirarse de adopción si quedó marcado por datos previos.
-        // El servidor aplica la misma regla, esta guarda solo evita el viaje.
-        if (enCuarentena && !animalActual.disponibleAdopcion) return;
-        setFeedback(null);
-        startTransition(async () => {
-            const result = await updateAnimalAction({
-                id: animalActual.idAnimal,
-                disponibleAdopcion: !animalActual.disponibleAdopcion,
-            });
-            setFeedback(
-                result.success
-                    ? {
-                          type: "ok",
-                          msg: animalActual.disponibleAdopcion
-                              ? "Marcado como no disponible"
-                              : "Marcado como disponible para adopción",
-                      }
-                    : { type: "error", msg: result.error },
-            );
-        });
     }
 
     function darDeBaja() {
@@ -206,7 +182,6 @@ export function AnimalDetailPanel({
                     canEdit={canEdit}
                     canDelete={canDelete}
                     pending={pending}
-                    onToggleDisponible={toggleDisponible}
                     onDelete={darDeBaja}
                 />
 

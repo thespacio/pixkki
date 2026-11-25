@@ -59,7 +59,9 @@ export default async function SolicitudesPage({ searchParams }: Props) {
                             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="space-y-1">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <p className="font-semibold text-foreground">Solicitud #{String(s.id_solicitud)}</p>
+                                        <p className="font-semibold text-foreground">
+                                            Folio: <span className="font-mono">{String(s.codigo_seguimiento ?? `Solicitud #${String(s.id_solicitud)}`)}</span>
+                                        </p>
                                         <AdoptionStatusBadge status={String(s.estado_solicitud ?? "")} />
                                     </div>
                                     <p className="text-sm text-muted-foreground">

@@ -2,7 +2,6 @@
 
 
 import { createContext, useState } from "react";
-import {Props} from "next/script";
 import {AuthUser} from "@/modules/auth/repository";
 
 interface AuthProviderProps {
