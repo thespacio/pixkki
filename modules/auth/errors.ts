@@ -17,6 +17,13 @@ export class AuthError extends Error {
     }
 }
 
+/** El correo ya existe en Supabase Auth aunque no tenga fila en `usuario`. */
+export class AuthEmailAlreadyInUseError extends AuthError {
+    constructor(email: string) {
+        super(`El correo ${email} ya está registrado en Auth.`, 409, "email_exists");
+    }
+}
+
 export class UnauthorizedError extends AuthError {
     constructor(
         message = "Usuario no autenticado"

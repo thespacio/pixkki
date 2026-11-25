@@ -2,6 +2,8 @@
 
 import {UserRepository} from './repository';
 import {AuthAdminRepository} from '@/modules/auth/admin-repository';
+import {AuthEmailAlreadyInUseError} from '@/modules/auth/errors';
+import type {AuthUser} from '@/modules/auth/repository';
 import {User, UserQueryParams, GlobalUserItem, ROLE_NAME_TO_ID, StaffListItem} from './types';
 import {UserNotFoundError, EmailAlreadyInUseError} from './errors';
 import {CreateStaffSchema, StaffRole} from './schemas';
@@ -51,9 +53,11 @@ export class UserService {
             // 3. Mapear rol lógico a ID numérico.
             const roleId = this.resolveRoleId(parsed.role);
 
-            // 4. Crear usuario en Supabase Auth con contraseña temporal.
+            // 4. Crear usuario en Supabase Auth con contraseña temporal. Si el
+            //    correo quedó huérfano en Auth tras un borrado, se reaprovecha
+            //    la cuenta existente sin tocar la de otro usuario.
             const tempPassword = this.generateTempPassword();
-            const authUser = await this.authAdminRepository.createAuthUser(
+            const authUser = await this.createOrReuseAuthUser(
                 parsed.email,
                 tempPassword,
             );
@@ -197,6 +201,19 @@ export class UserService {
                 throw new UserNotFoundError(id);
             }
             await this.userRepository.delete(id);
+
+            // La FK usuario.auth_user_id -> auth.users.id no tiene ON DELETE
+            // CASCADE: primero se borra la fila y luego la cuenta Auth. Si este
+            // segundo paso falla, la baja ya quedó aplicada y solo se registra
+            // el motivo (sin exponer stack traces al cliente).
+            try {
+                await this.authAdminRepository.deleteAuthUser(user.authUserId);
+            } catch (error) {
+                console.error(
+                    `[user.service] No se pudo eliminar la cuenta Auth del miembro ${id}:`,
+                    error instanceof Error ? error.message : "Unknown error",
+                );
+            }
         } catch (error) {
             if (error instanceof UserServiceError || error instanceof UserNotFoundError) {
                 throw error;
@@ -207,6 +224,38 @@ export class UserService {
                 }`,
                 'UNEXPECTED_ERROR',
                 error,
+            );
+        }
+    }
+
+    /**
+     * Crea la cuenta Auth o, si el correo ya existe allí pero no tiene fila en
+     * `usuario`, recupera esa cuenta huérfana y le asigna la contraseña nueva.
+     */
+    private async createOrReuseAuthUser(
+        email: string,
+        password: string,
+    ): Promise<AuthUser> {
+        try {
+            return await this.authAdminRepository.createAuthUser(email, password);
+        } catch (error) {
+            if (!(error instanceof AuthEmailAlreadyInUseError)) {
+                throw error;
+            }
+
+            const orphan = await this.authAdminRepository.findAuthUserByEmail(email);
+            if (!orphan) {
+                throw error;
+            }
+
+            const owner = await this.userRepository.findByAuthUserId(orphan.id);
+            if (owner) {
+                throw new EmailAlreadyInUseError(email);
+            }
+
+            return await this.authAdminRepository.updateAuthUserPassword(
+                orphan.id,
+                password,
             );
         }
     }
